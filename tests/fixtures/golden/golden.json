@@ -1,0 +1,99 @@
+{
+  "cli_commit": "9a6cc68865832b6e746656cb203cb24ce9c54afb",
+  "cases": [
+    {
+      "case": "plain",
+      "slot": 0,
+      "label": "1A",
+      "display_name": "Clean Tone",
+      "file_name": "1A_Clean Tone.prst",
+      "ir_nam": [],
+      "prst_sha256": "e1113b3cdac527a2963807f0d161685111f142a142888af901851aa51c01520d"
+    },
+    {
+      "case": "dynamic_fields",
+      "slot": 145,
+      "label": "37B",
+      "display_name": "Blue Sparkle",
+      "file_name": "37B_Blue Sparkle.prst",
+      "ir_nam": [],
+      "prst_sha256": "7b4e785c465173526b7d2ebfe7ead1e18263e4975a07bf2cdc0b2ea4cfa04112"
+    },
+    {
+      "case": "empty_name",
+      "slot": 5,
+      "label": "2B",
+      "display_name": "",
+      "file_name": "2B_2B.prst",
+      "ir_nam": [],
+      "prst_sha256": "248ab9be8dfc1348d5326fe3d0aaf844e9dac67d4da370e050b183d80db40c2b"
+    },
+    {
+      "case": "unsafe_chars",
+      "slot": 63,
+      "label": "16D",
+      "display_name": " a/b:c*d?\"e<f>|.",
+      "file_name": "16D_a_b_c_d_e_f_.prst",
+      "ir_nam": [],
+      "prst_sha256": "8cfdddf7a0f3a776dd301a074036e2f81762709a94e8baf4f808f355252d4107"
+    },
+    {
+      "case": "only_dots",
+      "slot": 100,
+      "label": "26A",
+      "display_name": "...",
+      "file_name": "26A_patch.prst",
+      "ir_nam": [],
+      "prst_sha256": "1ffc9305988b08cbecd9bd072116adb3da1d1a561015d7455b94c590a3880246"
+    },
+    {
+      "case": "non_ascii",
+      "slot": 200,
+      "label": "51A",
+      "display_name": "Amp ����x",
+      "file_name": "51A_Amp ����x.prst",
+      "ir_nam": [],
+      "prst_sha256": "6d27d330376c8fc9193c6d45116c4f800d8383eb9dee57c651030deed673b99e"
+    },
+    {
+      "case": "whitespace_ctrl",
+      "slot": 255,
+      "label": "64D",
+      "display_name": "\u001c\tTab Name\u000b\u001f",
+      "file_name": "64D_Tab Name.prst",
+      "ir_nam": [],
+      "prst_sha256": "d566a845698ac2b21de18fab45b177422277c8070e1b56879b0948afe47d8eed"
+    },
+    {
+      "case": "short_dump",
+      "slot": 30,
+      "label": "8C",
+      "display_name": "Short",
+      "file_name": "8C_Short.prst",
+      "ir_nam": [],
+      "prst_sha256": "7bd7d3cdc19ddc48dc0458e08032b59350d4aefdb1be3e666c504fc219b16561"
+    },
+    {
+      "case": "long_dump",
+      "slot": 31,
+      "label": "8D",
+      "display_name": "Long",
+      "file_name": "8D_Long.prst",
+      "ir_nam": [],
+      "prst_sha256": "04ab4f156a10dd49ef6c9991ad10b30e7ed0893606ba84875714f4085ff031ae"
+    },
+    {
+      "case": "ir_nam",
+      "slot": 40,
+      "label": "11A",
+      "display_name": "IR+NAM",
+      "file_name": "11A_IR+NAM.prst",
+      "ir_nam": [
+        "User-IR slot 3",
+        "SnapTone (NAM) slot 1 (amp)",
+        "SnapTone (NAM) slot 2 (dist)"
+      ],
+      "prst_sha256": "a0e0c15c835e4c6332c5d5570604c29b4b5189e072f143b68868dcac4f84665c"
+    }
+  ]
+}

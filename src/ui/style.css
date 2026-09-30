@@ -1,0 +1,89 @@
+:root {
+  --bg: #fafaf9;
+  --fg: #1c1917;
+  --muted: #78716c;
+  --panel: #ffffff;
+  --border: #e7e5e4;
+  --accent: #b45309;
+  --accent-fg: #ffffff;
+  --warn-bg: #fef3c7;
+  --warn-fg: #78350f;
+  --error-bg: #fee2e2;
+  --error-fg: #7f1d1d;
+  --ok: #15803d;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1917;
+    --fg: #f5f5f4;
+    --muted: #a8a29e;
+    --panel: #292524;
+    --border: #44403c;
+    --accent: #f59e0b;
+    --accent-fg: #1c1917;
+    --warn-bg: #451a03;
+    --warn-fg: #fde68a;
+    --error-bg: #450a0a;
+    --error-fg: #fecaca;
+    --ok: #4ade80;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { margin: 0; font-size: 1.5rem; }
+h2 { margin: 0 0 8px; font-size: 1.05rem; }
+.sub { margin: 4px 0 0; }
+.muted { color: var(--muted); }
+section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 8px 0; }
+button {
+  font: inherit;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+  cursor: pointer;
+}
+button.secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+input, select {
+  font: inherit;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+}
+progress { width: 200px; }
+.status.ok { color: var(--ok); font-weight: 600; }
+.banner { padding: 10px 14px; border-radius: 6px; margin-top: 16px; }
+.banner.error, .warnings li.error { background: var(--error-bg); color: var(--error-fg); }
+.warnings { list-style: none; padding: 0; margin: 8px 0 0; }
+.warnings li { background: var(--warn-bg); color: var(--warn-fg); padding: 8px 12px; border-radius: 6px; margin-top: 6px; }
+#log {
+  margin: 8px 0 0;
+  height: 320px;
+  overflow: auto;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: 12px/1.45 ui-monospace, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

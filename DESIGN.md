@@ -34,9 +34,9 @@ not a patch editor.
   JavaScript port. This repo doesn't copy them; it links to them and records
   only what's new or different in the browser.
 - File names match the CLI's so outputs can be compared one-to-one:
-  - one slot: `<slot>_<name>.prst` (e.g. `34-A_Clean.prst`)
-  - all slots: `gp200_all_patches.zip`
-  - a range: `gp200_<start>_to_<end>.zip`
+  - one slot: `<slot>_<name>.prst` (e.g. `34A_Clean.prst`)
+  - all slots: `gp200_all_patches.zip`, whose entries use the same names
+  - a range: `gp200_<start>_to_<end>.zip` (e.g. `gp200_34A_to_36D.zip`)
 
 ## Architecture
 
@@ -61,9 +61,11 @@ These are deliberately simpler than the CLI's. See the journal entry of
   1. Normalize the known-changing bytes to fixed values: the dead bytes
      `0x43` and `0x9F`, `0x2E`, and the tail block, exactly as the CLI's
      `normalize_export_dynamic_fields` does.
-  2. Run cheap sanity checks: SysEx framing, expected length, and a name
-     that decodes.
-  3. Re-read that slot only if a check fails. No "read until two reads
+  2. Run cheap sanity checks: all 7 chunks arrived, every payload byte is a
+     valid nibble (≤ 0x0F), payloads have even length, and the dump is long
+     enough to cover the name and all 11 effect blocks.
+  3. Re-read that slot only if a read times out or fails a check, up to 3
+     attempts in all; then skip it with an error. No "read until two reads
      agree" loop.
 - **Writes (phase 2): write, then one read-back compare**, ignoring the
   known-changing bytes. Report a clear pass/fail. No silent retry loops;
@@ -134,6 +136,14 @@ that silently did nothing would still pass. So:
 3. Export and confirm the change actually landed.
 4. Restore A with the web app.
 5. Export all → must match A exactly.
+
+## Parity with the CLI
+
+`tools/make_golden.py` runs the CLI's own Python functions on a set of
+test dumps and saves the results as fixtures. `tests/golden.test.js`
+requires the JavaScript port to reproduce them byte-for-byte: `.prst`
+contents, file names, displayed names, and User-IR/NAM detection. Re-run the
+generator whenever the CLI's export logic changes.
 
 ## Process
 

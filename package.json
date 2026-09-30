@@ -1,0 +1,15 @@
+{
+  "name": "gp-200-patch-manager-web",
+  "private": true,
+  "description": "Browser-based bulk backup and restore of Valeton GP-200 patches over Web MIDI",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "serve": "python -m http.server 8000",
+    "compare": "node tools/compare-zips.js"
+  }
+}
