@@ -12,6 +12,28 @@ pedal.
   supported, because it has no Web MIDI.
 - Nothing to install. Hosted on GitHub Pages.
 
+This isn't a patch editor. If you want to create or edit patches, look at
+[GP200 Studio](https://github.com/kabir0st/gp200-studio) (a full editor) or
+[RigSheet](https://github.com/ricardo-mv/rigsheet); this tool covers the
+narrower job of backing up and restoring whole banks.
+
+## Credits
+
+The GP-200's SysEx message formats (read requests, upload chunking,
+preset-change messages, the nibble encoding) and the way a device dump maps
+onto a `.prst` file were reverse-engineered by Kabir S. Tamari's
+[GP200 Studio](https://github.com/kabir0st/gp200-studio) (GPL-3.0) from USB
+captures of Valeton's own editor. They reached this project through the
+command-line
+[GP-200 Patch Manager](https://github.com/donpark2000/GP-200-Patch-Manager),
+which ported them and then verified and extended them against real hardware.
+
+[RigSheet](https://github.com/ricardo-mv/rigsheet) served as a second,
+independent reverse-engineering of the protocol. It was used only as a
+read-only cross-check of facts (for example, the SnapTone/NAM model-code
+ranges and the upload addressing); none of RigSheet's code or text is
+copied here.
+
 ## For contributors
 
 - [`DESIGN.md`](DESIGN.md): what we're building and the decisions behind it.

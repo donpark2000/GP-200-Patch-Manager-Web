@@ -75,6 +75,9 @@ progress { width: 200px; }
 .banner.error, .warnings li.error { background: var(--error-bg); color: var(--error-fg); }
 .warnings { list-style: none; padding: 0; margin: 8px 0 0; }
 .warnings li { background: var(--warn-bg); color: var(--warn-fg); padding: 8px 12px; border-radius: 6px; margin-top: 6px; }
+footer { margin-top: 24px; font-size: 0.85rem; color: var(--muted); }
+footer p { margin: 4px 0; }
+a { color: var(--accent); }
 #log {
   margin: 8px 0 0;
   height: 320px;

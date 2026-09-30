@@ -1,6 +1,13 @@
 // .prst file building from a device dump, export normalization, names.
 // Spec: PROTOCOL.md section 1 in the CLI repo. Ported from gp200.py; pinned
 // to it byte-for-byte by tests/golden.test.js.
+//
+// Credit: the .prst layout, the dump-to-file shift of 0x28, and the
+// User-IR model-code range come from GP200 Studio (Kabir S. Tamari,
+// github.com/kabir0st/gp200-studio, GPL-3.0). The SnapTone (NAM) code
+// ranges were confirmed against RigSheet (github.com/ricardo-mv/rigsheet)
+// as facts only; no RigSheet code is used. The export normalization rules
+// are the CLI's own hardware findings.
 
 import { slotToLabel } from "./slots.js";
 

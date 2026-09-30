@@ -38,6 +38,23 @@ not a patch editor.
   - all slots: `gp200_all_patches.zip`, whose entries use the same names
   - a range: `gp200_<start>_to_<end>.zip` (e.g. `gp200_34A_to_36D.zip`)
 
+## Credit and licensing
+
+Protocol knowledge that came from other projects is credited wherever it's
+used: in the README, in the source file that implements it, and in the
+page's footer, since that's what users actually see. The CLI's rules carry
+over unchanged:
+
+- **GP200 Studio** (GPL-3.0): the SysEx message formats and `.prst`
+  layout were ported from it (via the CLI). Credit by name, with a link.
+  This project is GPL-3.0 too.
+- **RigSheet** (all rights reserved): read-only cross-check only.
+  Independently confirmed *facts* may be used and credited; RigSheet's code
+  and text are never copied.
+
+When the write path is ported (phase 2), its RigSheet-derived addressing
+finding gets the same credit in the write code.
+
 ## Architecture
 
 Two layers, kept strictly apart:

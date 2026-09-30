@@ -1,5 +1,11 @@
 // GP-200 SysEx message building and parsing (read path only).
 // Spec: PROTOCOL.md section 2 in the CLI repo. Ported from gp200.py.
+//
+// Credit: these message formats (the read request, identity query,
+// enter-editor-mode, chunk offsets, nibble encoding) were reverse-engineered
+// by Kabir S. Tamari's GP200 Studio (github.com/kabir0st/gp200-studio,
+// GPL-3.0) from USB captures of Valeton's own editor, and ported from there
+// into the CLI, which this file ports in turn.
 
 export const HEADER = [0xf0, 0x21, 0x25, 0x7e, 0x47, 0x50, 0x2d, 0x32];
 
