@@ -56,6 +56,66 @@ export function validateSkeleton(bytes) {
   return bytes;
 }
 
+/** Is this a plausible .prst file? (Same test the CLI's upload uses.) */
+export function isPrst(bytes) {
+  return bytes.length === PRST_LEN && bytes[0] === 0x54 && bytes[1] === 0x53 && bytes[2] === 0x52 && bytes[3] === 0x50;
+}
+
+/** Patch name stored in a .prst file (decoded the same way as a dump's). */
+export function prstFileName(fileBytes) {
+  return extractNameField(fileBytes.subarray(CONTENT_FILE_START));
+}
+
+// Fields a correct write is NOT expected to reproduce, so write verification
+// ignores them (the CLI's VERIFY_IGNORE_OFFSETS): the PC-software stamp
+// (never sent), the three slot mirrors (recomputed for the new slot), and
+// the tail block's live bytes. The dead bytes are a separate category, added
+// by callers that want them ignored too (DEAD_BYTE_FILE_OFFSETS).
+export const VERIFY_IGNORE_OFFSETS = new Set([
+  0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x34, 0x90, ...TAIL_BLOCK_FILE_OFFSETS,
+]);
+
+/** Compare two .prst buffers over the range a device dump covers, skipping
+ *  VERIFY_IGNORE_OFFSETS plus `extraIgnore`. Returns [{off, expected, actual}]
+ *  for every other difference (the CLI's diff_prst_content). */
+export function diffPrstContent(expected, actual, extraIgnore = []) {
+  const ignore = new Set([...VERIFY_IGNORE_OFFSETS, ...extraIgnore]);
+  const end = Math.min(expected.length, actual.length, CHECKSUM_OFF);
+  const out = [];
+  for (let i = CONTENT_FILE_START; i < end; i++) {
+    if (!ignore.has(i) && expected[i] !== actual[i]) out.push({ off: i, expected: expected[i], actual: actual[i] });
+  }
+  return out;
+}
+
+/** Human-readable name for a .prst file offset, for mismatch reports. */
+export function describeOffset(off) {
+  const r = (a, b) => off >= a && off < b;
+  if (r(0x00, 0x04)) return "magic";
+  if (r(0x1c, 0x20)) return "per-export nonce";
+  if (r(0x28, 0x2e)) return "PC-software stamp";
+  if (off === 0x2e || off === 0x34 || off === 0x90) return "slot-mirror byte";
+  if (off === 0x3e || off === 0x40) return "export-zeroed byte";
+  if (off === 0x43 || off === 0x9f) return "dead byte";
+  if (r(0x44, 0x54)) return `name[${off - 0x44}]`;
+  if (r(0x54, 0x64)) return `author[${off - 0x54}]`;
+  if (r(0x64, 0x8c)) return `note[${off - 0x64}]`;
+  if (r(0x8c, 0xa0)) return "pre-effects header";
+  if (r(0xa0, 0xa0 + 11 * 72)) {
+    const block = Math.floor((off - 0xa0) / 72);
+    const rel = (off - 0xa0) % 72;
+    let what = `+${rel}`;
+    if (rel === 4) what = "slot index";
+    else if (rel === 5) what = "enabled";
+    else if (rel >= 8 && rel < 12) what = "model code";
+    else if (rel >= 12) what = `param ${Math.floor((rel - 12) / 4)}`;
+    return `effect block ${block} ${what}`;
+  }
+  if (r(1120, 1120 + 96)) return `tail block entry ${Math.floor((off - 1120) / 12)} +${(off - 1120) % 12}`;
+  if (r(0x4c6, 0x4c8)) return "checksum";
+  return "other";
+}
+
 /** Overlay a device dump onto the skeleton's content region; recompute the checksum. */
 export function buildPrstFromDump(decoded, skeleton) {
   const out = Uint8Array.from(skeleton);

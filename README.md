@@ -4,9 +4,9 @@ A browser-based tool for **bulk backup and restore of Valeton GP-200
 patches** over USB-MIDI. It's the web companion to the command-line
 [GP-200 Patch Manager](https://github.com/donpark2000/GP-200-Patch-Manager).
 
-**Status: early test build.** Read-only backup works against a simulated
-pedal and is being checked against real hardware. Nothing writes to the
-pedal.
+**Status: early test build.** Backup is verified against real hardware (it
+matches the CLI byte-for-byte). Restore is built and being tested; it
+writes to the pedal only after you confirm.
 
 - Runs in **Chrome or Edge** on Windows, macOS, or Linux. Safari isn't
   supported, because it has no Web MIDI.

@@ -100,6 +100,47 @@ for case, (slot, dump) in cases.items():
         "prst_sha256": hashlib.sha256(prst).hexdigest(),
     })
 
+# ---- Write path: the exact SysEx the CLI's flash upload sends, and its
+# verify comparison. Each upload case sends a case's exported .prst (the
+# file a user would actually restore from) to a slot.
+upload_cases = [("plain", 252), ("dynamic_fields", 255), ("non_ascii", 0), ("ir_nam", 133)]
+manifest["uploads"] = []
+for case, slot in upload_cases:
+    prst = (out_dir / f"{case}.prst").read_bytes()
+    chunks = gp.build_upload_chunks(gp.build_upload_image(prst, slot), slot)
+    (out_dir / f"upload_{case}_{slot}.bin").write_bytes(b"".join(chunks))
+    manifest["uploads"].append({
+        "case": case,
+        "slot": slot,
+        "chunk_lengths": [len(c) for c in chunks],
+        "preset_change_hex": gp.build_preset_change(slot).hex(),
+    })
+
+# diff_prst_content: which offsets count as a real mismatch after a write.
+expected = (out_dir / "plain.prst").read_bytes()
+actual = bytearray(expected)
+probe_offsets = [0x2A, 0x2E, 0x2F, 0x34, 0x3E, 0x40, 0x43, 0x50, 0x90, 0x9F, 0x200,
+                 1120 + 5, 1120 + 6, 1120 + 7, 1120 + 12 * 7 + 11, 0x4C5]
+for off in probe_offsets:
+    actual[off] ^= 0x5A
+manifest["verify_diff"] = {
+    "probe_offsets": probe_offsets,
+    "flagged_default": [o for o, _, _ in gp.diff_prst_content(expected, bytes(actual))],
+    "flagged_ignoring_dead": [o for o, _, _ in gp.diff_prst_content(
+        expected, bytes(actual), extra_ignore=gp.DEAD_BYTE_FILE_OFFSETS)],
+}
+
+# expand_import_sources' ordering rule for zip entries.
+label_names = ["37A_Template.prst", "8A_x.prst", "36-A JImi.prst", "10B_y.prst"]
+mixed_names = ["Friedman_BE100.prst", "8A_x.prst", "JCM800 Recipe.prst"]
+manifest["zip_order"] = {
+    "labelled_in": label_names,
+    "labelled_out": sorted(label_names, key=gp._parse_leading_slot_label),
+    "mixed_in": mixed_names,
+    "mixed_out": sorted(mixed_names, key=str.lower),
+    "labels": {n: gp._parse_leading_slot_label(n) for n in label_names + mixed_names},
+}
+
 (out_dir / "golden.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
                                      encoding="utf-8")
 print(f"wrote {len(cases)} golden cases to {out_dir} (CLI commit {manifest['cli_commit']})")

@@ -95,5 +95,137 @@
       ],
       "prst_sha256": "a0e0c15c835e4c6332c5d5570604c29b4b5189e072f143b68868dcac4f84665c"
     }
-  ]
+  ],
+  "uploads": [
+    {
+      "case": "plain",
+      "slot": 252,
+      "chunk_lengths": [
+        380,
+        380,
+        380,
+        380,
+        380,
+        380,
+        186
+      ],
+      "preset_change_hex": "f021257e47502d3212080000000008010000040000000000000f0c0000f7"
+    },
+    {
+      "case": "dynamic_fields",
+      "slot": 255,
+      "chunk_lengths": [
+        380,
+        380,
+        380,
+        380,
+        380,
+        380,
+        186
+      ],
+      "preset_change_hex": "f021257e47502d3212080000000008010000040000000000000f0f0000f7"
+    },
+    {
+      "case": "non_ascii",
+      "slot": 0,
+      "chunk_lengths": [
+        380,
+        380,
+        380,
+        380,
+        380,
+        380,
+        186
+      ],
+      "preset_change_hex": "f021257e47502d32120800000000080100000400000000000000000000f7"
+    },
+    {
+      "case": "ir_nam",
+      "slot": 133,
+      "chunk_lengths": [
+        380,
+        380,
+        380,
+        380,
+        380,
+        380,
+        186
+      ],
+      "preset_change_hex": "f021257e47502d32120800000000080100000400000000000008050000f7"
+    }
+  ],
+  "verify_diff": {
+    "probe_offsets": [
+      42,
+      46,
+      47,
+      52,
+      62,
+      64,
+      67,
+      80,
+      144,
+      159,
+      512,
+      1125,
+      1126,
+      1127,
+      1215,
+      1221
+    ],
+    "flagged_default": [
+      47,
+      62,
+      64,
+      67,
+      80,
+      159,
+      512,
+      1125,
+      1215,
+      1221
+    ],
+    "flagged_ignoring_dead": [
+      47,
+      62,
+      64,
+      80,
+      512,
+      1125,
+      1215,
+      1221
+    ]
+  },
+  "zip_order": {
+    "labelled_in": [
+      "37A_Template.prst",
+      "8A_x.prst",
+      "36-A JImi.prst",
+      "10B_y.prst"
+    ],
+    "labelled_out": [
+      "8A_x.prst",
+      "10B_y.prst",
+      "36-A JImi.prst",
+      "37A_Template.prst"
+    ],
+    "mixed_in": [
+      "Friedman_BE100.prst",
+      "8A_x.prst",
+      "JCM800 Recipe.prst"
+    ],
+    "mixed_out": [
+      "8A_x.prst",
+      "Friedman_BE100.prst",
+      "JCM800 Recipe.prst"
+    ],
+    "labels": {
+      "37A_Template.prst": 144,
+      "8A_x.prst": 28,
+      "36-A JImi.prst": 140,
+      "10B_y.prst": 37,
+      "Friedman_BE100.prst": null,
+      "JCM800 Recipe.prst": null
+    }
+  }
 }

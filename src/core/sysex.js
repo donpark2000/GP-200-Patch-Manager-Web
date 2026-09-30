@@ -68,6 +68,64 @@ export function buildEnterEditorMode() {
   return Uint8Array.from([...HEADER, CMD_REQUEST, 0x12, 0, 0, 0, 0xf7]);
 }
 
+/** Switch the pedal's active preset. The CLI sends this after every upload:
+ *  it's what loads the freshly written flash copy into the active state. */
+export function buildPresetChange(slot) {
+  const sh = (slot >> 4) & 0x0f;
+  const sl = slot & 0x0f;
+  return Uint8Array.from([
+    ...HEADER,
+    CMD_RESPONSE, 0x08,
+    0, 0, 0, 0,
+    0x08, 0x01,
+    0, 0,
+    0x04, 0, 0, 0,
+    0, 0, 0,
+    sh, sl,
+    0, 0,
+    0xf7,
+  ]);
+}
+
+// ---- Flash upload (write path). Ported from gp200.py build_upload_image /
+// build_upload_chunks. Credit: the chunk format comes from GP200 Studio; the
+// addressing (the real target slot lives inside the payload's 14-byte inner
+// header, and the outer per-chunk byte is a fixed 0x09) was found by
+// cross-checking against RigSheet's independent reverse-engineering, after
+// GP200-Studio-style writes were silently discarded (PROTOCOL.md section 2).
+
+export const SUB_UPLOAD_CHUNK = 0x20;
+const UPLOAD_CONTENT_START = 0x2e; // file offset the upload payload starts at
+const UPLOAD_FOOTER_LEN = 8; // trailing file bytes never sent
+const UPLOAD_HEADER_LEN = 14;
+const UPLOAD_CHUNK_RAW = 183;
+
+/** Raw (pre-nibble) upload payload for `fileBytes` written to `slot`. */
+export function buildUploadImage(fileBytes, slot) {
+  const content = fileBytes.subarray(UPLOAD_CONTENT_START, fileBytes.length - UPLOAD_FOOTER_LEN);
+  const image = new Uint8Array(UPLOAD_HEADER_LEN + content.length);
+  image.set([0x00, 0x00, 0x04, 0x00, 0x01, 0x00, slot & 0xff, 0x00,
+    0x01, 0x00, 0x04, 0x00, slot & 0xff, 0x00]);
+  image.set(content, UPLOAD_HEADER_LEN);
+  image[20] = 0xff; // file offset 0x34: device-owned slot-mirror byte
+  image[112] = 0xff; // file offset 0x90: device-owned slot-mirror byte
+  return image;
+}
+
+/** Split an upload image into cmd=0x12 sub=0x20 SysEx messages. */
+export function buildUploadChunks(image) {
+  const chunks = [];
+  for (let off = 0; off < image.length; off += UPLOAD_CHUNK_RAW) {
+    const nib = nibbleEncode(image.subarray(off, off + UPLOAD_CHUNK_RAW));
+    const msg = new Uint8Array(CHUNK_PAYLOAD_START + nib.length + 1);
+    msg.set([...HEADER, CMD_RESPONSE, SUB_UPLOAD_CHUNK, 0x09, off & 0x7f, (off >> 7) & 0x7f]);
+    msg.set(nib, CHUNK_PAYLOAD_START);
+    msg[msg.length - 1] = 0xf7;
+    chunks.push(msg);
+  }
+  return chunks;
+}
+
 export function isSysex(msg, cmd, sub) {
   if (msg.length <= 10) return false;
   for (let i = 0; i < HEADER.length; i++) if (msg[i] !== HEADER[i]) return false;

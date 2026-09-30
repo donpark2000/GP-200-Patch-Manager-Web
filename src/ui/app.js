@@ -1,12 +1,14 @@
 // Bare test page (DESIGN.md "Order of work", step 2): connect, export all or
-// a range, and a log that can be saved. Replaced by the designed UI later;
-// all protocol logic lives in src/core/.
+// a range, restore (test build), and a log that can be saved. Replaced by
+// the designed UI later; all protocol logic lives in src/core/.
 
 import { findGp200Ports, GP200 } from "../core/device.js";
 import { exportWarnings, packageExport, readSlots } from "../core/export.js";
 import { Logger } from "../core/log.js";
 import { skeletonBytes } from "../core/skeleton.js";
-import { slotsBetween, slotToLabel } from "../core/slots.js";
+import { labelToSlot, slotsBetween, slotToLabel } from "../core/slots.js";
+import { expandSources, orderEntries, planUpload, planWarnings, writeSlots } from "../core/upload.js";
+import { createZip } from "../core/zip.js";
 import { VERSION } from "../version.js";
 
 const $ = (id) => document.getElementById(id);
@@ -17,12 +19,19 @@ const ui = {
   progress: $("progress"), progressText: $("progress-text"), warnings: $("warnings"),
   debug: $("debug"), saveLog: $("save-log"), clearLog: $("clear-log"), log: $("log"),
   unsupported: $("unsupported"), version: $("version"),
+  restoreStart: $("restore-start"), restoreFiles: $("restore-files"), restorePlan: $("restore-plan"),
+  restoreWarnings: $("restore-warnings"), restoreWrite: $("restore-write"), restoreStop: $("restore-stop"),
+  restoreStatus: $("restore-status"), restoreFailed: $("restore-failed"),
 };
 
 const log = new Logger({ onLine: appendLogLine });
 let midi = null;
 let device = null;
 let cancelRequested = false;
+let busy = false;
+let plan = null; // the current restore plan, shown before anything is written
+let failedReadbacks = [];
+const knownNames = new Map(); // slot -> patch name, from this session's reads and writes
 
 ui.version.textContent = `Version ${VERSION}.`;
 log.info(`GP-200 Patch Manager Web, version ${VERSION}`);
@@ -34,6 +43,17 @@ if (!navigator.requestMIDIAccess) {
 }
 
 ui.connect.addEventListener("click", onConnect);
+ui.restoreStart.addEventListener("change", rebuildPlan);
+ui.restoreFiles.addEventListener("change", rebuildPlan);
+ui.restoreWrite.addEventListener("click", onRestore);
+ui.restoreStop.addEventListener("click", () => {
+  cancelRequested = true;
+  ui.restoreStop.disabled = true;
+});
+ui.restoreFailed.addEventListener("click", () => {
+  const zip = createZip(failedReadbacks.map((r) => ({ name: `failed_verify_${r.label}.prst`, data: r.roundtrip })));
+  download("gp200_failed_readbacks.zip", zip, "application/zip");
+});
 ui.export.addEventListener("click", onExport);
 ui.cancel.addEventListener("click", () => {
   cancelRequested = true;
@@ -74,10 +94,8 @@ async function onConnect() {
     device = new GP200({ input, output, log });
     await device.connect();
     setStatus(`Connected to ${input.name}`, true);
-    ui.export.disabled = false;
   } catch (e) {
     device = null;
-    ui.export.disabled = true;
     const msg = e?.name === "SecurityError" || e?.name === "NotAllowedError"
       ? "MIDI access was blocked. Allow it from the icon in the address bar, then try again."
       : `Couldn't connect: ${e?.message ?? e}`;
@@ -85,6 +103,7 @@ async function onConnect() {
     log.error(msg);
   } finally {
     ui.connect.disabled = false;
+    refreshButtons();
   }
 }
 
@@ -110,7 +129,7 @@ function onPortStateChange(e) {
   if (p.state === "disconnected" && device && (p.id === device.input.id || p.id === device.output.id)) {
     device.close();
     device = null;
-    ui.export.disabled = true;
+    refreshButtons();
     setStatus("Pedal disconnected. Plug it back in and press Connect.");
   }
   if (!device) fillPortPickers();
@@ -126,7 +145,7 @@ async function onExport() {
   }
   ui.warnings.replaceChildren();
   cancelRequested = false;
-  setBusy(true);
+  setBusy("export");
   ui.progress.max = slots.length;
   ui.progress.value = 0;
   log.info(`Exporting ${slots.length} slot(s): ${slotToLabel(slots[0])} to ${slotToLabel(slots.at(-1))}`);
@@ -140,6 +159,8 @@ async function onExport() {
         ui.progressText.textContent = `${done} / ${total}: ${label} ${name ?? "(skipped)"}`;
       },
     });
+    for (const e of result.entries) knownNames.set(e.slot, e.name);
+    renderPlan();
     const pkg = result.cancelled ? null : packageExport(slots, result);
     if (pkg) {
       download(pkg.fileName, pkg.bytes, pkg.fileName.endsWith(".zip") ? "application/zip" : "application/octet-stream");
@@ -159,12 +180,116 @@ async function onExport() {
   }
 }
 
-function setBusy(busy) {
-  ui.export.disabled = busy || !device;
+/** @param {false|"export"|"restore"} what */
+function setBusy(what) {
+  busy = Boolean(what);
   ui.connect.disabled = busy;
-  ui.cancel.hidden = !busy;
+  ui.cancel.hidden = what !== "export";
   ui.cancel.disabled = false;
-  ui.progress.hidden = !busy;
+  ui.restoreStop.hidden = what !== "restore";
+  ui.restoreStop.disabled = false;
+  ui.progress.hidden = what !== "export";
+  refreshButtons();
+}
+
+function refreshButtons() {
+  ui.export.disabled = busy || !device;
+  ui.restoreWrite.disabled = busy || !device || !plan?.items.length;
+  ui.restoreStart.disabled = busy;
+  ui.restoreFiles.disabled = busy;
+}
+
+// ---- Restore (test build) ---------------------------------------------------
+
+async function rebuildPlan() {
+  plan = null;
+  ui.restoreWarnings.replaceChildren();
+  ui.restoreStatus.textContent = "";
+  const files = [...ui.restoreFiles.files];
+  const startText = ui.restoreStart.value.trim();
+  try {
+    if (!files.length) return;
+    if (!startText) {
+      ui.restoreStatus.textContent = "Enter a starting slot, e.g. 64A.";
+      return;
+    }
+    const start = labelToSlot(startText);
+    const picked = await Promise.all(files.map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
+    const { entries, notes } = await expandSources(picked);
+    const { ordered, orderedBy } = orderEntries(entries);
+    plan = planUpload(ordered, start);
+    const warnings = [...notes, ...planWarnings(plan)];
+    showList(ui.restoreWarnings, warnings);
+    const n = plan.items.length;
+    ui.restoreStatus.textContent = n
+      ? `${n} patch(es) to ${plan.items[0].label}-${plan.items.at(-1).label}, in order of ${orderedBy}.`
+      : "Nothing to write.";
+    log.info(`Restore plan: ${n} patch(es) from ${files.map((f) => f.name).join(", ")}, ordered by ${orderedBy}`);
+    for (const w of warnings) log.warn(w);
+  } catch (e) {
+    plan = null;
+    showList(ui.restoreWarnings, [e.message], "error");
+  } finally {
+    renderPlan();
+    refreshButtons();
+  }
+}
+
+function renderPlan(results = new Map()) {
+  const body = ui.restorePlan.tBodies[0];
+  ui.restorePlan.hidden = !plan?.items.length;
+  if (!plan) return body.replaceChildren();
+  body.replaceChildren(...plan.items.map((it) => {
+    const tr = document.createElement("tr");
+    const r = results.get(it.slot);
+    const cells = [it.fileName, it.patchName, it.label, knownNames.get(it.slot) ?? "(not read yet)",
+      r ? (r.ok ? "verified" : `NOT verified: ${r.reason}`) : ""];
+    for (const text of cells) tr.append(Object.assign(document.createElement("td"), { textContent: text }));
+    if (r) tr.lastChild.className = r.ok ? "ok" : "bad";
+    return tr;
+  }));
+}
+
+async function onRestore() {
+  if (!plan?.items.length || !device) return;
+  const n = plan.items.length;
+  const range = `${plan.items[0].label}-${plan.items.at(-1).label}`;
+  if (!confirm(`Write ${n} patch(es) to ${range} on the pedal?\n\n` +
+    "This replaces what's in those slots now. Make sure you have a backup.")) {
+    log.info("Restore cancelled at the confirmation prompt; nothing written");
+    return;
+  }
+  cancelRequested = false;
+  failedReadbacks = [];
+  ui.restoreFailed.hidden = true;
+  setBusy("restore");
+  const results = new Map();
+  log.info(`Restoring ${n} patch(es) to ${range}`);
+  try {
+    const out = await writeSlots(device, plan.items, {
+      skeleton: skeletonBytes(),
+      log,
+      isCancelled: () => cancelRequested,
+      onProgress: ({ done, total, label }) => {
+        ui.restoreStatus.textContent = `${done} / ${total} written (${label})`;
+      },
+    });
+    for (const r of out.results) {
+      results.set(r.slot, r);
+      if (r.deviceName !== null) knownNames.set(r.slot, r.deviceName);
+    }
+    failedReadbacks = out.failed.filter((r) => r.roundtrip);
+    ui.restoreFailed.hidden = failedReadbacks.length === 0;
+    ui.restoreStatus.textContent = `${out.results.length - out.failed.length} of ${n} verified` +
+      (out.failed.length ? `, ${out.failed.length} NOT verified (see the log)` : "") +
+      (out.cancelled ? "; stopped early" : "") + ".";
+  } catch (e) {
+    log.error(`Restore stopped: ${e?.stack ?? e}`);
+    showList(ui.restoreWarnings, [`Restore stopped: ${e?.message ?? e}. Check the pedal, then export the affected slots to see what they hold.`], "error");
+  } finally {
+    setBusy(false);
+    renderPlan(results);
+  }
 }
 
 function setStatus(text, ok = false) {
@@ -173,7 +298,11 @@ function setStatus(text, ok = false) {
 }
 
 function showWarnings(list, kind = "warn") {
-  ui.warnings.replaceChildren(...list.map((w) => {
+  showList(ui.warnings, list, kind);
+}
+
+function showList(ul, list, kind = "warn") {
+  ul.replaceChildren(...list.map((w) => {
     const li = document.createElement("li");
     li.textContent = w;
     if (kind === "error") li.className = "error";

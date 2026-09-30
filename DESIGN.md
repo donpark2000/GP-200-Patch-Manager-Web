@@ -85,8 +85,16 @@ These are deliberately simpler than the CLI's. See the journal entry of
      attempts in all; then skip it with an error. No "read until two reads
      agree" loop.
 - **Writes (phase 2): write, then one read-back compare**, ignoring the
-  known-changing bytes. Report a clear pass/fail. No silent retry loops;
+  device-owned bytes and the dead bytes, exactly as the CLI's
+  `verify_write_full` does. If the read-back mismatches, re-read **once**
+  before calling it a failure, so read noise can't pose as a failed write.
+  Report a clear pass/fail. No automatic rewrites (the CLI tries up to 10);
   the user decides whether to retry.
+- **Write method: flash upload only**, ported byte-for-byte from the CLI
+  (golden-tested) with the CLI's pacing: 40 ms between the 7 chunks, a
+  1 s settle, then a preset change to the written slot. So after a
+  restore, **the pedal is left on the last slot written**. The CLI's
+  "live" method and experimental save-commit are not ported.
 - These rules hold only if the browser's MIDI path behaves like the CLI's.
   The acceptance tests below exist to prove that.
 
@@ -111,6 +119,13 @@ These are deliberately simpler than the CLI's. See the journal entry of
   name*)" table and ask for confirmation. The browser doesn't guarantee the
   order of picked files, so the preview is where the user confirms what
   lands where.
+- **Order and placement follow the CLI:** by leading slot label if every
+  file name has one, otherwise alphabetical; consecutive slots from the
+  start slot; an invalid file keeps its slot position (that slot is left
+  unchanged); nothing past 64D. Plain `.prst` files get the same ordering
+  rule as a zip, because the browser's file order isn't reliable.
+- *Status: built in the bare test page (section 3, "Restore"), awaiting
+  real-hardware tests.*
 - Show the **User-IR / NAM (SnapTone) warning** in the preview (CLI README,
   "Known limitations"; `PROTOCOL_NOTES.md` Finding 11).
 - Write method (flash vs. live) is chosen by the app, not the user, based

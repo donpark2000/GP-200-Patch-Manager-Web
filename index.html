@@ -46,6 +46,27 @@
       <ul id="warnings" class="warnings"></ul>
     </section>
 
+    <section aria-labelledby="h-restore">
+      <h2 id="h-restore">3. Restore (test build: writes to the pedal)</h2>
+      <p class="muted">Pick one or more .prst files, or one .zip. They fill consecutive slots from the starting slot.
+        Nothing is written until you confirm. Each patch is read back and checked after writing.</p>
+      <div class="row">
+        <label>Starting slot <input id="restore-start" placeholder="64A" size="5" autocomplete="off"></label>
+        <label>Files <input id="restore-files" type="file" accept=".prst,.zip" multiple></label>
+      </div>
+      <table id="restore-plan" class="plan" hidden>
+        <thead><tr><th>File</th><th>Patch</th><th>Slot</th><th>Replaces</th><th>Result</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <ul id="restore-warnings" class="warnings"></ul>
+      <div class="row">
+        <button id="restore-write" disabled>Write to pedal</button>
+        <button id="restore-stop" class="secondary" hidden>Stop after this patch</button>
+        <span id="restore-status" class="muted"></span>
+        <button id="restore-failed" class="secondary" hidden>Download failed read-backs</button>
+      </div>
+    </section>
+
     <section aria-labelledby="h-log">
       <h2 id="h-log">Log</h2>
       <div class="row">

@@ -37,6 +37,12 @@ This journal records only what's new or different for the browser.
   them (PROTOCOL.md §2). The web app does the same, for parity with the
   tested CLI. Open: does editor mode have any visible effect on the pedal?
 
+- **W1. Does the pedal keep what's written at 0x3E/0x40 and tail +5/+10/+11?**
+  Exports zero these (matching official exports), but the CLI's write
+  verification still compares them. If the pedal substitutes its own values
+  there, restores of our own exports would fail verification at exactly
+  those offsets. *Watch the first real restores.*
+
 ## Resolved
 
 *(none yet)*
@@ -217,3 +223,49 @@ export, the page warned that 2 of the developer's patches reference
 User-IR/NAM (SnapTone) slots. Those are real patches using those
 features, so the ported detection (`findIrNamDependencies`) works on real
 dumps, not just the golden fixtures.
+
+## 2026-09-30: Write path ported (restore, test build)
+
+Moved phase 2 forward on the developer's call: reading was proven well
+enough, and the untested half of the Web MIDI layer was writing. The
+original precondition, "the CLI's write path must be confirmed on hardware
+first", was re-checked against `PROTOCOL_NOTES.md` and found met for the
+flash upload: since the RigSheet addressing fix, uploads persist (the
+dead-byte write test verified everything except the two dead bytes), and
+three soak runs recorded 0 writes that failed to store. The "live" method
+has a known bug with some effect types, so it isn't ported.
+
+**Ported from the CLI:** `build_upload_image`, `build_upload_chunks`,
+`build_preset_change`, `write_slot`'s sequence and pacing (40 ms per chunk,
+1 s settle, preset change, 300 ms; 300 ms between patches),
+`verify_write_full`'s comparison (`diff_prst_content` + dead bytes), and
+`upload`'s ordering and placement rules.
+
+**Pinned to the CLI's own code** (golden fixtures from `make_golden.py`):
+the full upload SysEx for 4 patch/slot combinations is byte-identical; the
+verify comparison flags exactly the same offsets as the CLI's for 16
+probed offsets; zip ordering matches for labelled and mixed names.
+
+**Deliberate difference:** one write, then verify. A mismatch gets one
+confirming re-read (to tell read noise from a bad write) but no automatic
+rewrite; the CLI rewrote up to 10 times. Rationale in `DESIGN.md`.
+
+**Negative controls, in the test suite against the fake pedal** (the fake
+now models the documented write behaviour: writes discarded without
+editor mode, slot mirrors recomputed, dead bytes forced to 0):
+- a write without the editor-mode handshake is discarded; verify reports
+  it with the name mismatch
+- one wrong nibble in one upload chunk is reported as a failed write
+- a glitched read-back is re-read and correctly *not* reported as failed
+- export -> write elsewhere -> export: identical apart from ignored bytes
+
+**In the browser (Chromium), real page, simulated pedal:** exported
+64A-64D, picked a 1A-1D zip, restore start 64A. The plan table showed
+file -> slot -> replaces "It's GP-200"; the confirm prompt appeared; 4 of
+4 written and verified in 7.6 s. At the CLI's pacing that's about
+1.9 s per patch, so a full 256-slot restore will take about 8 minutes.
+
+**Not verified yet: real hardware.** Test plan agreed with the developer:
+scratch slots 64A-64D (factory defaults; a factory reset restores them),
+single patch first, then a range, then the full round robin (export all,
+restore all, export all, compare).

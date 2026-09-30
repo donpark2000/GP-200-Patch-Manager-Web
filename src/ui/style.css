@@ -75,6 +75,10 @@ progress { width: 200px; }
 .banner.error, .warnings li.error { background: var(--error-bg); color: var(--error-fg); }
 .warnings { list-style: none; padding: 0; margin: 8px 0 0; }
 .warnings li { background: var(--warn-bg); color: var(--warn-fg); padding: 8px 12px; border-radius: 6px; margin-top: 6px; }
+.plan { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem; }
+.plan th, .plan td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.plan td.ok { color: var(--ok); font-weight: 600; }
+.plan td.bad { color: var(--error-fg); background: var(--error-bg); font-weight: 600; }
 footer { margin-top: 24px; font-size: 0.85rem; color: var(--muted); }
 footer p { margin: 4px 0; }
 a { color: var(--accent); }

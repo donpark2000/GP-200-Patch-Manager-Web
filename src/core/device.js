@@ -12,7 +12,10 @@ import {
   assembleChunks,
   buildEnterEditorMode,
   buildIdentityQuery,
+  buildPresetChange,
   buildReadRequest,
+  buildUploadChunks,
+  buildUploadImage,
   chunkOffset,
   chunkPayload,
   CMD_RESPONSE,
@@ -22,11 +25,24 @@ import {
   SUB_DUMP_CHUNK,
   SUB_IDENTITY_REPLY,
 } from "./sysex.js";
-import { MIN_DUMP_LEN } from "./prst.js";
+import {
+  buildPrstFromDump,
+  DEAD_BYTE_FILE_OFFSETS,
+  diffPrstContent,
+  MIN_DUMP_LEN,
+  prstFileName,
+} from "./prst.js";
 import { slotToLabel } from "./slots.js";
 
 export const READ_TIMEOUT_MS = 2000; // same budget as the CLI's READ_TIMEOUT_S
 export const READ_ATTEMPTS = 3;
+
+/** Write pacing, copied from the CLI's write_slot. There's no ACK/NAK on
+ *  the write path, so these delays are all the flow control there is:
+ *  40 ms between chunks (RigSheet's spacing), a settle pause because the
+ *  device ignores commands sent too soon after the burst, then a preset
+ *  change to load the written copy. Tests pass zeros. */
+export const WRITE_TIMING = { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -63,13 +79,15 @@ export class GP200 {
    * @param {import("./log.js").Logger} opts.log
    * @param {number} [opts.timeoutMs]
    * @param {number} [opts.attempts]
+   * @param {typeof WRITE_TIMING} [opts.timing]
    */
-  constructor({ input, output, log, timeoutMs = READ_TIMEOUT_MS, attempts = READ_ATTEMPTS }) {
+  constructor({ input, output, log, timeoutMs = READ_TIMEOUT_MS, attempts = READ_ATTEMPTS, timing = WRITE_TIMING }) {
     this.input = input;
     this.output = output;
     this.log = log;
     this.timeoutMs = timeoutMs;
     this.attempts = attempts;
+    this.timing = timing;
     this._waiter = null;
     this.input.onmidimessage = (e) => this._onMessage(e.data);
   }
@@ -119,6 +137,61 @@ export class GP200 {
       this.log.warn(`${label}: read attempt ${attempt} of ${this.attempts} ${reason}`);
     }
     throw new ReadError(slot, reason);
+  }
+
+  /**
+   * Flash-upload one .prst file to `slot` (the CLI's write_slot, without its
+   * experimental save-commit). Leaves the pedal switched to `slot`.
+   * Only called from the restore feature, after the user confirms.
+   */
+  async writeSlot(slot, fileBytes) {
+    const chunks = buildUploadChunks(buildUploadImage(fileBytes, slot));
+    const { chunkGapMs, settleMs, presetChangeMs } = this.timing;
+    for (const c of chunks) {
+      this._send(c);
+      await sleep(chunkGapMs);
+    }
+    await sleep(settleMs);
+    this._send(buildPresetChange(slot));
+    await sleep(presetChangeMs);
+  }
+
+  /**
+   * Read `slot` back and compare it with the file that was written, ignoring
+   * the device-owned bytes and the dead bytes (the CLI's verify_write_full).
+   * One read, as DESIGN.md says; but a mismatch gets one confirming re-read
+   * before it's called a write failure, so read noise can't masquerade as a
+   * failed write. Never rewrites anything itself.
+   * @returns {Promise<{ok: boolean, mismatches: {off: number, expected: number, actual: number}[],
+   *   deviceName: string|null, roundtrip: Uint8Array|null, reason?: string, recheckedAfterMismatch: boolean}>}
+   */
+  async verifyWrite(slot, fileBytes, skeleton) {
+    const label = slotToLabel(slot);
+    let recheckedAfterMismatch = false;
+    let last = null;
+    for (let read = 1; read <= 2; read++) {
+      let decoded;
+      try {
+        ({ decoded } = await this.readDump(slot));
+      } catch (e) {
+        if (!(e instanceof ReadError)) throw e;
+        return { ok: false, mismatches: [], deviceName: null, roundtrip: null, reason: e.reason, recheckedAfterMismatch };
+      }
+      const roundtrip = buildPrstFromDump(decoded, skeleton);
+      const mismatches = diffPrstContent(fileBytes, roundtrip, DEAD_BYTE_FILE_OFFSETS);
+      last = { mismatches, deviceName: prstFileName(roundtrip), roundtrip };
+      if (mismatches.length === 0) {
+        if (recheckedAfterMismatch) {
+          this.log.warn(`${label}: the first read-back mismatched but the re-read matched -- read noise, not a failed write`);
+        }
+        return { ok: true, ...last, recheckedAfterMismatch };
+      }
+      if (read === 1) {
+        this.log.warn(`${label}: read-back differs in ${mismatches.length} byte(s); re-reading once to rule out read noise`);
+        recheckedAfterMismatch = true;
+      }
+    }
+    return { ok: false, ...last, reason: `${last.mismatches.length} byte(s) differ from the file`, recheckedAfterMismatch };
   }
 
   _send(msg) {

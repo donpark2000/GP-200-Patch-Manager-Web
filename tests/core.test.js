@@ -21,7 +21,7 @@ import {
   nibbleEncode,
 } from "../src/core/sysex.js";
 import { createZip, crc32 } from "../src/core/zip.js";
-import { readZip } from "../tools/zipread.js";
+import { readZip } from "../src/core/unzip.js";
 import { baseDump, fixtureBytes } from "./helpers/fixtures.js";
 import { FakePedal } from "./helpers/fake-pedal.js";
 
@@ -122,13 +122,13 @@ test("safeFilename edge cases", () => {
   assert.equal(safeFilename("..."), "patch");
 });
 
-test("zip: round-trips through a reader, including a non-ASCII name", () => {
+test("zip: round-trips through a reader, including a non-ASCII name", async () => {
   const entries = [
     { name: "1A_Clean.prst", data: Uint8Array.from([1, 2, 3]) },
     { name: "2A_Amp �x.prst", data: new Uint8Array(0) },
     { name: "3A_Big.prst", data: fixtureBytes("skeleton.prst") },
   ];
-  const back = readZip(createZip(entries));
+  const back = await readZip(createZip(entries));
   assert.deepEqual([...back.keys()], entries.map((e) => e.name));
   for (const e of entries) assert.deepEqual(back.get(e.name), e.data);
 });

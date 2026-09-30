@@ -5,7 +5,7 @@ import { deflateRawSync } from "node:zlib";
 import { test } from "node:test";
 import { compareZips, describeOffset } from "../tools/compare-lib.js";
 import { createZip, crc32 } from "../src/core/zip.js";
-import { readZip } from "../tools/zipread.js";
+import { readZip } from "../src/core/unzip.js";
 
 const bytes = (...xs) => Uint8Array.from(xs);
 
@@ -37,7 +37,7 @@ test("describeOffset names the known regions", () => {
   assert.equal(describeOffset(0x4c7), "checksum");
 });
 
-test("zip reader handles deflated entries, like the CLI's zips", () => {
+test("zip reader handles deflated entries, like the CLI's zips", async () => {
   // Build a one-entry deflated zip by hand, as Python's zipfile would.
   const data = new TextEncoder().encode("hello hello hello hello");
   const comp = deflateRawSync(data);
@@ -56,6 +56,6 @@ test("zip reader handles deflated entries, like the CLI's zips", () => {
   new DataView(end.buffer).setUint32(16, local.length + comp.length, true);
   const zip = Uint8Array.from([...local, ...comp, ...central, ...end]);
   assert.equal(v.getUint32(0, true), 0x04034b50);
-  assert.deepEqual(readZip(zip).get("1A_A.prst"), data);
+  assert.deepEqual((await readZip(zip)).get("1A_A.prst"), data);
   assert.equal(crc32(data), cv.getUint32(16, true));
 });

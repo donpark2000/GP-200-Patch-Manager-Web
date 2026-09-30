@@ -12,7 +12,7 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { compareZips, describeOffset } from "./compare-lib.js";
-import { readZip } from "./zipread.js";
+import { readZip } from "../src/core/unzip.js";
 
 const hex = (x) => (x === undefined ? "--" : x.toString(16).padStart(2, "0"));
 
@@ -21,7 +21,7 @@ if (!fileA || !fileB) {
   console.error("usage: node tools/compare-zips.js <cli.zip> <web.zip>");
   process.exit(2);
 }
-const rep = compareZips(readZip(readFileSync(fileA)), readZip(readFileSync(fileB)));
+const rep = compareZips(await readZip(readFileSync(fileA)), await readZip(readFileSync(fileB)));
 const A = basename(fileA);
 const B = basename(fileB);
 console.log(`${A}: ${rep.entriesA} entries; ${B}: ${rep.entriesB} entries; ` +

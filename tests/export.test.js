@@ -8,7 +8,7 @@ import { Logger } from "../src/core/log.js";
 import { exportPrst } from "../src/core/prst.js";
 import { skeletonBytes } from "../src/core/skeleton.js";
 import { parseSlotRange } from "../src/core/slots.js";
-import { readZip } from "../tools/zipread.js";
+import { readZip } from "../src/core/unzip.js";
 import { baseDump, dumpWithName, fixtureBytes } from "./helpers/fixtures.js";
 import { FakePedal } from "./helpers/fake-pedal.js";
 
@@ -35,7 +35,7 @@ test("export a range: zip with CLI-style names and normalized contents", async (
 
   const pkg = packageExport(slots, result);
   assert.equal(pkg.fileName, "gp200_1A_to_1C.zip");
-  const zip = readZip(pkg.bytes);
+  const zip = await readZip(pkg.bytes);
   assert.deepEqual([...zip.keys()], ["1A_It's GP-200.prst", "1B_Clean.prst", "1C_Blue Sparkle.prst"]);
   const c = zip.get("1C_Blue Sparkle.prst");
   assert.equal(c[0x9f], 0, "dead byte is normalized to 0x00");
@@ -57,7 +57,7 @@ test("export: an unreadable slot is skipped and the gap is warned about", async 
   const slots = [0, 1, 2];
   const result = await readSlots(dev, slots, { skeleton: skeletonBytes(), log });
   assert.deepEqual(result.skipped, ["1B"]);
-  assert.equal(readZip(packageExport(slots, result).bytes).size, 2);
+  assert.equal((await readZip(packageExport(slots, result).bytes)).size, 2);
   assert.match(exportWarnings(result).join(), /1B\. Restoring a zip fills slots one after another/);
   assert.ok(log.lines.some((l) => l.includes("ERROR") && l.includes("Error reading 1B - skipped")));
 });
