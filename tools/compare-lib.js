@@ -36,13 +36,14 @@ export function compareZips(a, b) {
   const byLabel = (zip) => new Map([...zip].map(([name, data]) => [labelOf(name), { name, data }]));
   const A = byLabel(a);
   const B = byLabel(b);
-  const report = { onlyA: [], onlyB: [], renamed: [], differing: [], identical: 0 };
+  const report = { onlyA: [], onlyB: [], renamed: [], differing: [], identical: 0, entriesA: a.size, entriesB: b.size, bytesCompared: 0 };
   for (const [label, ea] of A) {
     const eb = B.get(label);
     if (!eb) { report.onlyA.push(ea.name); continue; }
     if (ea.name !== eb.name) report.renamed.push([ea.name, eb.name]);
     const diffs = [];
     const n = Math.max(ea.data.length, eb.data.length);
+    report.bytesCompared += n;
     for (let i = 0; i < n; i++) {
       if (ea.data[i] !== eb.data[i]) diffs.push({ off: i, a: ea.data[i], b: eb.data[i] });
     }

@@ -24,6 +24,8 @@ if (!fileA || !fileB) {
 const rep = compareZips(readZip(readFileSync(fileA)), readZip(readFileSync(fileB)));
 const A = basename(fileA);
 const B = basename(fileB);
+console.log(`${A}: ${rep.entriesA} entries; ${B}: ${rep.entriesB} entries; ` +
+  `${rep.bytesCompared.toLocaleString("en-US")} bytes compared`);
 console.log(`${rep.identical} slot(s) identical`);
 for (const n of rep.onlyA) console.log(`only in ${A}: ${n}`);
 for (const n of rep.onlyB) console.log(`only in ${B}: ${n}`);

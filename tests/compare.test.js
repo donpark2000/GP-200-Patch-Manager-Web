@@ -13,6 +13,8 @@ test("identical contents under the same names match", () => {
   const a = new Map([["1A_X.prst", bytes(1, 2)], ["1B_Y.prst", bytes(3)]]);
   const rep = compareZips(a, new Map(a));
   assert.equal(rep.identical, 2);
+  assert.equal(rep.bytesCompared, 3);
+  assert.equal(rep.entriesA, 2);
   assert.equal(rep.differing.length + rep.onlyA.length + rep.onlyB.length + rep.renamed.length, 0);
 });
 
