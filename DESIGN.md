@@ -110,6 +110,9 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - **Export:** disabled until something is selected. One slot downloads a
   `.prst`; several download a `.zip`.
 - Progress while reading, since reading all 256 slots takes a while.
+- *Status: core and bare test page built; export-all matched the CLI's
+  byte-for-byte on real hardware on the developer's first computer (see the
+  journal). Second computer still to do.*
 
 ### Phase 2: restore
 
@@ -124,8 +127,10 @@ These are deliberately simpler than the CLI's. See the journal entry of
   start slot; an invalid file keeps its slot position (that slot is left
   unchanged); nothing past 64D. Plain `.prst` files get the same ordering
   rule as a zip, because the browser's file order isn't reliable.
-- *Status: built in the bare test page (section 3, "Restore"), awaiting
-  real-hardware tests.*
+- *Status: built in the bare test page (section 3, "Restore") and
+  confirmed on real hardware on the developer's first computer: scratch-slot
+  writes with changed content, then a full 256-slot round robin (see the
+  journal). Second computer still to do.*
 - Show the **User-IR / NAM (SnapTone) warning** in the preview (CLI README,
   "Known limitations"; `PROTOCOL_NOTES.md` Finding 11).
 - Write method (flash vs. live) is chosen by the app, not the user, based
