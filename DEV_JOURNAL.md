@@ -50,8 +50,23 @@ This journal records only what's new or different for the browser.
   restore takes about 8 minutes); the 1 s settle dominates. The CLI's
   `calibrate-settle` history shows settle was once suspected in write
   failures that later traced to the dead bytes, so a shorter settle may be
-  safe now. Only change it with a measured test (for example a soak on the
-  scratch slots at a shorter settle, with verification on).
+  safe now. Only change it with a measured test. Agreed approach:
+  - There is no write ACK (PROTOCOL.md section 2), and Web MIDI's `send()`
+    is fire-and-forget, so the pedal's flash-commit time is invisible. The
+    ~0.3 s is only our own chunk pacing, not the write time.
+  - **Sweep:** add a developer-only timing control plus an "alternate
+    set X / set Y on 64A-64D for N cycles" test mode. Every write must
+    *change* the slot's content, or a write that silently didn't land
+    would still verify. Try settle 1000, 500, 250, 100, 0 ms; count
+    verify failures per setting; finish with export + `compare-zips`.
+  - **Idea: the read-back as the ACK.** Instead of a fixed settle, start
+    reading back right after the burst and repeat (bounded) until the new
+    content appears, which measures the real commit time per write. Unknown:
+    whether a read during the flash commit can disturb the write. Test on
+    scratch slots before relying on it.
+  - Scratch slots 64A-64D are factory defaults, safe to overwrite (a
+    factory reset restores them). Keep the defaults unchanged until the
+    data supports a change.
 
 ## Resolved
 
