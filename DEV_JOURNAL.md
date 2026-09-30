@@ -211,3 +211,9 @@ browser path reproduces the CLI's full backup exactly. This is strong
 evidence for Q1, not yet a resolution: the plan calls for repeat runs and
 the second computer. The instant finish is expected, since 313 KB is a
 trivial amount to compare.
+
+**User-IR/NAM warning confirmed on real hardware.** During the full web
+export, the page warned that 2 of the developer's patches reference
+User-IR/NAM (SnapTone) slots. Those are real patches using those
+features, so the ported detection (`findIrNamDependencies`) works on real
+dumps, not just the golden fixtures.
