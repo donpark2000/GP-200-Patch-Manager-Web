@@ -188,3 +188,26 @@ four slots with the CLI and with the web app (from localhost), and
 but it's the first real evidence for Q1: through the browser's MIDI layer,
 the JS port produced exactly what the Python CLI did. The full 256-slot
 comparison, repeated on both computers, is still the phase 1 gate.
+
+**Full comparison, computer 1: 256 of 256 identical.** CLI `export --all`
+vs. the web app's export of all slots (from localhost), one after the
+other: `compare-zips.js` reported `256 slot(s) identical, RESULT: MATCH`.
+
+The compare finished instantly, so the result was double-checked rather
+than taken on trust:
+- Two genuinely different files: the CLI's zip is deflated (120,444 bytes),
+  the web app's stored (342,682 bytes), written 56 s apart.
+- Inside: 256 entries each, all 1224 bytes, 313,344 bytes per side, and
+  **256 distinct contents per side**. Slots sharing the default name
+  "It's GP-200" still differ, since each carries its own slot-mirror bytes.
+- Negative controls, run against the web zip modified in memory: one
+  flipped bit in 35B was reported at exactly 0x144 (255 identical);
+  swapping the contents of 3C and 3D under their original names was
+  reported as both differing (254 identical); removing 64D was reported as
+  "only in CLI" (255 identical).
+
+Conclusion: the compare really checks every byte, and on this computer the
+browser path reproduces the CLI's full backup exactly. This is strong
+evidence for Q1, not yet a resolution: the plan calls for repeat runs and
+the second computer. The instant finish is expected, since 313 KB is a
+trivial amount to compare.
