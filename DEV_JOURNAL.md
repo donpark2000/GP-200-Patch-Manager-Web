@@ -181,3 +181,10 @@ exported just that slot. Fixed with `slotsBetween()` in `src/core/slots.js`
 range it's exporting. For the designed UI (step 4): range entry should make
 its meaning visible before anything runs, e.g. by highlighting the selected
 slots in the grid.
+
+**First CLI comparison: 4 of 4 identical.** The developer exported the same
+four slots with the CLI and with the web app (from localhost), and
+`tools/compare-zips.js` reported all 4 slots byte-identical. Small sample,
+but it's the first real evidence for Q1: through the browser's MIDI layer,
+the JS port produced exactly what the Python CLI did. The full 256-slot
+comparison, repeated on both computers, is still the phase 1 gate.
