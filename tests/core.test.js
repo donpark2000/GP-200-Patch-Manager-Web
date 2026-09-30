@@ -11,7 +11,7 @@ import {
   validateSkeleton,
 } from "../src/core/prst.js";
 import { skeletonBytes } from "../src/core/skeleton.js";
-import { labelToSlot, parseSlotRange, slotToLabel } from "../src/core/slots.js";
+import { labelToSlot, parseSlotRange, slotsBetween, slotToLabel } from "../src/core/slots.js";
 import {
   assembleChunks,
   buildReadRequest,
@@ -40,6 +40,15 @@ test("slot labels reject bad input", () => {
   assert.throws(() => slotToLabel(-1), RangeError);
   assert.throws(() => parseSlotRange("2A", "1D"), RangeError);
   assert.deepEqual(parseSlotRange("1D", "2B"), [3, 4, 5]);
+});
+
+test("slotsBetween: a blank end means the first or last slot", () => {
+  assert.equal(slotsBetween("", "").length, 256);
+  assert.deepEqual(slotsBetween("", "1C"), [0, 1, 2]); // To only: from 1A
+  assert.deepEqual(slotsBetween("64B", " "), [253, 254, 255]); // From only: to 64D
+  assert.deepEqual(slotsBetween("2a", "2A"), [4]);
+  assert.throws(() => slotsBetween("2A", "1A"), RangeError);
+  assert.throws(() => slotsBetween("zz", ""), RangeError);
 });
 
 test("nibble encoding round-trips every byte value", () => {

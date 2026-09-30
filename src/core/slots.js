@@ -22,6 +22,14 @@ export function labelToSlot(label) {
   return slot;
 }
 
+/** Slots for a From/To pair where either may be blank: a blank From means
+ *  the first slot (1A), a blank To the last (64D), both blank all 256. */
+export function slotsBetween(fromLabel, toLabel) {
+  const from = String(fromLabel ?? "").trim() || slotToLabel(0);
+  const to = String(toLabel ?? "").trim() || slotToLabel(TOTAL_SLOTS - 1);
+  return parseSlotRange(from, to);
+}
+
 /** Inclusive range of slot indices, in natural pedal order. */
 export function parseSlotRange(startLabel, endLabel) {
   const a = labelToSlot(startLabel);

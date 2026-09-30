@@ -167,3 +167,17 @@ None of this touches real hardware; that's the phase 1 acceptance test.
 **Why `.prst` building overlays at most 1182 bytes.** The overlay stops
 at the checksum (0x4C6), exactly like the CLI, even when a dump is longer.
 Tested with a 1300-byte dump.
+
+## 2026-09-30: First real-hardware run (connectivity)
+
+Reported by the developer after running the bare page from localhost in
+Chrome/Edge against the real pedal: **connecting and exporting both work.**
+The full CLI comparison (phase 1 gate) is next and isn't done yet.
+
+UI feedback from that run: with only **To** filled in, Export appeared to
+do nothing. Cause: a lone To was treated as a one-slot range, so it quietly
+exported just that slot. Fixed with `slotsBetween()` in `src/core/slots.js`
+(tested): a blank From means 1A, a blank To means 64D. The log now names the
+range it's exporting. For the designed UI (step 4): range entry should make
+its meaning visible before anything runs, e.g. by highlighting the selected
+slots in the grid.

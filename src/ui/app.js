@@ -6,7 +6,7 @@ import { findGp200Ports, GP200 } from "../core/device.js";
 import { exportWarnings, packageExport, readSlots } from "../core/export.js";
 import { Logger } from "../core/log.js";
 import { skeletonBytes } from "../core/skeleton.js";
-import { parseSlotRange, TOTAL_SLOTS } from "../core/slots.js";
+import { slotsBetween, slotToLabel } from "../core/slots.js";
 import { VERSION } from "../version.js";
 
 const $ = (id) => document.getElementById(id);
@@ -119,7 +119,7 @@ function onPortStateChange(e) {
 async function onExport() {
   let slots;
   try {
-    slots = selectedSlots();
+    slots = slotsBetween(ui.from.value, ui.to.value);
   } catch (e) {
     showWarnings([e.message], "error");
     return;
@@ -129,7 +129,7 @@ async function onExport() {
   setBusy(true);
   ui.progress.max = slots.length;
   ui.progress.value = 0;
-  log.info(`Exporting ${slots.length} slot(s)...`);
+  log.info(`Exporting ${slots.length} slot(s): ${slotToLabel(slots[0])} to ${slotToLabel(slots.at(-1))}`);
   try {
     const result = await readSlots(device, slots, {
       skeleton: skeletonBytes(),
@@ -157,13 +157,6 @@ async function onExport() {
   } finally {
     setBusy(false);
   }
-}
-
-function selectedSlots() {
-  const from = ui.from.value.trim();
-  const to = ui.to.value.trim();
-  if (!from && !to) return Array.from({ length: TOTAL_SLOTS }, (_, i) => i);
-  return parseSlotRange(from || to, to || from);
 }
 
 function setBusy(busy) {
