@@ -1,0 +1,142 @@
+# Design
+
+The agreed direction for GP-200 Patch Manager Web. This file records
+**decisions**; the reasoning, evidence, and anything still open live in
+[`DEV_JOURNAL.md`](DEV_JOURNAL.md).
+
+## Goal
+
+A browser-based GUI for **bulk backup and restore of Valeton GP-200
+patches**, with the same narrow scope as the command-line
+[GP-200 Patch Manager](https://github.com/donpark2000/GP-200-Patch-Manager):
+it moves whole `.prst` patches between the pedal and files on disk. It is
+not a patch editor.
+
+## Platform
+
+- **A static web app hosted on GitHub Pages.** No install, and no
+  per-platform executables to build or sign.
+- **Talks to the pedal through the browser's Web MIDI API** (SysEx over
+  USB-MIDI), the same wire protocol the CLI uses.
+- **Supported browsers: Chrome and Edge** (any desktop OS). Safari has no
+  Web MIDI, and Firefox's permission flow is awkward. Other community GP-200
+  web tools have the same limitation, and users are used to it.
+- **Plain JavaScript (ES modules), no build step.** What's in the repo is
+  what's served. Unit tests run under Node without a bundler.
+- **A downloadable single-file build is a maybe.** It depends on whether
+  Web MIDI SysEx works from a `file://` page (open question in the journal).
+
+## Relationship to the CLI
+
+- The CLI repo stays as it is: a stable, scriptable tool and the
+  **reference implementation**.
+- Its `PROTOCOL.md` and `PROTOCOL_NOTES.md` are the **spec** for the
+  JavaScript port. This repo doesn't copy them; it links to them and records
+  only what's new or different in the browser.
+- File names match the CLI's so outputs can be compared one-to-one:
+  - one slot: `<slot>_<name>.prst` (e.g. `34-A_Clean.prst`)
+  - all slots: `gp200_all_patches.zip`
+  - a range: `gp200_<start>_to_<end>.zip`
+
+## Architecture
+
+Two layers, kept strictly apart:
+
+1. **Protocol core** (`src/core/`): Web MIDI I/O, SysEx framing, slot
+   reads, normalization, `.prst` building. No DOM or UI code, so it can be
+   unit-tested in Node against a fake MIDI device.
+2. **UI** (`src/ui/`): starts as a bare test page and is replaced by the
+   designed interface later without touching the core.
+
+A **debug log** is built in from the start (standards §1): an on-screen log
+panel plus "save log to file", including browser, OS, and MIDI port
+details, so a user can send it back for support.
+
+## Reliability rules
+
+These are deliberately simpler than the CLI's. See the journal entry of
+2026-09-30 for why.
+
+- **Reads: one read per slot.** Then:
+  1. Normalize the known-changing bytes to fixed values: the dead bytes
+     `0x43` and `0x9F`, `0x2E`, and the tail block, exactly as the CLI's
+     `normalize_export_dynamic_fields` does.
+  2. Run cheap sanity checks: SysEx framing, expected length, and a name
+     that decodes.
+  3. Re-read that slot only if a check fails. No "read until two reads
+     agree" loop.
+- **Writes (phase 2): write, then one read-back compare**, ignoring the
+  known-changing bytes. Report a clear pass/fail. No silent retry loops;
+  the user decides whether to retry.
+- These rules hold only if the browser's MIDI path behaves like the CLI's.
+  The acceptance tests below exist to prove that.
+
+## Phases
+
+### Phase 1: read-only backup
+
+- Connect to the pedal (auto-detect the port; let the user pick if
+  ambiguous).
+- **Slot grid:** 64 banks × 4 slots (A–D), each cell showing its label and
+  patch name.
+- **Selection:** click, shift-click for a range, **Select all**, **Clear**.
+- **Export:** disabled until something is selected. One slot downloads a
+  `.prst`; several download a `.zip`.
+- Progress while reading, since reading all 256 slots takes a while.
+
+### Phase 2: restore
+
+- Choose a **starting slot**, then pick `.prst` files or one `.zip` with
+  the file dialog.
+- **Preview before writing:** show a "file → slot (replacing *current
+  name*)" table and ask for confirmation. The browser doesn't guarantee the
+  order of picked files, so the preview is where the user confirms what
+  lands where.
+- Show the **User-IR / NAM (SnapTone) warning** in the preview (CLI README,
+  "Known limitations"; `PROTOCOL_NOTES.md` Finding 11).
+- Write method (flash vs. live) is chosen by the app, not the user, based
+  on whichever is confirmed on hardware at the time.
+
+### Later
+
+- Load one template into many slots (the CLI's `apply-template`).
+- Anything else users ask for.
+
+### Out of scope
+
+The CLI's diagnostic commands (`diag-write`, `calibrate-settle`, `reread`,
+`drift`, `raw-sweep`, `soak`). They were research tools for learning the
+protocol; the CLI still has them.
+
+## Acceptance tests
+
+### Phase 1 gate: CLI comparison
+
+1. Run CLI `export --all` and the web app's export-all against the same
+   pedal.
+2. Compare the **files inside** the two zips (not the zip files
+   themselves, since timestamps and ordering differ) with the compare
+   script.
+3. **Expected: byte-identical**, since both normalize the same bytes. Any
+   difference gets investigated.
+4. Repeat several times, **on both of the developer's computers**.
+
+This tests the Web MIDI transport *and* the JavaScript port's parity with
+the Python logic at the same time.
+
+### Phase 2 gate: real round trip
+
+Writing a patch back to where it came from proves nothing, because a write
+that silently did nothing would still pass. So:
+
+1. Export all → **backup A** (with a CLI backup kept as a safety net).
+2. Write something *different* (e.g. restore A shifted by one slot).
+3. Export and confirm the change actually landed.
+4. Restore A with the web app.
+5. Export all → must match A exactly.
+
+## Process
+
+This project follows the `software-project-standards` practices: debug
+output per feature, a test per feature, one-command regression suite, and a
+running journal (`DEV_JOURNAL.md`). See `CLAUDE.md`.
