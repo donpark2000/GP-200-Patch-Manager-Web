@@ -313,3 +313,34 @@ were the spec, and the CLI's own code served as a byte-exact reference
 through the golden fixtures. The expensive knowledge (dead bytes, device-
 owned fields, upload addressing, pacing) carried over to a completely
 different implementation for free.
+
+## 2026-09-30: Full round robin passed (all 256 slots)
+
+Run by the developer from localhost against the real pedal:
+1. Web export of all slots, 3:37 PM (`gp200_all_patches.zip`).
+2. Restore of that zip to all 256 slots from 1A: **256 of 256 verified.**
+   The developer observed a little over a second per patch.
+3. Web export of all slots again, 3:48 PM (`gp200_all_patches-roundrobin.zip`).
+4. `compare-zips` (1) vs (3): 256 entries each, 313,344 bytes compared,
+   **256 identical, MATCH.**
+
+A second comparison was run against the 2:35 PM export, which predates all
+of today's writing and had itself matched the CLI's `export --all`
+byte-for-byte: again **MATCH**. So after every write made today (the scratch
+tests on 64A-64D, putting them back, and the full restore), the pedal holds
+exactly what it held this morning, per both the web reader and, by
+transitivity, the CLI's.
+
+What this does and doesn't prove: it proves 256 back-to-back writes plus
+verifications through Web MIDI with no corruption and no failures. On its
+own it can't prove each write *landed*, because each slot got back the
+content it already had. That was proven separately on 64A-64D with
+content that differed. The step-6 CLI re-export (independent reader after
+the restore) wasn't run; it's optional given the transitive chain above.
+
+**Status at end of day:** read and write paths confirmed on real hardware
+on the developer's main computer. Open before UX work: T1 (background-tab
+throttling), T2 (restore speed, via a settle-time sweep that alternates
+two different patch sets on the scratch slots so every write changes
+content, with the read-back as the evidence), and the second computer.
+Then merge to GitHub Pages and start mockups.
