@@ -4,6 +4,7 @@
 // starting slot). Nothing here runs without the user confirming the plan.
 
 import { findIrNamDependencies, isPrst, prstFileName, describeOffset, CONTENT_FILE_START } from "./prst.js";
+import { slowWriteWarning } from "./device.js";
 import { labelToSlot, slotToLabel, TOTAL_SLOTS } from "./slots.js";
 import { readZip } from "./unzip.js";
 
@@ -114,8 +115,13 @@ export function planWarnings(plan) {
  * Write and verify each planned item, in order. Stops between patches
  * (never mid-patch) if cancelled.
  * @param {import("./device.js").GP200} device
+ * @param {object} opts
+ * @param {(sinceMs: number) => boolean} [opts.wasHidden] true if the page was
+ *   hidden at any point since performance.now() was `sinceMs` (UI supplies it)
  */
-export async function writeSlots(device, items, { skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = 300 }) {
+export async function writeSlots(device, items, {
+  skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = 300, wasHidden = () => false,
+}) {
   const results = [];
   let cancelled = false;
   const started = performance.now();
@@ -127,7 +133,11 @@ export async function writeSlots(device, items, { skeleton, log, onProgress = ()
     }
     const it = items[i];
     log.info(`${it.fileName} -> ${it.label}: writing "${it.patchName}"`);
-    await device.writeSlot(it.slot, it.data);
+    const writeStarted = performance.now();
+    const timing = await device.writeSlot(it.slot, it.data);
+    const slow = slowWriteWarning(it.label, timing, wasHidden(writeStarted));
+    if (slow) log.warn(slow);
+    else log.debug(`${it.label}: write took ${timing.totalMs.toFixed(0)} ms (planned ${timing.plannedMs} ms)`);
     const v = await device.verifyWrite(it.slot, it.data, skeleton);
     if (v.ok) {
       log.info(`${it.label}: verified, now reads "${v.deviceName}"`);

@@ -18,12 +18,19 @@ const CHUNK_RAW = 183; // same stride the write path uses (gp200.py build_upload
 const DUMP_SHIFT = 0x28;
 
 export class FakePedal {
-  constructor({ dumps = new Map(), defaultDump, faults = null, writeFaults = null, answerIdentity = true } = {}) {
+  constructor({
+    dumps = new Map(), defaultDump, faults = null, writeFaults = null, answerIdentity = true,
+    commitMs = 0, readsDuringCommit = "old",
+  } = {}) {
     this.dumps = dumps;
     this.defaultDump = defaultDump;
     this.faults = faults;
     this.writeFaults = writeFaults;
     this.answerIdentity = answerIdentity;
+    this.commitMs = commitMs;
+    this.readsDuringCommit = readsDuringCommit;
+    this._pending = null; // an upload still committing (commitMs)
+    this.readsIgnored = 0;
     this.editorMode = false;
     this.activeSlot = null;
     this.reads = new Map();
@@ -51,6 +58,11 @@ export class FakePedal {
       this.editorMode = true;
     } else if (cmd === 0x11 && sub === 0x10) {
       const slot = (msg[25] << 4) | msg[26];
+      this._finishCommitIfDue();
+      if (this._pending && this.readsDuringCommit === "ignore") {
+        this.readsIgnored++;
+        return;
+      }
       const n = (this.reads.get(slot) ?? 0) + 1;
       this.reads.set(slot, n);
       let chunks = FakePedal.dumpChunks(this.dumpOf(slot));
@@ -88,7 +100,20 @@ export class FakePedal {
     dump.set(content.subarray(0, dump.length - (0x2e - DUMP_SHIFT)), 0x2e - DUMP_SHIFT);
     for (const off of [0x2e, 0x34, 0x90]) dump[off - DUMP_SHIFT] = slot;
     for (const off of [0x43, 0x9f]) dump[off - DUMP_SHIFT] = 0;
-    this.dumps.set(slot, dump);
+    if (!this.commitMs) {
+      this.dumps.set(slot, dump);
+      return;
+    }
+    this._pending = { slot, dump, due: performance.now() + this.commitMs };
+    setTimeout(() => this._finishCommitIfDue(), this.commitMs);
+  }
+
+  // Timers can fire late, so a read checks the clock too.
+  _finishCommitIfDue() {
+    if (this._pending && performance.now() >= this._pending.due) {
+      this.dumps.set(this._pending.slot, this._pending.dump);
+      this._pending = null;
+    }
   }
 
   /** Split a dump into cmd=0x12 sub=0x18 reply chunks. */

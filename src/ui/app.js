@@ -5,8 +5,10 @@
 import { findGp200Ports, GP200 } from "../core/device.js";
 import { exportWarnings, packageExport, readSlots } from "../core/export.js";
 import { Logger } from "../core/log.js";
+import { prstFileName } from "../core/prst.js";
 import { skeletonBytes } from "../core/skeleton.js";
 import { labelToSlot, slotsBetween, slotToLabel } from "../core/slots.js";
+import { checkTuningSets, runTuning, SCRATCH_SLOTS, TUNING_DEFAULTS, tuningCsv } from "../core/tuning.js";
 import { expandSources, orderEntries, planUpload, planWarnings, writeSlots } from "../core/upload.js";
 import { createZip } from "../core/zip.js";
 import { VERSION } from "../version.js";
@@ -22,16 +24,31 @@ const ui = {
   restoreStart: $("restore-start"), restoreFiles: $("restore-files"), restorePlan: $("restore-plan"),
   restoreWarnings: $("restore-warnings"), restoreWrite: $("restore-write"), restoreStop: $("restore-stop"),
   restoreStatus: $("restore-status"), restoreFailed: $("restore-failed"),
+  hiddenBanner: $("hidden-banner"),
+  tuning: $("dev-tuning"), tuneX: $("tune-x"), tuneY: $("tune-y"), tuneMode: $("tune-mode"), tuneCycles: $("tune-cycles"),
+  tuneChunk: $("tune-chunk"), tuneSettle: $("tune-settle"), tunePreset: $("tune-preset"), tuneBetween: $("tune-between"),
+  tunePollTimeout: $("tune-poll-timeout"), tunePollMax: $("tune-poll-max"), tuneDefaults: $("tune-defaults"),
+  tuneWarnings: $("tune-warnings"), tuneRun: $("tune-run"), tuneStop: $("tune-stop"), tuneStatus: $("tune-status"),
+  tuneCsv: $("tune-csv"),
 };
+
+// Developer-only tools (the write-timing test) appear only with ?dev.
+const DEV = new URLSearchParams(location.search).has("dev");
 
 const log = new Logger({ onLine: appendLogLine });
 let midi = null;
 let device = null;
 let cancelRequested = false;
 let busy = false;
+let busyWhat = false; // false | "export" | "restore" | "tuning"
 let plan = null; // the current restore plan, shown before anything is written
 let failedReadbacks = [];
 const knownNames = new Map(); // slot -> patch name, from this session's reads and writes
+let tuneSets = null; // {setX, setY} once both pickers hold usable sets
+let tuneRows = [];
+let hiddenAt = null; // performance.now() when the page was last hidden; null while visible
+let lastVisibleAgainAt = -Infinity;
+let wakeLock = null;
 
 ui.version.textContent = `Version ${VERSION}.`;
 log.info(`GP-200 Patch Manager Web, version ${VERSION}`);
@@ -55,6 +72,7 @@ ui.restoreFailed.addEventListener("click", () => {
   download("gp200_failed_readbacks.zip", zip, "application/zip");
 });
 ui.export.addEventListener("click", onExport);
+document.addEventListener("visibilitychange", onVisibilityChange);
 ui.cancel.addEventListener("click", () => {
   cancelRequested = true;
   ui.cancel.disabled = true;
@@ -180,9 +198,14 @@ async function onExport() {
   }
 }
 
-/** @param {false|"export"|"restore"} what */
+/** @param {false|"export"|"restore"|"tuning"} what */
 function setBusy(what) {
   busy = Boolean(what);
+  busyWhat = what;
+  if (what) ui.hiddenBanner.hidden = true;
+  holdWakeLock(busy);
+  ui.tuneStop.hidden = what !== "tuning";
+  ui.tuneStop.disabled = false;
   ui.connect.disabled = busy;
   ui.cancel.hidden = what !== "export";
   ui.cancel.disabled = false;
@@ -197,6 +220,63 @@ function refreshButtons() {
   ui.restoreWrite.disabled = busy || !device || !plan?.items.length;
   ui.restoreStart.disabled = busy;
   ui.restoreFiles.disabled = busy;
+  ui.tuneRun.disabled = busy || !device || !tuneSets;
+}
+
+// ---- Hidden tabs (DEV_JOURNAL.md T1) ----------------------------------------
+// Chrome slows timers in background tabs, and the write pacing runs on
+// timers. Log every change, warn when it happens mid-write, and keep the
+// screen awake during long jobs so it can't sleep or lock the page away.
+
+const writing = () => busyWhat === "restore" || busyWhat === "tuning";
+
+/** True if the page was hidden at any point since performance.now() was `since`. */
+const wasHidden = (since) => document.hidden || lastVisibleAgainAt >= since;
+
+function onVisibilityChange() {
+  if (document.hidden) {
+    hiddenAt = performance.now();
+    if (writing()) log.warn("Page hidden while writing: the browser may slow the writes down until it's visible again");
+    else log.info("Page hidden");
+    return;
+  }
+  const secs = hiddenAt === null ? 0 : (performance.now() - hiddenAt) / 1000;
+  hiddenAt = null;
+  lastVisibleAgainAt = performance.now();
+  if (writing()) {
+    log.warn(`Page visible again after ${secs.toFixed(1)} s hidden during the write`);
+    ui.hiddenBanner.textContent = `This page was in the background for ${secs.toFixed(0)} s while writing. ` +
+      "Browsers slow down background pages, so the writes may have taken longer (the log shows each one). " +
+      "Keep this tab in front until writing finishes.";
+    ui.hiddenBanner.hidden = false;
+  } else {
+    log.info(`Page visible again after ${secs.toFixed(1)} s hidden`);
+  }
+  if (busy) holdWakeLock(true); // the browser drops the lock when the page is hidden
+}
+
+async function holdWakeLock(hold) {
+  if (!hold) {
+    const lock = wakeLock;
+    wakeLock = null;
+    if (lock && !lock.released) {
+      await lock.release().catch(() => {});
+      log.debug("Screen wake lock released");
+    }
+    return;
+  }
+  if (wakeLock && !wakeLock.released) return;
+  if (!navigator.wakeLock) {
+    log.debug("This browser has no screen wake lock; the screen may sleep during long jobs");
+    return;
+  }
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+    log.debug("Screen wake lock on: the screen won't sleep while this runs");
+    if (!busy) holdWakeLock(false); // the job ended while we were asking
+  } catch (e) {
+    log.info(`Couldn't keep the screen awake (${e?.message ?? e}); if it sleeps mid-restore, writes slow down`);
+  }
 }
 
 // ---- Restore (test build) ---------------------------------------------------
@@ -270,6 +350,7 @@ async function onRestore() {
       skeleton: skeletonBytes(),
       log,
       isCancelled: () => cancelRequested,
+      wasHidden,
       onProgress: ({ done, total, label }) => {
         ui.restoreStatus.textContent = `${done} / ${total} written (${label})`;
       },
@@ -289,6 +370,137 @@ async function onRestore() {
   } finally {
     setBusy(false);
     renderPlan(results);
+  }
+}
+
+// ---- Developer: write-timing test (DEV_JOURNAL.md T1/T2) --------------------
+
+function setUpTuning() {
+  ui.tuning.hidden = false;
+  resetTuneInputs();
+  log.info("Developer tools shown (?dev in the address)");
+  ui.tuneX.addEventListener("change", checkTuneInputs);
+  ui.tuneY.addEventListener("change", checkTuneInputs);
+  ui.tuneDefaults.addEventListener("click", resetTuneInputs);
+  ui.tuneRun.addEventListener("click", onTune);
+  ui.tuneStop.addEventListener("click", () => {
+    cancelRequested = true;
+    ui.tuneStop.disabled = true;
+  });
+  ui.tuneCsv.addEventListener("click", () => {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const r = tuneRows[0];
+    download(`gp200_timing_${r.mode}_settle${r.settleMs}_${stamp}.csv`, new TextEncoder().encode(tuningCsv(tuneRows)), "text/csv");
+  });
+}
+
+const TUNE_FIELDS = {
+  tuneCycles: "cycles", tuneChunk: "chunkGapMs", tuneSettle: "settleMs", tunePreset: "presetChangeMs",
+  tuneBetween: "betweenSlotsMs", tunePollTimeout: "pollTimeoutMs", tunePollMax: "pollMaxMs",
+};
+const TUNE_FIELD_NAMES = {
+  tuneCycles: "Writes per slot", tuneChunk: "Chunk gap", tuneSettle: "Settle", tunePreset: "After preset change",
+  tuneBetween: "Between writes", tunePollTimeout: "Poll timeout", tunePollMax: "Poll limit",
+};
+
+function resetTuneInputs() {
+  ui.tuneMode.value = TUNING_DEFAULTS.mode;
+  for (const [id, key] of Object.entries(TUNE_FIELDS)) ui[id].value = TUNING_DEFAULTS[key];
+}
+
+function readTuneSettings() {
+  const s = { mode: ui.tuneMode.value };
+  for (const [id, key] of Object.entries(TUNE_FIELDS)) {
+    const v = Number(ui[id].value);
+    const min = Number(ui[id].min);
+    if (ui[id].value.trim() === "" || !Number.isInteger(v) || v < min) {
+      throw new Error(`${TUNE_FIELD_NAMES[id]} must be a whole number of at least ${min}.`);
+    }
+    s[key] = v;
+  }
+  return s;
+}
+
+async function readPicked(input) {
+  const picked = await Promise.all([...input.files].map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
+  if (!picked.length) return [];
+  return orderEntries((await expandSources(picked)).entries).ordered;
+}
+
+async function checkTuneInputs() {
+  tuneSets = null;
+  ui.tuneWarnings.replaceChildren();
+  ui.tuneStatus.textContent = "";
+  try {
+    const [setX, setY] = await Promise.all([readPicked(ui.tuneX), readPicked(ui.tuneY)]);
+    if (!setX.length || !setY.length) return;
+    const problems = checkTuningSets(setX, setY);
+    if (problems.length) {
+      showList(ui.tuneWarnings, problems, "error");
+      return;
+    }
+    tuneSets = { setX, setY };
+    ui.tuneStatus.textContent = setX.map((x, i) =>
+      `${slotToLabel(SCRATCH_SLOTS[i])}: X "${prstFileName(x.data)}" / Y "${prstFileName(setY[i].data)}"`).join("; ");
+    log.info(`Timing test sets: ${ui.tuneStatus.textContent}`);
+  } catch (e) {
+    showList(ui.tuneWarnings, [e.message], "error");
+  } finally {
+    refreshButtons();
+  }
+}
+
+async function onTune() {
+  if (!tuneSets || !device) return;
+  let s;
+  try {
+    s = readTuneSettings();
+  } catch (e) {
+    showList(ui.tuneWarnings, [e.message], "error");
+    return;
+  }
+  ui.tuneWarnings.replaceChildren();
+  const n = tuneSets.setX.length;
+  const range = n === 1 ? "64A" : `64A-${slotToLabel(SCRATCH_SLOTS[n - 1])}`;
+  if (!confirm(`Run the timing test on ${range}?\n\nIt writes ${s.cycles * n} time(s) to ${range}, switching each ` +
+    `slot between set X and set Y, and leaves them holding one of the two. Make sure you have a backup of ${range}.`)) {
+    log.info("Timing test cancelled at the confirmation prompt; nothing written");
+    return;
+  }
+  cancelRequested = false;
+  tuneRows = [];
+  ui.tuneCsv.hidden = true;
+  setBusy("tuning");
+  try {
+    const out = await runTuning(device, {
+      ...tuneSets,
+      mode: s.mode,
+      cycles: s.cycles,
+      timing: { chunkGapMs: s.chunkGapMs, settleMs: s.settleMs, presetChangeMs: s.presetChangeMs },
+      betweenSlotsMs: s.betweenSlotsMs,
+      pollTimeoutMs: s.pollTimeoutMs,
+      pollMaxMs: s.pollMaxMs,
+      skeleton: skeletonBytes(),
+      log,
+      wasHidden,
+      isCancelled: () => cancelRequested,
+      onProgress: ({ done, total, row }) => {
+        ui.tuneStatus.textContent = `${done} / ${total}: ${row.label} ${row.verified ? "verified" : "NOT verified"}`;
+      },
+    });
+    tuneRows = out.rows;
+    for (const r of out.rows) if (r.roundtrip) knownNames.set(labelToSlot(r.label), prstFileName(r.roundtrip));
+    const { writes, notVerified, rechecked } = out.summary;
+    ui.tuneStatus.textContent = `${writes - notVerified} of ${writes} verified` +
+      (notVerified ? `, ${notVerified} NOT verified` : "") + (rechecked ? `, ${rechecked} needed a re-read` : "") +
+      (out.cancelled ? "; stopped early" : "") + ". Details in the log.";
+    ui.tuneCsv.hidden = tuneRows.length === 0;
+  } catch (e) {
+    log.error(`Timing test stopped: ${e?.stack ?? e}`);
+    showList(ui.tuneWarnings, [`Timing test stopped: ${e?.message ?? e}`], "error");
+  } finally {
+    setBusy(false);
+    renderPlan();
   }
 }
 
@@ -355,6 +567,11 @@ function environmentInfo() {
   } else {
     lines.push("MIDI access: not requested yet");
   }
+  lines.push(`Page: ${document.hidden ? "hidden" : "visible"}; developer tools: ${DEV ? "shown" : "off"}; ` +
+    `screen wake lock: ${navigator.wakeLock ? "available" : "not available"}`);
   lines.push(`Connected: ${device ? `in="${device.input.name}" out="${device.output.name}"` : "no"}`);
   return lines;
 }
+
+// Last, so every constant above is initialized first.
+if (DEV) setUpTuning();

@@ -38,14 +38,18 @@ This journal records only what's new or different for the browser.
   tested CLI. Open: does editor mode have any visible effect on the pedal?
 
 - **T1. Background-tab timer throttling.** Chrome slows timers in hidden
-  tabs, and after about 5 minutes hidden it can throttle chained timers to
-  roughly once a minute. The write pacing (40 ms chunk gaps, 1 s settle)
-  runs on `setTimeout`, so a restore in a hidden tab could slow down
-  drastically. Longer gaps are probably harmless to the pedal, but this is
-  untested. For now the user must keep the tab visible. Options to evaluate:
-  timestamped `MIDIOutput.send(data, timestamp)` for the chunk burst,
-  timers in a Web Worker, the Screen Wake Lock API, or at least a visible
-  warning when the page is hidden mid-restore.
+  tabs (to about once a second as soon as the tab is hidden, and after
+  about 5 minutes hidden it can throttle chained timers to roughly once a
+  minute). The write pacing (40 ms chunk gaps, 1 s settle) runs on
+  `setTimeout`, so a restore in a hidden tab could slow down drastically.
+  Longer gaps are probably harmless to the pedal, but this is untested.
+  *Now built (see the entry "Write-timing test"): per-write timing with a
+  warning when a write runs long, hidden/visible changes in the log, a
+  banner after a hidden mid-write, and a screen wake lock during jobs.*
+  Still to do: measure a hidden-tab restore on real Chrome; if it's slow,
+  fix the remaining timers (a Web Worker clock, or timestamped
+  `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
+  replaced by read-backs, only the 7 chunk gaps would still need timers.
 - **T2. Restore speed.** About 1.9 s per patch at the CLI's pacing (a full
   restore takes about 8 minutes); the 1 s settle dominates. The CLI's
   `calibrate-settle` history shows settle was once suspected in write
@@ -359,3 +363,75 @@ throttling), T2 (restore speed, via a settle-time sweep that alternates
 two different patch sets on the scratch slots so every write changes
 content, with the read-back as the evidence), and the second computer.
 Then merge to GitHub Pages and start mockups.
+
+## 2026-09-30: Write-timing test (T1/T2 tooling)
+
+**Principle agreed with the developer:** don't risk flakiness for speed.
+Pauses and steps get removed only when a measured hardware test shows
+they're unnecessary; until then the shipped timing stays the CLI's.
+
+**Why read-backs instead of a shorter fixed settle.** The pedal sends no
+write ACK, so any fixed settle is a guess sized for the worst case. A read
+finishes when the pedal's reply arrives, which (a) measures the real
+commit time per write and (b) is a MIDI event, not a timer, so hidden-tab
+throttling doesn't stretch it. The 7 chunk gaps can't be replaced this
+way (no reply per chunk), so T1 still needs a small fix for those if the
+hidden-tab measurement shows it matters.
+
+**What was built** (developer-only; the panel appears only with `?dev` in
+the address):
+- `src/core/tuning.js`: writes to the scratch slots 64A-64D only (item i
+  of each set goes to 64A+i). Before each write it picks whichever set the
+  slot doesn't already hold, so every write changes the content, including
+  the first (the slots are read first) and the one after a failed write.
+  Two modes:
+  - *fixed*: settle, preset change, verify: a restore with adjustable
+    chunk gap / settle / preset-change / between-writes pauses.
+  - *poll*: settle (can be 0), then read repeatedly from the end of the
+    burst until the new patch appears (poll timeout and limit adjustable),
+    then the same preset change and verify. Each answer is classed as the
+    new patch, the old one, or "other" (neither: a partial commit, or
+    chunks from two replies mixed after a timed-out poll).
+  Pass/fail is exactly a restore's `verifyWrite` in both modes. Results: one
+  log line per write (actual burst/settle/write times, the poll trace,
+  whether the page was hidden), a summary (verify failures, re-reads,
+  min/median/max times, what the first reply held), and a CSV download.
+- `GP200.readOnce()` (one read attempt, its own timeout, no warnings) is
+  now `readDump`'s building block; `writeSlot` is split into `sendUpload`
+  and `selectSlot` (same bytes and the same pauses as before) and returns
+  how long each phase really took.
+- Restores now log each write's real time and warn when it took at least
+  twice the plan and 500 ms over (`slowWriteWarning`), noting a hidden page.
+- The page logs every hidden/visible change (a warning while writing),
+  shows a banner after a hidden mid-write, and holds a screen wake lock
+  during export, restore and the timing test.
+
+**Fake pedal:** `commitMs` delays when an upload lands; reads during it get
+the old patch, or no reply with `readsDuringCommit: "ignore"`. Tests cover
+both, plus a write that never lands (poll limit reached, verify fails),
+sets that can't show a write (same patch in X and Y), the slot that already
+holds X, and cancel. Suite: 76 tests, all passing (ran three times).
+
+**Checked in the desktop app's built-in Chromium, fake pedal as a Web MIDI
+port, poll mode, settle 0, 150 ms fake commit:** 8 of 8 verified; first
+reply 10-13 ms after the burst held the old patch, the new one appeared at
+108-114 ms (the burst's trailing 40 ms gap counts toward the 150 ms). The
+pane was hidden throughout (`document.visibilityState` "hidden") and every
+row was flagged hidden, yet bursts took 328-350 ms against 280 ms planned:
+no 1-per-second throttling there. That's an embedded browser, not evidence
+about real Chrome.
+
+**Hardware plan** (scratch slots 64A-64D, 4 different patches in each set):
+1. Fixed mode at the CLI's timing, tab visible: the baseline (should be
+   all verified, like the round robin).
+2. Poll mode, settle 1000 (reads start only after today's settle): does the
+   first reply already hold the new patch?
+3. Poll mode, settle 0: when does the pedal first answer, and with what?
+   Any "other" or verify failure here is the "can a read disturb the
+   commit" answer, and a reason to stop.
+4. If 3 is clean over enough writes, fixed mode at shorter settles to
+   cross-check.
+5. Fixed mode at the CLI's timing with the tab hidden for 5+ minutes (T1).
+6. Restore the 64A-64D baseline; export and `compare-zips` against it.
+Any change to the shipped timing or to DESIGN.md's "one read-back" rule
+waits for these results.

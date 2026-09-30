@@ -2,8 +2,10 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { checkDump, findGp200Ports, GP200, ReadError } from "../src/core/device.js";
+import { checkDump, findGp200Ports, GP200, plannedWriteMs, ReadError, slowWriteWarning } from "../src/core/device.js";
 import { Logger } from "../src/core/log.js";
+import { exportPrst } from "../src/core/prst.js";
+import { skeletonBytes } from "../src/core/skeleton.js";
 import { assembleChunks } from "../src/core/sysex.js";
 import { baseDump, dumpWithName } from "./helpers/fixtures.js";
 import { FakePedal } from "./helpers/fake-pedal.js";
@@ -102,4 +104,28 @@ test("checkDump: flags odd payloads and short dumps", () => {
 test("findGp200Ports: matches the CLI's auto-detect rule", () => {
   const ports = [{ name: "GP-200" }, { name: "Microsoft GS Wavetable Synth" }, { name: "gp200 MIDI 1" }, { name: "GP-100" }];
   assert.deepEqual(findGp200Ports(ports).map((p) => p.name), ["GP-200", "gp200 MIDI 1"]);
+});
+
+test("readOnce: one attempt with its own timeout, no retry and no warning", async () => {
+  const { dev, pedal, log } = setup({ faults: () => [] });
+  const r = await dev.readOnce(4, 10);
+  assert.equal(r.ok, false);
+  assert.equal(r.got, 0);
+  assert.equal(pedal.reads.get(4), 1);
+  assert.ok(!log.lines.some((l) => l.includes("WARN")));
+});
+
+test("writeSlot: reports how long each phase took against the plan", async () => {
+  const { dev } = setup({}, { timing: { chunkGapMs: 2, settleMs: 20, presetChangeMs: 5 } });
+  const t = await dev.writeSlot(3, exportPrst(dumpWithName("Timed"), skeletonBytes()));
+  assert.equal(t.plannedMs, plannedWriteMs({ chunkGapMs: 2, settleMs: 20, presetChangeMs: 5 }));
+  assert.equal(t.plannedMs, 39);
+  assert.ok(t.settleMs >= 19 && t.burstMs >= 13 && t.totalMs >= 38, JSON.stringify(t));
+});
+
+test("slowWriteWarning: quiet at normal speed, warns when throttled", () => {
+  assert.equal(slowWriteWarning("64A", { totalMs: 1900, plannedMs: 1580 }), null);
+  assert.equal(slowWriteWarning("64A", { totalMs: 400, plannedMs: 0 }), null, "tiny plans need 500 ms of slack");
+  assert.match(slowWriteWarning("64A", { totalMs: 9800, plannedMs: 1580 }, true), /took 9\.8 s, planned 1\.6 s \(the page was hidden/);
+  assert.doesNotMatch(slowWriteWarning("64A", { totalMs: 9800, plannedMs: 1580 }, false), /hidden/);
 });

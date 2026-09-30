@@ -72,6 +72,8 @@ input, select {
 progress { width: 200px; }
 .status.ok { color: var(--ok); font-weight: 600; }
 .banner { padding: 10px 14px; border-radius: 6px; margin-top: 16px; }
+.banner.warn { background: var(--warn-bg); color: var(--warn-fg); }
+input.num { width: 6em; }
 .banner.error, .warnings li.error { background: var(--error-bg); color: var(--error-fg); }
 .warnings { list-style: none; padding: 0; margin: 8px 0 0; }
 .warnings li { background: var(--warn-bg); color: var(--warn-fg); padding: 8px 12px; border-radius: 6px; margin-top: 6px; }

@@ -46,6 +46,22 @@ export const WRITE_TIMING = { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 30
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** How long writeSlot should take with `timing` if the browser keeps time. */
+export function plannedWriteMs({ chunkGapMs, settleMs, presetChangeMs }) {
+  return 7 * chunkGapMs + settleMs + presetChangeMs;
+}
+
+/**
+ * A warning when a write took much longer than planned (at least twice as
+ * long and 500 ms over), else null. The usual cause is a hidden tab: Chrome
+ * slows timers there (DEV_JOURNAL.md T1).
+ */
+export function slowWriteWarning(label, { totalMs, plannedMs }, wasHidden = false) {
+  if (totalMs < plannedMs * 2 || totalMs < plannedMs + 500) return null;
+  return `${label}: the write took ${(totalMs / 1000).toFixed(1)} s, planned ${(plannedMs / 1000).toFixed(1)} s` +
+    (wasHidden ? " (the page was hidden, so the browser slowed its timers)" : "");
+}
+
 export class ReadError extends Error {
   constructor(slot, reason) {
     super(`couldn't read ${slotToLabel(slot)}: ${reason}`);
@@ -118,20 +134,12 @@ export class GP200 {
     const label = slotToLabel(slot);
     let reason = "";
     for (let attempt = 1; attempt <= this.attempts; attempt++) {
-      const started = performance.now();
-      const chunks = await this._request(buildReadRequest(slot), SUB_DUMP_CHUNK, DUMP_CHUNK_COUNT);
-      const ms = performance.now() - started;
-      if (chunks.length < DUMP_CHUNK_COUNT) {
-        reason = `timed out with ${chunks.length} of ${DUMP_CHUNK_COUNT} chunks`;
-      } else {
-        const decoded = assembleChunks(chunks);
-        const problems = checkDump(chunks, decoded);
-        if (problems.length === 0) {
-          this.log.debug(`${label}: read OK on attempt ${attempt}, ${decoded.length} bytes in ${ms.toFixed(0)} ms`);
-          return { decoded, chunks, attempt, ms };
-        }
-        reason = `failed sanity check: ${problems.join("; ")}`;
+      const r = await this.readOnce(slot);
+      if (r.ok) {
+        this.log.debug(`${label}: read OK on attempt ${attempt}, ${r.decoded.length} bytes in ${r.ms.toFixed(0)} ms`);
+        return { decoded: r.decoded, chunks: r.chunks, attempt, ms: r.ms };
       }
+      reason = r.reason;
       // Warn, not debug: re-reads are exactly the browser-vs-CLI evidence
       // the phase 1 acceptance test is looking for (DEV_JOURNAL.md Q1).
       this.log.warn(`${label}: read attempt ${attempt} of ${this.attempts} ${reason}`);
@@ -140,20 +148,57 @@ export class GP200 {
   }
 
   /**
+   * One read attempt, no retries and no warnings: readDump's building block,
+   * also used by the timing experiment to poll right after a write.
+   * @returns {Promise<{ok: true, decoded: Uint8Array, chunks: Uint8Array[], ms: number}
+   *   | {ok: false, reason: string, got: number, ms: number}>}
+   */
+  async readOnce(slot, timeoutMs = this.timeoutMs) {
+    const started = performance.now();
+    const chunks = await this._request(buildReadRequest(slot), SUB_DUMP_CHUNK, DUMP_CHUNK_COUNT, timeoutMs);
+    const ms = performance.now() - started;
+    if (chunks.length < DUMP_CHUNK_COUNT) {
+      return { ok: false, reason: `timed out with ${chunks.length} of ${DUMP_CHUNK_COUNT} chunks`, got: chunks.length, ms };
+    }
+    const decoded = assembleChunks(chunks);
+    const problems = checkDump(chunks, decoded);
+    if (problems.length) return { ok: false, reason: `failed sanity check: ${problems.join("; ")}`, got: chunks.length, ms };
+    return { ok: true, decoded, chunks, ms };
+  }
+
+  /**
    * Flash-upload one .prst file to `slot` (the CLI's write_slot, without its
    * experimental save-commit). Leaves the pedal switched to `slot`.
    * Only called from the restore feature, after the user confirms.
+   * Returns how long each phase really took: in a hidden tab the browser
+   * can stretch every pause (DEV_JOURNAL.md T1).
+   * @param {typeof WRITE_TIMING} [timing] the timing experiment varies it
    */
-  async writeSlot(slot, fileBytes) {
-    const chunks = buildUploadChunks(buildUploadImage(fileBytes, slot));
-    const { chunkGapMs, settleMs, presetChangeMs } = this.timing;
-    for (const c of chunks) {
+  async writeSlot(slot, fileBytes, timing = this.timing) {
+    const t0 = performance.now();
+    const burstMs = await this.sendUpload(slot, fileBytes, timing);
+    const t1 = performance.now();
+    await sleep(timing.settleMs);
+    const t2 = performance.now();
+    await this.selectSlot(slot, timing);
+    const t3 = performance.now();
+    return { burstMs, settleMs: t2 - t1, presetMs: t3 - t2, totalMs: t3 - t0, plannedMs: plannedWriteMs(timing) };
+  }
+
+  /** The 7 upload chunks with `chunkGapMs` after each. Returns elapsed ms. */
+  async sendUpload(slot, fileBytes, timing = this.timing) {
+    const t0 = performance.now();
+    for (const c of buildUploadChunks(buildUploadImage(fileBytes, slot))) {
       this._send(c);
-      await sleep(chunkGapMs);
+      await sleep(timing.chunkGapMs);
     }
-    await sleep(settleMs);
+    return performance.now() - t0;
+  }
+
+  /** Preset change to `slot` (loads the written copy), then `presetChangeMs`. */
+  async selectSlot(slot, timing = this.timing) {
     this._send(buildPresetChange(slot));
-    await sleep(presetChangeMs);
+    await sleep(timing.presetChangeMs);
   }
 
   /**
@@ -201,14 +246,14 @@ export class GP200 {
 
   /** Send `msg`, then collect `want` distinct-offset replies with the given
    *  sub-command. Resolves with whatever arrived when complete or timed out. */
-  _request(msg, sub, want) {
+  _request(msg, sub, want, timeoutMs = this.timeoutMs) {
     if (this._waiter) throw new Error("another request is already in progress");
     return new Promise((resolve, reject) => {
       const w = { sub, want, chunks: [], offsets: new Set(), other: 0, resolve, started: performance.now() };
       w.timer = setTimeout(() => {
-        this.log.debug(`(timed out after ${this.timeoutMs} ms: ${w.chunks.length}/${want} matched, ${w.other} other message(s))`);
+        this.log.debug(`(timed out after ${timeoutMs} ms: ${w.chunks.length}/${want} matched, ${w.other} other message(s))`);
         this._finish(w);
-      }, this.timeoutMs);
+      }, timeoutMs);
       this._waiter = w;
       try {
         this._send(msg);
