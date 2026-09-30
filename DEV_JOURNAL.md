@@ -37,6 +37,22 @@ This journal records only what's new or different for the browser.
   them (PROTOCOL.md §2). The web app does the same, for parity with the
   tested CLI. Open: does editor mode have any visible effect on the pedal?
 
+- **T1. Background-tab timer throttling.** Chrome slows timers in hidden
+  tabs, and after about 5 minutes hidden it can throttle chained timers to
+  roughly once a minute. The write pacing (40 ms chunk gaps, 1 s settle)
+  runs on `setTimeout`, so a restore in a hidden tab could slow down
+  drastically. Longer gaps are probably harmless to the pedal, but this is
+  untested. For now the user must keep the tab visible. Options to evaluate:
+  timestamped `MIDIOutput.send(data, timestamp)` for the chunk burst,
+  timers in a Web Worker, the Screen Wake Lock API, or at least a visible
+  warning when the page is hidden mid-restore.
+- **T2. Restore speed.** About 1.9 s per patch at the CLI's pacing (a full
+  restore takes about 8 minutes); the 1 s settle dominates. The CLI's
+  `calibrate-settle` history shows settle was once suspected in write
+  failures that later traced to the dead bytes, so a shorter settle may be
+  safe now. Only change it with a measured test (for example a soak on the
+  scratch slots at a shorter settle, with verification on).
+
 ## Resolved
 
 - **W1. Does the pedal keep what's written at 0x3E/0x40 and tail +5/+10/+11?**
