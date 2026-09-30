@@ -37,15 +37,14 @@ This journal records only what's new or different for the browser.
   them (PROTOCOL.md §2). The web app does the same, for parity with the
   tested CLI. Open: does editor mode have any visible effect on the pedal?
 
-- **W1. Does the pedal keep what's written at 0x3E/0x40 and tail +5/+10/+11?**
-  Exports zero these (matching official exports), but the CLI's write
-  verification still compares them. If the pedal substitutes its own values
-  there, restores of our own exports would fail verification at exactly
-  those offsets. *Watch the first real restores.*
-
 ## Resolved
 
-*(none yet)*
+- **W1. Does the pedal keep what's written at 0x3E/0x40 and tail +5/+10/+11?**
+  *Yes, as far as tested.* Every hardware restore on 2026-09-30 (6 writes of
+  real exported patches, all with those bytes zeroed) verified, and the
+  CLI's verification checks those offsets. A pedal substituting its own
+  values there would have failed every one. See the entry "Write path
+  confirmed on real hardware".
 
 ---
 
@@ -269,3 +268,32 @@ file -> slot -> replaces "It's GP-200"; the confirm prompt appeared; 4 of
 scratch slots 64A-64D (factory defaults; a factory reset restores them),
 single patch first, then a range, then the full round robin (export all,
 restore all, export all, compare).
+
+## 2026-09-30: Write path confirmed on real hardware (scratch slots)
+
+Run by the developer from localhost in Chrome/Edge against the real pedal,
+using factory-default slots 64A-64D as scratch. **Everything passed:**
+1. Baseline: exported 64A-64D.
+2. Single patch: exported one of the developer's own patches and restored
+   it to 64A. Verified; the pedal switched to 64A showing the patch.
+3. Range: restored the earlier 1A-1D web export to 64A-64D. 4 of 4
+   verified.
+4. Put back: restored the step-1 baseline to 64A-64D, exported again, and
+   `compare-zips` against the baseline reported MATCH. So the round trip
+   holds per an independent tool, not just the app's own verification.
+
+This settles W1 (see Resolved) and is the first evidence that the browser's
+MIDI output behaves like Python's. No read-back needed its confirming
+re-read.
+
+Next: the full round robin (export all -> restore all -> export all ->
+compare), about 8 minutes of writing at the CLI's pacing; then the second
+computer; then merge and GitHub Pages.
+
+**Retrospective note (developer):** the web port reached this point in
+under a day, against many days for the CLI. The difference was the CLI's
+slow, careful, documented groundwork: `PROTOCOL.md`/`PROTOCOL_NOTES.md`
+were the spec, and the CLI's own code served as a byte-exact reference
+through the golden fixtures. The expensive knowledge (dead bytes, device-
+owned fields, upload addressing, pacing) carried over to a completely
+different implementation for free.
