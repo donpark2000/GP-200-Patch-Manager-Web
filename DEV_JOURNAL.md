@@ -1094,3 +1094,50 @@ only 4 checks per run.
 Session folder `2026-10-01_timing-late-check\` holds the baseline 64A-64D
 export, the set files, and the B3 and B4 CSVs and logs; keep it until
 these runs are done.
+
+## 2026-10-01: Timing test: late check "two writes later"
+
+Built as proposed in the B4 entry (step 1 of the Status above). Test tool
+only; the restore is unchanged (CLI pacing).
+
+- **New late-check mode:** write k's slot is re-read right after write
+  k+2's verify. In the "verify before the switch" order that's before
+  k+2's preset change; in the default order it's after k+2's verify read,
+  which already follows the switch. Either way nothing is added between a
+  preset change and the next upload, the pedal has switched away from the
+  slot (at write k+1), and with 3-4 slots it comes before the slot is
+  overwritten. Every write gets a late check, in both sets. The end-of-run
+  check now re-reads only writes not yet checked (the last two here; in
+  the other modes nothing is checked before the end, so they're
+  unchanged). The late read's time is kept out of the write's
+  `writeMs`/`totalMs`.
+- **Change of approach in the panel:** the checkbox "Late-check each slot
+  before overwriting it" became a three-way **Late check** choice: before
+  each overwrite (still the default), two writes later, at the end only.
+  Reason: three modes that exclude each other don't fit a checkbox. Core:
+  `runTuning`'s `lateBeforeOverwrite: bool` became `late: "overwrite" |
+  "twoLater" | "end"`. "Two writes later" needs 3-4 patches per set (with
+  2, write k+2 overwrites the slot first) and is refused before any write
+  otherwise. New CSV column `lateMode`; the CSV name gets `_late2`; the log
+  header names the mode.
+- **Tests: 96, all passing (three runs).** New: under the fault model with
+  `readEndsWindow`, vfirst + two-later late-checks all 8 writes and finds
+  all 8 CHANGED with every verify passed, while the default order finds
+  none; message order in both orders (the late read is a read of the slot
+  two writes back, before the switch in vfirst, after it otherwise, and a
+  switch is never followed by it); refused with 2 patches per set or an
+  unknown mode, nothing written; a 150 ms late read doesn't show in the
+  write's times. **Each new test was shown to fail** on a deliberate break:
+  late time counted in the write (1 test red), no two-later check (4 red),
+  vfirst late read moved after the switch (2 red).
+- **In-page check (built-in browser, fake pedal, 4 slots, 3 writes each,
+  poll mode, all pauses 0, 40 ms fault window, `readEndsWindow`):** vfirst:
+  12 of 12 verified, late check 12 of 12 re-read, **12 CHANGED**; default
+  order: 12 of 12 re-read, none changed. Page loads with no console
+  errors; the new choice shows with "Before each overwrite" selected.
+
+**Run B5 (next, hardware).** Session folder as before. Expected: Love
+Yourself's 10 writes fail their verify with `0x456:2->1` (the known quirk,
+not the fault), and the late check re-reads **40 of 40**. The fault shows as
+late-check CHANGED rows whose verify passed. If there are none, the 4-slot
+test can't reproduce it, and the next test needs more slots in a row.

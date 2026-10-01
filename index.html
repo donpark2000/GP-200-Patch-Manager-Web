@@ -75,7 +75,7 @@
         same number of different patches for set Y; patch 1 goes to 64A, 2 to 64B, and so on. Each write switches a
         slot to whichever set it doesn't hold, so every write changes it, and each is verified like a restore.
         A late check re-reads every write again after the test has moved on (the pedal can change a byte after
-        the verify): always at the end, and optionally before each overwrite.
+        the verify): at the end, plus before each overwrite or two writes later if chosen below.
         Afterwards, restore your 64A-64D backup.</p>
       <div class="row">
         <label>Set X <input id="tune-x" type="file" accept=".prst,.zip" multiple></label>
@@ -100,8 +100,11 @@
         <button id="tune-defaults" class="secondary">Reset to restore's timing</button>
       </div>
       <div class="row">
-        <label><input type="checkbox" id="tune-late-each" checked> Late-check each slot before overwriting it
-          (more checks; adds one read, a few ms, before each upload)</label>
+        <label>Late check <select id="tune-late">
+          <option value="overwrite">Before each overwrite, and at the end (adds one read, a few ms, before each upload)</option>
+          <option value="twoLater">Two writes later, after that write's verify, and at the end (3-4 patches per set)</option>
+          <option value="end">At the end only (each slot's last write)</option>
+        </select></label>
       </div>
       <div class="row">
         <label><input type="checkbox" id="tune-verify-first"> Verify before the preset change, as the withdrawn fast

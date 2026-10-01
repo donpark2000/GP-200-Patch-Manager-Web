@@ -114,7 +114,7 @@ test("summary and CSV: medians, first-reply counts, quoting", () => {
   assert.deepEqual(s.firstReply, { old: 1, none: 1 });
   const csv = tuningCsv(rows).trim().split("\n");
   assert.equal(csv.length, 3);
-  assert.ok(csv[0].endsWith(",reason,late,lateWhen,lateDiff,otherDiff,otherDiffLast,verifyBeforeSwitch"));
+  assert.ok(csv[0].endsWith(",reason,late,lateWhen,lateDiff,otherDiff,otherDiffLast,verifyBeforeSwitch,lateMode"));
   assert.ok(csv[2].includes(`,"a ""b"", c",`));
   assert.equal(summarizeTuning([]).writeMs, null);
 });
@@ -154,7 +154,7 @@ test("late check: with pauses longer than the fault window, nothing changes", as
 
 test("late check: the end-of-run check alone still covers each slot's last write", async () => {
   const { log, dev } = await setup({ fragile: { off: FRAGILE, windowMs: 40 } });
-  const { rows, summary } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 2, lateBeforeOverwrite: false, lateSettleMs: 0 });
+  const { rows, summary } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 2, late: "end", lateSettleMs: 0 });
   assert.deepEqual(rows.map((r) => r.lateWhen), ["", "", "end of run", "end of run"]);
   assert.equal(summary.lateChecked, 2);
   assert.ok(summary.lateChanged.length >= 1, "64A's last write was disturbed by the upload to 64B");
@@ -179,7 +179,7 @@ test("poll mode: \"other\" replies record where they differed from the new patch
   assert.ok(rows.every((r) => r.otherDiff === "0x456:2->0" && r.otherDiffLast === ""), JSON.stringify(rows.map((r) => r.otherDiff)));
   assert.equal(summary.neverNew, 2);
   assert.ok(log.lines.some((l) => l.includes('"other" replies differed from the new patch at 0x456:2->0 [')));
-  assert.ok(tuningCsv(rows).split("\n")[1].endsWith(",0x456:2->0,,false"));
+  assert.ok(tuningCsv(rows).split("\n")[1].endsWith(",0x456:2->0,,false,overwrite"));
 });
 
 test("poll mode: no \"other\" replies, no otherDiff; long diffs are capped", async () => {
@@ -202,7 +202,7 @@ const isSwitch = (m) => m[8] === 0x12 && m[9] === 0x08;
 test("verify before the switch: read-back, then preset change, then the next upload with nothing between", async () => {
   const { pedal, log, dev } = await setup();
   const start = pedal.sent.length;
-  const { rows } = await run(dev, log, { cycles: 2, verifyBeforeSwitch: true, lateBeforeOverwrite: false, lateSettleMs: 0 });
+  const { rows } = await run(dev, log, { cycles: 2, verifyBeforeSwitch: true, late: "end", lateSettleMs: 0 });
   assert.ok(rows.every((r) => r.verified && r.verifyBeforeSwitch === true));
   const sent = pedal.sent.slice(start);
   const switches = sent.map((m, i) => (isSwitch(m) ? i : -1)).filter((i) => i >= 0);
@@ -210,13 +210,13 @@ test("verify before the switch: read-back, then preset change, then the next upl
   for (const i of switches.slice(0, 3)) assert.ok(isUpload(sent[i + 1]), `message after switch ${i} is an upload`);
   for (const i of switches.slice(0, 4)) assert.ok(isRead(sent[i - 1]), `message before switch ${i} is the verify read`);
   assert.ok(log.lines.some((l) => l.includes("verify BEFORE the preset change")));
-  assert.ok(tuningCsv(rows).split("\n")[0].endsWith(",verifyBeforeSwitch"));
+  assert.ok(tuningCsv(rows).split("\n")[0].endsWith(",verifyBeforeSwitch,lateMode"));
 });
 
 test("default order: a verify read always sits between the switch and the next upload", async () => {
   const { pedal, log, dev } = await setup();
   const start = pedal.sent.length;
-  await run(dev, log, { cycles: 2, lateBeforeOverwrite: false, lateSettleMs: 0 });
+  await run(dev, log, { cycles: 2, late: "end", lateSettleMs: 0 });
   const sent = pedal.sent.slice(start);
   const switches = sent.map((m, i) => (isSwitch(m) ? i : -1)).filter((i) => i >= 0);
   for (const i of switches.slice(0, 3)) assert.ok(isRead(sent[i + 1]), `message after switch ${i} is a read`);
@@ -224,7 +224,7 @@ test("default order: a verify read always sits between the switch and the next u
 
 test("verify before the switch reproduces a fault that a read after the switch would prevent", async () => {
   const fragile = { off: FRAGILE, windowMs: 40, readEndsWindow: true };
-  const opts = { setX: fragX, setY: fragY, cycles: 2, lateBeforeOverwrite: false, lateSettleMs: 0 };
+  const opts = { setX: fragX, setY: fragY, cycles: 2, late: "end", lateSettleMs: 0 };
   const a = await setup({ fragile });
   const before = await run(a.dev, a.log, opts);
   assert.equal(a.pedal.fragileHits, 0, "default order: the verify read ends the window");
@@ -238,7 +238,7 @@ test("verify before the switch reproduces a fault that a read after the switch w
 
 test("verify before the switch: a slot that reads differently until selected fails its verify, with the offset", async () => {
   const { log, dev } = await setup({ unloadedReads: { off: FRAGILE, value: 1 } });
-  const { rows } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 1, verifyBeforeSwitch: true, lateBeforeOverwrite: false, lateSettleMs: 0 });
+  const { rows } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 1, verifyBeforeSwitch: true, late: "end", lateSettleMs: 0 });
   assert.ok(rows.every((r) => !r.verified && r.rechecked && r.reason === "1 byte(s) differ from the file: 0x456:2->1"), JSON.stringify(rows.map((r) => r.reason)));
   assert.ok(rows.every((r) => r.late === "ok"), "after the switch the slot reads as written");
 });
@@ -246,5 +246,87 @@ test("verify before the switch: a slot that reads differently until selected fai
 test("verify before the switch with the late check before each overwrite on: warns", async () => {
   const { log, dev } = await setup();
   await run(dev, log, { cycles: 1, verifyBeforeSwitch: true, lateSettleMs: 0 });
-  assert.ok(log.lines.some((l) => l.includes("WARN") && l.includes("Untick it to test the fast restore's order")));
+  assert.ok(log.lines.some((l) => l.includes("WARN") && l.includes("Choose another late check to test the fast restore's order")));
+});
+
+// ---- Late check two writes later (B2-B4 checked only set Y's last writes) --
+
+const frag4 = (p) => ["A", "B", "C", "D"].map((s) => entry2(`${p}-${s}`));
+const fragX4 = frag4("FX");
+const fragY4 = frag4("FY");
+const slotOf = (m) => (m[25] << 4) | m[26];
+
+test("two writes later: every write is late-checked, and the fast restore's fault is caught in every one", async () => {
+  const fragile = { off: FRAGILE, windowMs: 40, readEndsWindow: true };
+  const { pedal, log, dev } = await setup({ fragile });
+  const { rows, summary } = await run(dev, log, {
+    setX: fragX4, setY: fragY4, cycles: 2, verifyBeforeSwitch: true, late: "twoLater", lateSettleMs: 0,
+  });
+  assert.equal(rows.length, 8);
+  assert.ok(rows.every((r) => r.verified), "every immediate verify passed");
+  assert.deepEqual(rows.map((r) => r.lateWhen), [...Array(6).fill("two writes later"), "end of run", "end of run"]);
+  assert.equal(summary.lateChecked, 8, "all 8 writes, both sets");
+  assert.ok(pedal.fragileHits > 0);
+  assert.equal(summary.lateChanged.length, 8, JSON.stringify(rows.map((r) => r.late)));
+  assert.equal(summary.lateChangedAfterVerify, 8);
+  assert.ok(rows.every((r) => r.lateDiff === "0x456:2->0" && r.lateMode === "twoLater"));
+  assert.ok(log.lines.some((l) => l.includes("late check two writes later (after that write's verify) and at the end")));
+  assert.ok(log.lines.some((l) => l.includes("then re-reading 64C (#7), 64D (#8)")), "the end only re-reads what wasn't checked");
+});
+
+test("two writes later: with the default order, the same fault model gives no changes (the verify read ends the window)", async () => {
+  const { pedal, log, dev } = await setup({ fragile: { off: FRAGILE, windowMs: 40, readEndsWindow: true } });
+  const { summary } = await run(dev, log, { setX: fragX4, setY: fragY4, cycles: 2, late: "twoLater", lateSettleMs: 0, betweenSlotsMs: 60 });
+  assert.equal(pedal.fragileHits, 0);
+  assert.equal(summary.lateChecked, 8);
+  assert.equal(summary.lateChanged.length, 0);
+});
+
+test("two writes later: the check reads the slot two writes back, after the verify, and never right after a switch", async () => {
+  for (const verifyBeforeSwitch of [true, false]) {
+    const { pedal, log, dev } = await setup();
+    const start = pedal.sent.length;
+    const { rows } = await run(dev, log, { setX: fragX4.slice(0, 3), setY: fragY4.slice(0, 3), cycles: 2, verifyBeforeSwitch, late: "twoLater", lateSettleMs: 0 });
+    const sent = pedal.sent.slice(start);
+    const uploads = sent.map((m, i) => (isUpload(m) && !isUpload(sent[i - 1]) ? i : -1)).filter((i) => i >= 0);
+    assert.equal(uploads.length, 6);
+    const switches = sent.map((m, i) => (isSwitch(m) ? i : -1)).filter((i) => i >= 0);
+    for (const i of switches.slice(0, 5)) {
+      assert.ok(verifyBeforeSwitch ? isUpload(sent[i + 1]) : isRead(sent[i + 1]) && slotOf(sent[i + 1]) === slotOf(sent[i]),
+        `${verifyBeforeSwitch ? "vfirst" : "default"}: what follows switch ${i}`);
+    }
+    // Writes 3-6: the message after the verify read is a read of the slot written two before.
+    for (let w = 2; w < 6; w++) {
+      const next = w < 5 ? uploads[w + 1] : sent.length;
+      const reads = sent.slice(uploads[w], next).map((m, j) => [m, j]).filter(([m]) => isRead(m));
+      const late = reads.find(([m]) => slotOf(m) === rows[w - 2].slot);
+      assert.ok(late, `write ${w + 1} late-checks ${rows[w - 2].label}`);
+      const seg = sent.slice(uploads[w], next);
+      const sw = seg.findIndex(isSwitch);
+      assert.ok(verifyBeforeSwitch ? late[1] < sw : late[1] > sw, "before the switch in vfirst order, after it otherwise");
+    }
+  }
+});
+
+test("two writes later: refused with fewer than 3 patches per set, before anything is written", async () => {
+  const { pedal, log, dev } = await setup();
+  await assert.rejects(run(dev, log, { late: "twoLater" }), /needs 3 or 4 patches per set/);
+  await assert.rejects(run(dev, log, { late: "sometimes" }), /Unknown late-check mode/);
+  assert.equal(pedal.writes.size, 0);
+});
+
+test("two writes later: the late read isn't counted in the write's own times", async () => {
+  const { log, dev } = await setup();
+  // Make every read of a slot other than the one being written (i.e. the
+  // late check) take 150 ms; the writes themselves take a few ms.
+  let writing = null;
+  const { sendUpload, readDump } = dev;
+  dev.sendUpload = (slot, ...rest) => ((writing = slot), sendUpload.call(dev, slot, ...rest));
+  dev.readDump = async (slot) => {
+    if (writing !== null && slot !== writing) await new Promise((r) => setTimeout(r, 150));
+    return readDump.call(dev, slot);
+  };
+  const { rows } = await run(dev, log, { setX: fragX4, setY: fragY4, cycles: 2, late: "twoLater", lateSettleMs: 0 });
+  assert.equal(rows.filter((r) => r.lateWhen === "two writes later").length, 6, "rows 3-8 each ran a slow late read");
+  assert.ok(rows.every((r) => r.totalMs < 100), JSON.stringify(rows.map((r) => Math.round(r.totalMs))));
 });

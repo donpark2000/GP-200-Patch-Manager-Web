@@ -28,7 +28,7 @@ const ui = {
   tuning: $("dev-tuning"), tuneX: $("tune-x"), tuneY: $("tune-y"), tuneMode: $("tune-mode"), tuneCycles: $("tune-cycles"),
   tuneChunk: $("tune-chunk"), tuneSettle: $("tune-settle"), tunePreset: $("tune-preset"), tuneBetween: $("tune-between"),
   tunePollTimeout: $("tune-poll-timeout"), tunePollMax: $("tune-poll-max"), tuneDefaults: $("tune-defaults"),
-  tuneLateEach: $("tune-late-each"), tuneVerifyFirst: $("tune-verify-first"),
+  tuneLate: $("tune-late"), tuneVerifyFirst: $("tune-verify-first"),
   tuneWarnings: $("tune-warnings"), tuneRun: $("tune-run"), tuneStop: $("tune-stop"), tuneStatus: $("tune-status"),
   tuneCsv: $("tune-csv"),
 };
@@ -392,7 +392,7 @@ function setUpTuning() {
   ui.tuneCsv.addEventListener("click", () => {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const r = tuneRows[0];
-    download(`gp200_timing_${r.mode}_settle${r.settleMs}${r.verifyBeforeSwitch ? "_vfirst" : ""}_${stamp}.csv`, new TextEncoder().encode(tuningCsv(tuneRows)), "text/csv");
+    download(`gp200_timing_${r.mode}_settle${r.settleMs}${r.verifyBeforeSwitch ? "_vfirst" : ""}${r.lateMode === "twoLater" ? "_late2" : ""}_${stamp}.csv`, new TextEncoder().encode(tuningCsv(tuneRows)), "text/csv");
   });
 }
 
@@ -463,6 +463,10 @@ async function onTune() {
   }
   ui.tuneWarnings.replaceChildren();
   const n = tuneSets.setX.length;
+  if (ui.tuneLate.value === "twoLater" && n < 3) {
+    showList(ui.tuneWarnings, ["The late check two writes later needs 3 or 4 patches per set."], "error");
+    return;
+  }
   const range = n === 1 ? "64A" : `64A-${slotToLabel(SCRATCH_SLOTS[n - 1])}`;
   if (!confirm(`Run the timing test on ${range}?\n\nIt writes ${s.cycles * n} time(s) to ${range}, switching each ` +
     `slot between set X and set Y, and leaves them holding one of the two. Make sure you have a backup of ${range}.`)) {
@@ -483,7 +487,7 @@ async function onTune() {
       pollTimeoutMs: s.pollTimeoutMs,
       pollMaxMs: s.pollMaxMs,
       verifyBeforeSwitch: ui.tuneVerifyFirst.checked,
-      lateBeforeOverwrite: ui.tuneLateEach.checked,
+      late: ui.tuneLate.value,
       skeleton: skeletonBytes(),
       log,
       wasHidden,

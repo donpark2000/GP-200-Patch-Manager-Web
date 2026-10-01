@@ -11,10 +11,16 @@
 // the immediate verify has passed (DEV_JOURNAL.md 2026-10-01: 0x44e/0x456,
 // a 2 became 0, in 44 slots of a full restore). The late check runs at the
 // end of every run (after switching to another slot and waiting
-// LATE_SETTLE_MS) and, optionally, before each slot is overwritten; that
-// option adds one read before each upload, i.e. a few ms to the gap under
-// test. Nothing here changes the shipped timing; the numbers are evidence
-// for deciding whether to.
+// LATE_SETTLE_MS) for writes not yet checked, plus one of (LATE_MODES):
+//   - "overwrite": each slot just before it's overwritten. Adds one read
+//     before each upload, i.e. a few ms in the gap after a preset change.
+//   - "twoLater": each write right after the verify of the write two later
+//     (3-4 patches per set). By then the pedal has switched away from the
+//     slot, and the read sits after a verify, so it adds nothing between a
+//     preset change and the next upload, in either order.
+//   - "end": only the end of the run (each slot's last write).
+// Nothing here changes the shipped timing; the numbers are evidence for
+// deciding whether to.
 
 import { plannedWriteMs, WRITE_TIMING } from "./device.js";
 import { buildPrstFromDump, DEAD_BYTE_FILE_OFFSETS, diffPrstContent, isPrst, prstFileName } from "./prst.js";
@@ -32,6 +38,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Pause after the final switch before the end-of-run late check. */
 export const LATE_SETTLE_MS = 1000;
+
+/** When writes are late-checked besides the end of the run (see the top of this file). */
+export const LATE_MODES = ["overwrite", "twoLater", "end"];
+const LATE_HEADER = {
+  overwrite: "late check before each overwrite and at the end",
+  twoLater: "late check two writes later (after that write's verify) and at the end",
+  end: "late check at the end only",
+};
 
 /** Mismatches as "0x456:2->0 ...", at most `max` of them. */
 export function formatDiffs(diffs, max = Infinity) {
@@ -84,8 +98,8 @@ export function checkTuningSets(setX, setY) {
  *   the next upload: the order of the withdrawn fast restore (commit
  *   540109f), which the default order can't reproduce because its verify
  *   read lands right after the switch
- * @param {boolean} [o.lateBeforeOverwrite] also late-check each slot just
- *   before it's overwritten (adds one read before each upload)
+ * @param {"overwrite"|"twoLater"|"end"} [o.late] when to late-check
+ *   besides the end of the run; "twoLater" needs 3-4 patches per set
  * @param {number} [o.lateSettleMs] pause before the end-of-run late check
  * @param {(sinceMs: number) => boolean} [o.wasHidden] see writeSlots
  * @returns {Promise<{rows: object[], summary: object, cancelled: boolean}>}
@@ -93,22 +107,27 @@ export function checkTuningSets(setX, setY) {
 export async function runTuning(device, {
   setX, setY, mode = TUNING_DEFAULTS.mode, cycles = TUNING_DEFAULTS.cycles, timing, betweenSlotsMs = 300,
   pollTimeoutMs = TUNING_DEFAULTS.pollTimeoutMs, pollMaxMs = TUNING_DEFAULTS.pollMaxMs,
-  verifyBeforeSwitch = false, lateBeforeOverwrite = true, lateSettleMs = LATE_SETTLE_MS,
+  verifyBeforeSwitch = false, late = "overwrite", lateSettleMs = LATE_SETTLE_MS,
   skeleton, log, wasHidden = () => false, isCancelled = () => false, onProgress = () => {},
 }) {
   const problems = checkTuningSets(setX, setY);
   if (problems.length) throw new Error(problems.join(" "));
+  if (!LATE_MODES.includes(late)) throw new Error(`Unknown late-check mode "${late}".`);
+  if (late === "twoLater" && setX.length < 3) {
+    throw new Error("The late check two writes later needs 3 or 4 patches per set; with fewer, " +
+      "the write two later would overwrite the slot before it's checked.");
+  }
   const slots = SCRATCH_SLOTS.slice(0, setX.length);
   const total = cycles * slots.length;
-  if (verifyBeforeSwitch && lateBeforeOverwrite) {
+  if (verifyBeforeSwitch && late === "overwrite") {
     log.warn("Timing test: the late check before each overwrite reads the next slot right after the preset change, " +
-      "so with verify before the switch there is still a read in that gap. Untick it to test the fast restore's order.");
+      "so with verify before the switch there is still a read in that gap. Choose another late check to test the fast restore's order.");
   }
   log.info(`Timing test: ${mode} mode, ${cycles} write(s) to each of ${slots.map(slotToLabel).join(", ")} (${total} in all); ` +
     `chunk gap ${timing.chunkGapMs} ms, settle ${timing.settleMs} ms, after preset change ${timing.presetChangeMs} ms, ` +
     `between patches ${betweenSlotsMs} ms` + (mode === "poll" ? `, poll timeout ${pollTimeoutMs} ms, poll limit ${pollMaxMs} ms` : "") +
     (verifyBeforeSwitch ? "; verify BEFORE the preset change (fast restore's order)" : "") +
-    `; late check at the end${lateBeforeOverwrite ? " and before each overwrite" : " only"}`);
+    `; ${LATE_HEADER[late]}`);
 
   const current = [];
   for (const slot of slots) {
@@ -127,7 +146,7 @@ export async function runTuning(device, {
         log.warn(`Timing test stopped after ${rows.length} of ${total} writes`);
         break outer;
       }
-      if (lateBeforeOverwrite && lastRow[i]) {
+      if (late === "overwrite" && lastRow[i]) {
         const now = await lateCheck(device, slots[i], lastRow[i], "before overwrite", skeleton, log);
         if (now) current[i] = now;
       }
@@ -135,10 +154,16 @@ export async function runTuning(device, {
       // still holds its old patch, so this still picks a different one.
       const useY = sameContent(current[i], setX[i].data);
       const entry = useY ? setY[i] : setX[i];
+      const twoBack = late === "twoLater" ? rows.at(-2) : undefined;
+      const afterVerify = twoBack && (async () => {
+        const now = await lateCheck(device, twoBack.slot, twoBack, "two writes later", skeleton, log);
+        if (now) current[slots.indexOf(twoBack.slot)] = now;
+      });
       const row = await tuneOneWrite(device, {
         slot: slots[i], entry, set: useY ? "Y" : "X", previous: current[i], mode, timing,
-        pollTimeoutMs, pollMaxMs, verifyBeforeSwitch, skeleton, wasHidden,
+        pollTimeoutMs, pollMaxMs, verifyBeforeSwitch, skeleton, wasHidden, afterVerify,
       });
+      row.lateMode = late;
       row.n = rows.length + 1;
       rows.push(row);
       lastRow[i] = row;
@@ -148,20 +173,20 @@ export async function runTuning(device, {
       if (rows.length < total) await sleep(betweenSlotsMs);
     }
   }
-  if (rows.length) {
+  const unchecked = lastRow.filter((r) => r && !r.late);
+  if (unchecked.length) {
     // End of run: after the usual between-writes pause (so the last slot
     // gets the same treatment as the others), switch to another scratch
     // slot so every written slot has been left, let the pedal settle, then
-    // re-read them all.
+    // re-read each slot whose latest write hasn't been late-checked yet.
     await sleep(betweenSlotsMs);
     const last = rows.at(-1).slot;
     const away = slots.find((s) => s !== last) ?? SCRATCH_SLOTS.find((s) => s !== last);
-    log.info(`Late check: switching to ${slotToLabel(away)}, waiting ${lateSettleMs} ms, then re-reading ${slots.map(slotToLabel).join(", ")}`);
+    log.info(`Late check: switching to ${slotToLabel(away)}, waiting ${lateSettleMs} ms, then re-reading ` +
+      unchecked.map((r) => `${r.label} (#${r.n})`).join(", "));
     await device.selectSlot(away, { ...timing, presetChangeMs: 0 });
     await sleep(lateSettleMs);
-    for (let i = 0; i < slots.length; i++) {
-      if (lastRow[i]) await lateCheck(device, slots[i], lastRow[i], "end of run", skeleton, log);
-    }
+    for (const r of unchecked) await lateCheck(device, r.slot, r, "end of run", skeleton, log);
   }
   const summary = summarizeTuning(rows);
   for (const line of describeSummary(summary, mode)) log.info(line);
@@ -196,8 +221,16 @@ async function lateCheck(device, slot, row, when, skeleton, log) {
   return now;
 }
 
+/** Run `fn` (if any); how long it took, in ms. */
+async function timed(fn) {
+  if (!fn) return 0;
+  const t = performance.now();
+  await fn();
+  return performance.now() - t;
+}
+
 async function tuneOneWrite(device, {
-  slot, entry, set, previous, mode, timing, pollTimeoutMs, pollMaxMs, verifyBeforeSwitch, skeleton, wasHidden,
+  slot, entry, set, previous, mode, timing, pollTimeoutMs, pollMaxMs, verifyBeforeSwitch, skeleton, wasHidden, afterVerify,
 }) {
   const t0 = performance.now();
   const row = {
@@ -215,20 +248,23 @@ async function tuneOneWrite(device, {
     Object.assign(row, await pollUntilNew(device, slot, entry.data, previous, skeleton, tBurst, { pollTimeoutMs, pollMaxMs }));
   }
   let v;
+  let lateMs = 0; // another write's late check, kept out of this write's times
   if (verifyBeforeSwitch) {
     row.writeMs = performance.now() - t0;
     v = await device.verifyWrite(slot, entry.data, skeleton);
+    lateMs = await timed(afterVerify);
     await device.selectSlot(slot, timing);
   } else {
     await device.selectSlot(slot, timing);
     row.writeMs = performance.now() - t0; // everything before the verify
     v = await device.verifyWrite(slot, entry.data, skeleton);
+    lateMs = await timed(afterVerify);
   }
   row.verified = v.ok;
   row.rechecked = v.recheckedAfterMismatch;
   row.reason = (v.reason ?? "") + (v.mismatches?.length ? `: ${formatDiffs(v.mismatches, OTHER_DIFF_MAX)}` : "");
   row.roundtrip = v.roundtrip;
-  row.totalMs = performance.now() - t0;
+  row.totalMs = performance.now() - t0 - lateMs;
   row.hidden = wasHidden(t0);
   return row;
 }
@@ -345,7 +381,7 @@ const CSV_COLUMNS = [
   "n", "label", "set", "file", "patch", "mode", "chunkGapMs", "settleMs", "presetChangeMs", "plannedMs",
   "burstMs", "settleActualMs", "writeMs", "totalMs", "polls", "firstReply", "firstReplyMs", "newAtMs",
   "pollTrace", "verified", "rechecked", "hidden", "reason", "late", "lateWhen", "lateDiff",
-  "otherDiff", "otherDiffLast", "verifyBeforeSwitch",
+  "otherDiff", "otherDiffLast", "verifyBeforeSwitch", "lateMode",
 ];
 
 /** One row per write, for pasting into a spreadsheet or the journal. */
