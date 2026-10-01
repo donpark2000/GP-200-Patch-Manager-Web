@@ -50,7 +50,11 @@ This journal records only what's new or different for the browser.
   fix the remaining timers (a Web Worker clock, or timestamped
   `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
   replaced by read-backs, only the 7 chunk gaps would still need timers.
-- **T2. Restore speed.** About 1.9 s per patch at the CLI's pacing (a full
+- **T2. Restore speed.** *Answered on hardware (entries below, ending
+  "Restore switched to read-back pacing"): no fixed pause is needed; the
+  restore now reads back until the patch matches, about 0.13 s per patch.
+  Moves to Resolved once the phase 2 gate passes with it.* Original
+  question: about 1.9 s per patch at the CLI's pacing (a full
   restore takes about 8 minutes); the 1 s settle dominates. The CLI's
   `calibrate-settle` history shows settle was once suspected in write
   failures that later traced to the dead bytes, so a shorter settle may be
@@ -435,3 +439,187 @@ about real Chrome.
 6. Restore the 64A-64D baseline; export and `compare-zips` against it.
 Any change to the shipped timing or to DESIGN.md's "one read-back" rule
 waits for these results.
+
+**Hardware step 1 (fixed mode, CLI timing, tab visible): 16 of 16 verified.**
+4 slots x 4 writes (`gp200_timing_fixed_settle1000_2026-09-30T23-49-59.csv`),
+alternating the developer's own patches (Y: Hard Rock, Lead, Special,
+Mandolin; X: 65 Super Reverb, Friedman BE100, GLASGOW KISS, JCM800 Recipe).
+No confirming re-reads, never hidden. The slots already held set X, so the
+run started with Y and every write changed content.
+- Write (before verify): 1630-1664 ms against 1580 planned. The burst took
+  310-342 ms against 280 (browser timer overhead on 7 chained timers);
+  settle 1001-1017 ms.
+- **The verify read-back took only 3-5 ms** (totalMs - writeMs). A full
+  7-chunk read is nearly free, so the per-patch time is almost all our own
+  pauses (1.3 s of the ~1.65 s), and poll mode can check very often.
+
+**Hardware step 2 (poll mode, settle 1000, tab visible): 16 of 16 verified.**
+(`gp200_timing_poll_settle1000_2026-09-30T23-55-01.csv`, same sets.) Every
+write's first read, 1004-1019 ms after the burst, already held the new
+patch: one poll each, no "old", no "other", no re-reads, never hidden. So
+after the CLI's settle the patch is stored *before* the preset change; the
+preset change isn't what makes it land. Reads again took 3-5 ms.
+
+**Hardware step 3 (poll mode, settle 0, tab visible): 16 of 16 verified.**
+(`gp200_timing_poll_settle0_2026-09-30T23-57-02.csv`, same sets.) The very
+first read after the burst held the new patch every time: first reply
+13-29 ms after the burst (median about 17), one poll each, no timed-out
+polls, no "old", no "other", no re-reads. Write time before verify fell
+from about 1650 ms to 651-674 ms.
+- "After the burst" includes the burst's trailing 40 ms gap, so the pedal
+  answered with the new patch roughly 55-70 ms after the last chunk.
+- These first reads took 10-24 ms against 3-5 ms after a 1 s settle, so
+  the pedal seems to hold the reply briefly while it finishes storing the
+  patch, rather than ignoring the read or answering with the old one.
+- **What this doesn't prove yet:** (a) that a patch read back this early is
+  in flash, not just in RAM: needs a power cycle, then an export; (b) that
+  the preset change, sent about 20 ms after the burst instead of 1 s, was
+  honoured (the verify read passes either way; only the pedal's display
+  shows it); (c) anything at scale: 16 writes. The shipped timing is
+  unchanged.
+
+**Settle-0 follow-up checks: both pass.**
+- *Preset change honoured:* after the settle-0 run the pedal's display
+  showed 64D "JCM800 Recipe" (developer), so the preset change sent about
+  20 ms after the burst, instead of 1.3 s, was acted on.
+- *The patches were stored, not just held in RAM:* the developer power-
+  cycled the pedal, then exported 64A-64D (`gp200_64A_to_64D-new.zip`). Each
+  entry was compared with the set X file last written to it (settle-0 run)
+  using `diffPrstContent`. 64A, 64B, 64D: 0 differences, even counting the
+  dead bytes. 64C (GLASGOW KISS): one difference, at 0x471 (file 1,
+  export 0). That is tail block entry 1 +5, one of the bytes every export
+  forces to 0 (`STUDIO_ADDITIONAL_ZEROED_OFFSETS`, as the CLI does); this
+  file came from elsewhere, not from an export, and is the only one of the
+  four with a non-zero value there. So it's export normalization, not the
+  pedal. The verify, which isn't normalized and does check 0x471, passed all
+  8 GLASGOW KISS writes; the export can't show that one byte after the power
+  cycle, but every byte it does carry persisted.
+
+**Hardware step 3b (poll mode, settle 0, 100 writes, tab visible): 100 of
+100 verified.** (`gp200_timing_poll_settle0_2026-10-01T00-06-21.csv`, 25
+writes per slot, same sets.) Every write's first read held the new patch:
+one poll each, no "old", no "other", no timed-out polls, no re-reads,
+never hidden.
+- First reply after the burst: min 12, median 16, 95th percentile 27,
+  max 34 ms. By slot, the medians were 16-19 ms; 64D had the slowest (34).
+- Write before verify: min 625, median 657, max 677 ms (CLI timing: about
+  1650). With verify: median 662 ms.
+- Together with the settle-0 run, power cycle and preset-change checks:
+  116 settle-0 writes, all landed and verified, all persisted (last
+  write of each slot), and the preset change was obeyed. On this pedal and
+  computer the 1 s settle is not needed for the write to land or for the
+  read-back to see it.
+
+**Hardware step 3c (poll mode, settle 0, after preset change 0, between
+writes 0, 100 writes, tab visible): 100 of 100 verified.**
+(`gp200_timing_poll_settle0_2026-10-01T00-10-01.csv`.) First read held the
+new patch every time (13-34 ms, median 20), one poll each, no re-reads.
+The verify read, sent right after the preset change, answered in 2-5 ms,
+so the pedal doesn't ignore reads while loading a preset, and the next
+upload right after the verify landed every time. Write 336-377 ms, nearly
+all of it the 7-chunk burst (median 336 ms). So the two CLI 300 ms pauses
+aren't needed for writes to land on this pedal and computer.
+
+**Tool change for the chunk-gap test:** `sendUpload` with `chunkGapMs: 0`
+now sends all 7 chunks at once with no timer. Before, a 0 ms gap still
+went through `setTimeout`, which browsers stretch to about 4 ms after a few
+nested calls, so "0" really meant about 4 ms. The shipped 40 ms is
+unaffected. Test added (77 tests, all passing).
+
+**Hardware step 4a (chunk gap 10 ms, all other pauses 0, poll mode, 100
+writes, tab visible): 100 of 100 verified.**
+(`gp200_timing_poll_settle0_2026-10-01T00-56-07.csv`.) First read held the
+new patch every time, one poll each, no re-reads. Burst 75-83 ms (planned
+70); whole write 127-201 ms (median 143) against about 356 ms with 40 ms
+gaps.
+- The pedal took longer to answer after a faster burst: first reply 51-121
+  ms after the burst (median 63) against 13-34 ms with 40 ms gaps. Counted
+  from the *first* chunk instead, it's much faster (about 145 ms against
+  about 356), so the pedal seems to work through queued chunks after the
+  burst rather than needing gaps between them.
+- **Commit time depends on the patch.** First reply by patch: JCM800 Recipe
+  106-121 ms and Friedman BE100 median 106 (one 70), the others medians
+  57-72. In the 40 ms run the slowest writes were also on 64D. A fixed
+  settle sized from one patch could be too short for another; reading
+  until the patch appears adapts to that.
+
+**Hardware step 4b (chunk gap 0, i.e. all 7 chunks sent at once, all other
+pauses 0, poll mode, 100 writes, tab visible): 100 of 100 verified.**
+(`gp200_timing_poll_settle0_2026-10-01T00-57-05.csv`.) First read held the
+new patch every time, one poll each, no re-reads. The burst itself took
+0 ms of page time (the sends are queued, not paced); the first reply came
+67-154 ms later (median 117), and that is the whole write: 72-159 ms with
+verify, median 122. At that rate a 256-slot restore is about 35 s of
+writing, against about 8 minutes at the CLI's pacing.
+- Per patch, the first-reply time was again patch-dependent (medians
+  107-143 ms), and some patches were bimodal (JCM800 Recipe: about 80 or
+  about 145-155).
+- Every pause in the write path has now been run at 0 for 100 writes each,
+  with no failures. The write path then has no timers at all, which would
+  also settle T1 (a hidden tab can't slow a timer that isn't there), apart
+  from read timeouts, which only fire when something has already gone
+  wrong.
+- **Limits of the evidence so far:** 0 failures in 100 writes bounds the
+  failure rate at roughly 3% (95%); not yet checked at these settings: the
+  pedal's display (slot switch obeyed), persistence across a power cycle,
+  a hidden tab, more than 8 different patches, and the second computer.
+
+**Hardware step 4c (repeat of 4b: chunk gap 0, all pauses 0, 100 writes):
+100 of 100 verified.** (`gp200_timing_poll_settle0_2026-10-01T00-59-06.csv`.
+`...00-58-08.csv` is a second download of 4b's results, byte-identical.)
+First read held the new patch every time; first reply 66-156 ms. So 200
+of 200 writes at the most aggressive settings, and 516 of 516 across
+every no-settle run so far, with no failure, re-read or timed-out poll.
+200 clean writes bounds the failure rate at these settings at roughly
+1.5% (95%). The last write to every slot was set Y.
+
+**Fastest-settings follow-up checks: both pass.**
+- *Preset change honoured:* after step 4c the pedal's display showed 64D
+  (developer), with no pause anywhere in the write path.
+- *Stored across a power cycle:* the developer power-cycled the pedal and
+  exported 64A-64D (`gp200_64A_to_64D.zip`, 18:01). Every entry matched
+  the set Y file last written to it in step 4c (Hard Rock, Lead, Special,
+  Mandolin): 0 differences, even counting the dead bytes.
+
+So at chunk gap 0 with no pauses: 200 of 200 writes verified, the last
+write to every slot survived a power cycle byte for byte, and the slot
+switch was obeyed.
+
+## 2026-10-01: Restore switched to read-back pacing
+
+Agreed with the developer after the T2 runs above. The restore
+(`GP200.writeSlot`) now sends all 7 chunks at once, reads the slot back
+until it matches (`verifyWrite`: each read up to 500 ms, re-reads 25 ms
+apart, at least one re-read, then up to 3 s in all), then sends the preset
+change; no fixed pauses, and none between patches. The CLI's pacing is
+kept as `CLI_WRITE_TIMING` for the timing test (new "CLI's timing"
+button), whose defaults are now the restore's own timing. `DESIGN.md`'s
+reliability rules are updated to match.
+
+Why read-until-match and not a short fixed pause: the save time depends on
+the patch (12-155 ms seen), so any fixed pause is a guess, and a fixed
+pause is a timer a hidden tab can stretch. The 3 s limit is about 20x the
+slowest save seen; it only matters when something is wrong.
+
+Change from the old verify: before, a mismatch got exactly one confirming
+re-read; now it gets re-reads until the limit. The 0-limit case still
+re-reads once (tested). A write that never lands still fails, after about
+3 s, with the last mismatches.
+
+Tests (82, all passing): the shipped timing pinned to the measured values;
+the order upload -> read -> preset change; a slow save (fake pedal
+`commitMs`) waited for; a pedal silent while saving re-read until it
+answers; a write that never lands failing after the limit with the slot
+still selected; the zero-limit confirming re-read.
+
+**Not yet verified on hardware:** the restore feature itself with this
+timing (the timing test exercised the same steps, in a slightly different
+order: its verify comes after the preset change). Next: the phase 2 gate
+(shifted restore of all 256 slots, then restore back), then a hidden-tab
+restore (T1) and the second computer.
+
+Planning note for the gate: in the 15:48 export
+(`gp200_all_patches-roundrobin.zip`), 101 of the 255 shifted writes would
+put an identical patch over itself (a run of 45 "Template" patches from
+36D, and neighbouring "It's GP-200" defaults), so they can't show whether
+they landed. About 154 slots really change.

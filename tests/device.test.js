@@ -2,7 +2,9 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { checkDump, findGp200Ports, GP200, plannedWriteMs, ReadError, slowWriteWarning } from "../src/core/device.js";
+import {
+  checkDump, CLI_WRITE_TIMING, findGp200Ports, GP200, plannedWriteMs, ReadError, slowWriteWarning, WRITE_TIMING,
+} from "../src/core/device.js";
 import { Logger } from "../src/core/log.js";
 import { exportPrst } from "../src/core/prst.js";
 import { skeletonBytes } from "../src/core/skeleton.js";
@@ -115,17 +117,83 @@ test("readOnce: one attempt with its own timeout, no retry and no warning", asyn
   assert.ok(!log.lines.some((l) => l.includes("WARN")));
 });
 
-test("writeSlot: reports how long each phase took against the plan", async () => {
-  const { dev } = setup({}, { timing: { chunkGapMs: 2, settleMs: 20, presetChangeMs: 5 } });
-  const t = await dev.writeSlot(3, exportPrst(dumpWithName("Timed"), skeletonBytes()));
-  assert.equal(t.plannedMs, plannedWriteMs({ chunkGapMs: 2, settleMs: 20, presetChangeMs: 5 }));
-  assert.equal(t.plannedMs, 39);
-  assert.ok(t.settleMs >= 19 && t.burstMs >= 13 && t.totalMs >= 38, JSON.stringify(t));
+const FAST = { ...WRITE_TIMING, readBackTimeoutMs: 50, readBackRetryMs: 0, readBackLimitMs: 150 };
+const kinds = (pedal) => pedal.sent.map((m) => (m[8] === 0x12 && m[9] === 0x20 ? "U" : m[9] === 0x10 ? "R" : m[9] === 0x08 ? "P" : "?"));
+
+test("restore timing: the shipped values are the ones measured on hardware (DEV_JOURNAL.md T2)", () => {
+  assert.deepEqual(WRITE_TIMING, {
+    chunkGapMs: 0, settleMs: 0, presetChangeMs: 0, readBackTimeoutMs: 500, readBackRetryMs: 25, readBackLimitMs: 3000,
+  });
+  assert.equal(plannedWriteMs(WRITE_TIMING), 0);
+  assert.equal(plannedWriteMs(CLI_WRITE_TIMING), 1580);
+});
+
+test("writeSlot: upload, read back until it matches, then the preset change", async () => {
+  const { dev, pedal } = setup({}, { timing: FAST });
+  await dev.connect();
+  pedal.sent.length = 0;
+  const r = await dev.writeSlot(3, exportPrst(dumpWithName("Ordered"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, true);
+  assert.equal(r.reads, 1);
+  assert.deepEqual(kinds(pedal), ["U", "U", "U", "U", "U", "U", "U", "R", "P"]);
+  assert.equal(pedal.activeSlot, 3);
+  assert.ok(r.totalMs >= r.readBackMs);
+});
+
+test("writeSlot: a slow save is waited for, not reported as a failure", async () => {
+  const { dev, log } = setup({ commitMs: 40 }, { timing: FAST });
+  await dev.connect();
+  const r = await dev.writeSlot(3, exportPrst(dumpWithName("Slow Save"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, true);
+  assert.ok(r.reads > 1 && r.recheckedAfterMismatch, JSON.stringify({ reads: r.reads }));
+  assert.ok(log.lines.some((l) => l.includes("INFO") && l.includes("matched on read-back")));
+  assert.ok(!log.lines.some((l) => l.includes("WARN")), "a slow save is normal, not a warning");
+});
+
+test("writeSlot: a pedal that stays silent while saving is re-read until it answers", async () => {
+  const { dev } = setup({ commitMs: 60, readsDuringCommit: "ignore" }, { timing: { ...FAST, readBackTimeoutMs: 20 } });
+  await dev.connect();
+  const r = await dev.writeSlot(3, exportPrst(dumpWithName("Quiet Save"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, true);
+  assert.ok(r.reads > 1);
+});
+
+test("writeSlot: a write that never lands fails after the limit, with at least one re-read, and still selects the slot", async () => {
+  const { dev, pedal } = setup({}, { timing: FAST }); // no connect(): uploads are discarded
+  const started = performance.now();
+  const r = await dev.writeSlot(5, exportPrst(dumpWithName("Never"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, false);
+  assert.ok(r.reads >= 2 && r.mismatches.length > 0);
+  assert.ok(performance.now() - started >= 150, "kept trying until the limit");
+  assert.equal(pedal.activeSlot, 5);
+});
+
+test("verifyWrite: even with a zero limit, a mismatch gets one confirming re-read", async () => {
+  const { dev } = setup({}, { timing: { ...FAST, readBackLimitMs: 0 } });
+  const r = await dev.verifyWrite(5, exportPrst(dumpWithName("Not There"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, false);
+  assert.equal(r.reads, 2);
 });
 
 test("slowWriteWarning: quiet at normal speed, warns when throttled", () => {
   assert.equal(slowWriteWarning("64A", { totalMs: 1900, plannedMs: 1580 }), null);
   assert.equal(slowWriteWarning("64A", { totalMs: 400, plannedMs: 0 }), null, "tiny plans need 500 ms of slack");
   assert.match(slowWriteWarning("64A", { totalMs: 9800, plannedMs: 1580 }, true), /took 9\.8 s, planned 1\.6 s \(the page was hidden/);
+  assert.equal(slowWriteWarning("64A", { totalMs: 150, plannedMs: 0 }), null, "a normal write with no pauses");
+  assert.equal(slowWriteWarning("64A", { totalMs: 1200, plannedMs: 0 }), "64A: the write took 1.2 s");
   assert.doesNotMatch(slowWriteWarning("64A", { totalMs: 9800, plannedMs: 1580 }, false), /hidden/);
+});
+
+test("sendUpload: a chunk gap of 0 sends all 7 chunks at once; any gap paces them", async () => {
+  const prst = exportPrst(dumpWithName("Burst"), skeletonBytes());
+  const uploads = (pedal) => pedal.sent.filter((m) => m[8] === 0x12 && m[9] === 0x20).length;
+  const fast = setup({}, { timing: { chunkGapMs: 0, settleMs: 0, presetChangeMs: 0 } });
+  const done = fast.dev.sendUpload(3, prst);
+  assert.equal(uploads(fast.pedal), 7, "all sent before the first await returns");
+  await done;
+  const paced = setup({}, { timing: { chunkGapMs: 5, settleMs: 0, presetChangeMs: 0 } });
+  const pending = paced.dev.sendUpload(3, prst);
+  assert.equal(uploads(paced.pedal), 1, "only the first chunk goes out before the first pause");
+  await pending;
+  assert.equal(uploads(paced.pedal), 7);
 });

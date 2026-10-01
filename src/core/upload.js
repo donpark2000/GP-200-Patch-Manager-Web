@@ -4,7 +4,7 @@
 // starting slot). Nothing here runs without the user confirming the plan.
 
 import { findIrNamDependencies, isPrst, prstFileName, describeOffset, CONTENT_FILE_START } from "./prst.js";
-import { slowWriteWarning } from "./device.js";
+import { plannedWriteMs, slowWriteWarning } from "./device.js";
 import { labelToSlot, slotToLabel, TOTAL_SLOTS } from "./slots.js";
 import { readZip } from "./unzip.js";
 
@@ -112,15 +112,17 @@ export function planWarnings(plan) {
 }
 
 /**
- * Write and verify each planned item, in order. Stops between patches
- * (never mid-patch) if cancelled.
+ * Write and verify each planned item, in order (device.writeSlot: upload,
+ * read back until it matches, preset change). Stops between patches (never
+ * mid-patch) if cancelled. `betweenSlotsMs` is 0: the CLI's 300 ms pause
+ * proved unnecessary on hardware (DEV_JOURNAL.md T2).
  * @param {import("./device.js").GP200} device
  * @param {object} opts
  * @param {(sinceMs: number) => boolean} [opts.wasHidden] true if the page was
  *   hidden at any point since performance.now() was `sinceMs` (UI supplies it)
  */
 export async function writeSlots(device, items, {
-  skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = 300, wasHidden = () => false,
+  skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = 0, wasHidden = () => false,
 }) {
   const results = [];
   let cancelled = false;
@@ -134,11 +136,10 @@ export async function writeSlots(device, items, {
     const it = items[i];
     log.info(`${it.fileName} -> ${it.label}: writing "${it.patchName}"`);
     const writeStarted = performance.now();
-    const timing = await device.writeSlot(it.slot, it.data);
-    const slow = slowWriteWarning(it.label, timing, wasHidden(writeStarted));
+    const v = await device.writeSlot(it.slot, it.data, skeleton);
+    const slow = slowWriteWarning(it.label, { totalMs: v.totalMs, plannedMs: plannedWriteMs(device.timing) }, wasHidden(writeStarted));
     if (slow) log.warn(slow);
-    else log.debug(`${it.label}: write took ${timing.totalMs.toFixed(0)} ms (planned ${timing.plannedMs} ms)`);
-    const v = await device.verifyWrite(it.slot, it.data, skeleton);
+    else log.debug(`${it.label}: written in ${v.totalMs.toFixed(0)} ms (read back after ${v.readBackMs.toFixed(0)} ms, ${v.reads} read(s))`);
     if (v.ok) {
       log.info(`${it.label}: verified, now reads "${v.deviceName}"`);
     } else {
@@ -151,13 +152,15 @@ export async function writeSlots(device, items, {
     }
     results.push({ ...it, ...v });
     onProgress({ done: i + 1, total: items.length, label: it.label, ok: v.ok });
-    if (i < items.length - 1) await sleep(betweenSlotsMs);
+    if (i < items.length - 1 && betweenSlotsMs > 0) await sleep(betweenSlotsMs);
   }
   const failed = results.filter((r) => !r.ok);
+  const reread = results.filter((r) => r.ok && r.reads > 1);
   const secs = ((performance.now() - started) / 1000).toFixed(1);
   log.info(`Wrote ${results.length} of ${items.length} patch(es) in ${secs} s: ` +
     `${results.length - failed.length} verified, ${failed.length} not verified` +
-    (failed.length ? ` (${failed.map((r) => r.label).join(", ")})` : ""));
+    (failed.length ? ` (${failed.map((r) => r.label).join(", ")})` : "") +
+    (reread.length ? `; ${reread.length} verified only after more than one read-back (${reread.map((r) => r.label).join(", ")})` : ""));
   return { results, failed, cancelled };
 }
 

@@ -84,17 +84,24 @@ These are deliberately simpler than the CLI's. See the journal entry of
   3. Re-read that slot only if a read times out or fails a check, up to 3
      attempts in all; then skip it with an error. No "read until two reads
      agree" loop.
-- **Writes (phase 2): write, then one read-back compare**, ignoring the
-  device-owned bytes and the dead bytes, exactly as the CLI's
-  `verify_write_full` does. If the read-back mismatches, re-read **once**
-  before calling it a failure, so read noise can't pose as a failed write.
-  Report a clear pass/fail. No automatic rewrites (the CLI tries up to 10);
-  the user decides whether to retry.
+- **Writes (phase 2): write, then read back until it matches**, comparing
+  as the CLI's `verify_write_full` does (device-owned and dead bytes
+  ignored). The pedal sends no write ACK, so the read-back *is* the ACK: it
+  waits exactly as long as each patch takes to save. A failed or
+  mismatching read is re-read (at least once, then for up to 3 s), so read
+  noise or a slow save can't pose as a failed write. Report a clear
+  pass/fail. No automatic rewrites (the CLI tries up to 10); the user
+  decides whether to retry.
 - **Write method: flash upload only**, ported byte-for-byte from the CLI
-  (golden-tested) with the CLI's pacing: 40 ms between the 7 chunks, a
-  1 s settle, then a preset change to the written slot. So after a
-  restore, **the pedal is left on the last slot written**. The CLI's
-  "live" method and experimental save-commit are not ported.
+  (golden-tested). **Pacing differs from the CLI on purpose:** all 7 chunks
+  are sent at once, then the read-back, then a preset change to the written
+  slot, with no fixed pauses anywhere (the CLI waits 40 ms between chunks,
+  1 s to settle, 300 ms after the preset change and 300 ms between
+  patches). Every one of those pauses was measured on hardware and found
+  unnecessary (journal, T2): about 0.13 s per patch instead of about 2 s,
+  and with no timers in the write path a background tab can't slow it
+  (T1). After a restore, **the pedal is left on the last slot written**.
+  The CLI's "live" method and experimental save-commit are not ported.
 - These rules hold only if the browser's MIDI path behaves like the CLI's.
   The acceptance tests below exist to prove that.
 
@@ -173,6 +180,13 @@ that silently did nothing would still pass. So:
 3. Export and confirm the change actually landed.
 4. Restore A with the web app.
 5. Export all → must match A exactly.
+
+Restoring A from 1B shifts every patch up one slot: 1A is left as it is,
+and the 64D file doesn't fit and isn't written (the preview says so). A
+shifted write only proves something where neighbouring patches differ;
+runs of identical patches (blank templates, factory defaults) can't show
+whether their writes landed. Step 3 therefore compares each slot with A's
+patch from the slot below, and counts how many slots really changed.
 
 ## Parity with the CLI
 

@@ -9,18 +9,22 @@
 // preset change. Nothing here changes the shipped timing; the numbers are
 // evidence for deciding whether to.
 
-import { plannedWriteMs } from "./device.js";
+import { CLI_WRITE_TIMING, plannedWriteMs, WRITE_TIMING } from "./device.js";
 import { buildPrstFromDump, DEAD_BYTE_FILE_OFFSETS, diffPrstContent, isPrst, prstFileName } from "./prst.js";
 import { labelToSlot, slotToLabel } from "./slots.js";
 
 /** Factory-default slots, safe to overwrite (a factory reset restores them). */
 export const SCRATCH_SLOTS = ["64A", "64B", "64C", "64D"].map(labelToSlot);
 
+/** Defaults: the restore's own timing, so a run checks what ships. */
 export const TUNING_DEFAULTS = {
-  mode: "fixed", cycles: 4,
-  chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300, betweenSlotsMs: 300,
-  pollTimeoutMs: 500, pollMaxMs: 5000,
+  mode: "poll", cycles: 4,
+  chunkGapMs: WRITE_TIMING.chunkGapMs, settleMs: WRITE_TIMING.settleMs, presetChangeMs: WRITE_TIMING.presetChangeMs,
+  betweenSlotsMs: 0, pollTimeoutMs: WRITE_TIMING.readBackTimeoutMs, pollMaxMs: WRITE_TIMING.readBackLimitMs,
 };
+
+/** The CLI's pacing, for comparison runs (e.g. on another computer). */
+export const TUNING_CLI = { ...TUNING_DEFAULTS, mode: "fixed", ...CLI_WRITE_TIMING, betweenSlotsMs: 300 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

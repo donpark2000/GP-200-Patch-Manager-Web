@@ -12,7 +12,7 @@ import { checkTuningSets, runTuning, sameContent, SCRATCH_SLOTS, summarizeTuning
 import { baseDump, dumpWithName } from "./helpers/fixtures.js";
 import { FakePedal } from "./helpers/fake-pedal.js";
 
-const NO_DELAY = { chunkGapMs: 0, settleMs: 0, presetChangeMs: 0 };
+const NO_DELAY = { chunkGapMs: 0, settleMs: 0, presetChangeMs: 0, readBackTimeoutMs: 50, readBackRetryMs: 0, readBackLimitMs: 150 };
 const entry = (name) => ({ name: `${name}.prst`, data: exportPrst(dumpWithName(name), skeletonBytes()) });
 const setX = [entry("X-A"), entry("X-B")];
 const setY = [entry("Y-A"), entry("Y-B")];

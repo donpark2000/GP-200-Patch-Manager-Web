@@ -7,6 +7,7 @@ node_modules/
 /*.prst.*
 /*.zip
 /gp200_*.log
+/gp200_*.csv
 
 # Editors / OS cruft
 .vscode/
