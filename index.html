@@ -103,6 +103,10 @@
         <label><input type="checkbox" id="tune-late-each" checked> Late-check each slot before overwriting it
           (more checks; adds one read, a few ms, before each upload)</label>
       </div>
+      <div class="row">
+        <label><input type="checkbox" id="tune-verify-first"> Verify before the preset change, as the withdrawn fast
+          restore did (nothing is sent between the preset change and the next upload)</label>
+      </div>
       <ul id="tune-warnings" class="warnings"></ul>
       <div class="row">
         <button id="tune-run" disabled>Run timing test</button>

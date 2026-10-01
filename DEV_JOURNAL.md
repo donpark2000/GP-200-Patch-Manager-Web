@@ -756,6 +756,9 @@ with the developer: test output lives outside the repo, in
 For the developer to add to `software-project-standards` (CLAUDE.md
 working standard 5). Project-specific details stay in `CLAUDE.md`.
 
+*All three are now in the skill (checked 2026-10-01): item 1 as section 5,
+item 2 as "Check the end state" in section 3, item 3 as section 6.*
+
 1. **Keep disposable test artifacts out of the repo.** Hardware or manual
    test runs write their outputs (exports, logs, CSVs, fixtures made for
    one run) to a dated session folder outside the repo
@@ -867,3 +870,160 @@ A: CLI pacing, expect clean. B: all four pauses 0, expect late-check
 failures (if B is clean, repeat with the checkbox off before trusting the
 test). C: chunk gap 0, settle 0, after preset change 300, between 300.
 D: only if C is clean, reduce the post-switch pauses one at a time.
+
+## 2026-10-01: Late-check runs A-C (hardware)
+
+Run by the developer in Edge 155 from localhost, session folder
+`2026-10-01_timing-late-check\`: baseline export `gp200_64A_to_64D.zip`
+(16:00, all four "It's GP-200" factory defaults) and one log for all three
+runs, `gp200_web_2026-10-01T23-05-34.log`. No CSVs were downloaded; the log
+has every write. **Each run did 4 writes per slot (16 in all), not the
+planned 10:** the panel's default was left in place. Late check before each
+overwrite on, page visible during every run.
+
+| Run | Mode | Gap / settle / after switch / between (ms) | Verified | Late check changed | Write median (ms) |
+|---|---|---|---|---|---|
+| A | fixed | 40 / 1000 / 300 / 300 | 16 of 16 | 0 of 16 | 1647 |
+| B | poll | 0 / 0 / 0 / 0 | 16 of 16 | 0 of 16 | 95 |
+| C | poll | 0 / 0 / 300 / 300 | 16 of 16 | 0 of 16 | 382 |
+
+No confirming re-reads anywhere.
+
+- **A** is clean, as expected.
+- **B did not reproduce the fault.** The test that should prove the late
+  check can fail on hardware came back clean, so B and C prove nothing yet
+  about which pause matters. Per the plan, B is to be repeated with "late
+  check before each overwrite" off. That check adds a read in exactly the
+  window under test (preset change -> verify read -> late-check read of the
+  next slot -> upload). Also, the plan's 10 writes per slot.
+- **New: "Love Yourself" never reads back as itself before the preset
+  change.** In B and C, all 4 of its writes (64D, #8 and #16 each run)
+  polled for the full 5 s limit: about 6,000 reads each, every one complete
+  and every one "other" (neither the old patch nor the new one, compared as
+  verify does). The verify read just after the preset change then matched,
+  and the late check after switching away found it unchanged. The other 7
+  patches read back as themselves on the first poll (64-142 ms after the
+  burst). Fixed mode (A) never reads before the switch, so it can't see
+  this.
+- What sets Love Yourself apart in the 0x448 records (`10 00 04 00 | n p v
+  00`): both records have p = 08, and record 1 has v = 2 (`01 08 02`). In
+  every other set file, p = 08 comes with v = 0, and v = 2 only with p = 02.
+  Factory defaults have p = ff, v = 0. *Which bytes the "other" reads
+  differed in isn't logged*, so it isn't known whether this is 0x456.
+  Working hypothesis (untested): v is a state value the pedal recomputes
+  when a preset is loaded, and until then the stored slot reads with its
+  own value there. That would also fit the fast-restore fault (bytes in
+  0x44e/0x456 changed around slot switches).
+
+**Tool change for the next run:** a poll reply classed "other" now records
+where it differed from the new patch: the first such reply (`otherDiff`)
+and the last one, if different (`otherDiffLast`), at most 20 offsets each.
+Both appear on the write's log line and as new CSV columns. Fake pedal:
+`unloadedReads: {off, value}` models the Love Yourself behaviour (reads
+show `value` at `off` until a preset change selects the slot). Tests: 86,
+all passing (three runs). The new test failed with the recording disabled.
+
+**Next run:** B again, with 10 writes per slot, "late check before each
+overwrite" off, log cleared first, and CSV and log both saved to the
+session folder.
+
+## 2026-10-01: Run B2 (B again, late check at the end only)
+
+Same session folder: `gp200_timing_poll_settle0_2026-10-01T23-19-22.csv`
+and `gp200_web_2026-10-01T23-19-33.log` (cleared before the run). Poll
+mode, all four pauses 0, late check at the end only. **Again 4 writes per
+slot (16), not 10:** the page logged and ran 4. The page reads the field
+as typed and resets it only on load and on "Reset to restore's timing", so
+the field held 4 when Run was pressed (cause not known; the confirmation
+prompt shows the total).
+
+- 16 of 16 verified, no re-reads. The late check (end of run, so the last
+  write per slot only) re-read 4 of 16: none changed. **The fault still
+  did not reproduce.**
+- Love Yourself (64D, #8 and #16): every poll reply, 2,880 and 2,929 of
+  them over 5 s, differed from the file in exactly one byte,
+  **0x456: 2 -> 1**, the same in every reply. After the preset change
+  the verify read matched (2), and the end-of-run late check found 2. The
+  other 7 patches matched on the first poll (65-145 ms).
+- So before the slot is selected, the pedal reads back record 1's `v` as 1
+  instead of the 2 that was written (`01 08 02` reads as `01 08 01`).
+  Selecting it makes it read 2. Contrast with the fast restore (journal
+  "Phase 2 gate, first pass"): there Love Yourself verified *before* its
+  preset change (at 5B and 37A), and Hi Sweety, Twiggy Blues and Classic
+  900 read back 0 instead of 2 before theirs, but here they match on the
+  first poll. So what a slot reads back before it is selected depends on
+  something beyond the patch itself (perhaps what was loaded or written
+  just before). Not yet understood.
+
+**Why B may not reproduce the fault: the order differs from the fast
+restore.** The withdrawn restore (commit 540109f, `writeSlot`) did upload
+-> read until match -> preset change -> *next upload at once*. The timing
+test does upload -> poll -> preset change -> **verify read** -> next
+upload, so a full read always lands between the slot switch and the next
+upload (it answered in 2-5 ms in step 3c). That's the window the working
+hypothesis is about. The 2026-10-01 entry "Restore switched to read-back
+pacing" already noted this order difference; it now matters.
+
+*B2's CSV and log were deleted from the session folder by the developer
+before a re-run (not a purge). The numbers above are the record.*
+
+## 2026-10-01: Run B3 (B with 10 writes per slot)
+
+`gp200_timing_poll_settle0_2026-10-01T23-23-51.csv` and
+`gp200_web_2026-10-01T23-25-02.log`. The log confirms the settings: poll
+mode, chunk gap, settle, after preset change and between patches all 0,
+poll timeout 500 / limit 5000 ms, late check at the end only, 10 writes
+per slot (40). The page was hidden briefly before and after the run, never
+during it.
+
+- 40 of 40 verified, no re-reads, never hidden. Late check (end of run,
+  last write per slot): 4 of 40 re-read, none changed. **Fault not
+  reproduced.**
+- Love Yourself, all 5 writes: never read back as itself before the
+  preset change (2,090-2,937 polls each), every reply **0x456: 2 -> 1**.
+  Verify after the switch matched; its last write was fine at the end-of-run
+  check.
+- The other 35 writes matched on the first poll, 66-148 ms after the burst
+  (median 127).
+
+With the verify read still between the switch and the next upload, three
+runs (B, B2, B3: 72 writes) haven't produced the fault.
+
+**Developer's information: patch-change lag.** When changing patches with
+the footswitches, the sound changes after a known lag of 3-5 ms, and during
+the tests the pedal's screen visibly takes longer to change. Relevance:
+(1) the verify read sent right after a preset change answered in 2-5 ms
+(step 3c), about the length of that lag, so one read there could be enough
+to cover the risky window, which fits B never failing; (2) the screen shows
+the pedal keeps working after the sound has changed (the 0x448 records may
+be part of that; unconfirmed), so the safe post-switch pause may be nearer
+the screen's time than the sound's. Run D should try a range (e.g. 300,
+100, 50, 20, 10, 5 ms) rather than assume a few ms is enough.
+
+## 2026-10-01: Timing test: "verify before the switch" option
+
+Built so the test can use the withdrawn fast restore's order: upload ->
+(poll) -> verify -> preset change -> next upload, with nothing sent between
+the preset change and the next upload (checkbox in the `?dev` panel,
+`verifyBeforeSwitch` in `runTuning`). With it on and "late check before
+each overwrite" also on, the log warns, since that check reads in the same
+gap. The log's header line names the order; the CSV has a
+`verifyBeforeSwitch` column and the file name gets `_vfirst`. A failed
+verify's reason now lists the offsets (`... differ from the file:
+0x456:2->1`). Also: "Reset to restore's timing" no longer resets Writes per
+slot (it reset 10 to 4 in run A).
+
+Fake pedal: `fragile.readEndsWindow` (a read after the preset change ends
+the fault window: the working hypothesis). Tests (91, all passing, three
+runs): the message order in both modes (default: a read right after each
+switch; new: an upload right after each switch); under `readEndsWindow`,
+the default order gives no fault and the new order gives late-check
+CHANGED rows whose verifies all passed; a slot that reads differently until
+selected (Love Yourself) fails a before-switch verify with `0x456:2->1`
+and is fine at the late check; the warning. Checked in the built-in
+browser: page loads with no console errors, checkbox present and unticked,
+Reset keeps Writes per slot.
+
+**Expect in B4 (hardware):** Love Yourself's 10 writes fail their verify
+(it reads 0x456 = 1 until selected); that is the known quirk, not the
+fault. The fault shows as late-check CHANGED rows.

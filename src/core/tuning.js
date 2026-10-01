@@ -33,6 +33,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** Pause after the final switch before the end-of-run late check. */
 export const LATE_SETTLE_MS = 1000;
 
+/** Mismatches as "0x456:2->0 ...", at most `max` of them. */
+export function formatDiffs(diffs, max = Infinity) {
+  const shown = diffs.slice(0, max).map((m) => `0x${m.off.toString(16)}:${m.expected}->${m.actual}`).join(" ");
+  return diffs.length > max ? `${shown} (+${diffs.length - max} more)` : shown;
+}
+
+/** At most this many offsets per "other" poll reply in the log and CSV. */
+const OTHER_DIFF_MAX = 20;
+
 /** Same patch as far as a verify can tell (device-owned and dead bytes ignored). */
 export function sameContent(a, b) {
   return diffPrstContent(a, b, DEAD_BYTE_FILE_OFFSETS).length === 0;
@@ -70,6 +79,11 @@ export function checkTuningSets(setX, setY) {
  * @param {"fixed"|"poll"} o.mode fixed: settle, preset change, verify (a
  *   restore). poll: settle, then read until the new patch appears (bounded
  *   by pollMaxMs), then the same preset change and verify.
+ * @param {boolean} [o.verifyBeforeSwitch] verify before the preset change
+ *   instead of after it, so nothing is sent between the preset change and
+ *   the next upload: the order of the withdrawn fast restore (commit
+ *   540109f), which the default order can't reproduce because its verify
+ *   read lands right after the switch
  * @param {boolean} [o.lateBeforeOverwrite] also late-check each slot just
  *   before it's overwritten (adds one read before each upload)
  * @param {number} [o.lateSettleMs] pause before the end-of-run late check
@@ -79,16 +93,21 @@ export function checkTuningSets(setX, setY) {
 export async function runTuning(device, {
   setX, setY, mode = TUNING_DEFAULTS.mode, cycles = TUNING_DEFAULTS.cycles, timing, betweenSlotsMs = 300,
   pollTimeoutMs = TUNING_DEFAULTS.pollTimeoutMs, pollMaxMs = TUNING_DEFAULTS.pollMaxMs,
-  lateBeforeOverwrite = true, lateSettleMs = LATE_SETTLE_MS,
+  verifyBeforeSwitch = false, lateBeforeOverwrite = true, lateSettleMs = LATE_SETTLE_MS,
   skeleton, log, wasHidden = () => false, isCancelled = () => false, onProgress = () => {},
 }) {
   const problems = checkTuningSets(setX, setY);
   if (problems.length) throw new Error(problems.join(" "));
   const slots = SCRATCH_SLOTS.slice(0, setX.length);
   const total = cycles * slots.length;
+  if (verifyBeforeSwitch && lateBeforeOverwrite) {
+    log.warn("Timing test: the late check before each overwrite reads the next slot right after the preset change, " +
+      "so with verify before the switch there is still a read in that gap. Untick it to test the fast restore's order.");
+  }
   log.info(`Timing test: ${mode} mode, ${cycles} write(s) to each of ${slots.map(slotToLabel).join(", ")} (${total} in all); ` +
     `chunk gap ${timing.chunkGapMs} ms, settle ${timing.settleMs} ms, after preset change ${timing.presetChangeMs} ms, ` +
     `between patches ${betweenSlotsMs} ms` + (mode === "poll" ? `, poll timeout ${pollTimeoutMs} ms, poll limit ${pollMaxMs} ms` : "") +
+    (verifyBeforeSwitch ? "; verify BEFORE the preset change (fast restore's order)" : "") +
     `; late check at the end${lateBeforeOverwrite ? " and before each overwrite" : " only"}`);
 
   const current = [];
@@ -118,7 +137,7 @@ export async function runTuning(device, {
       const entry = useY ? setY[i] : setX[i];
       const row = await tuneOneWrite(device, {
         slot: slots[i], entry, set: useY ? "Y" : "X", previous: current[i], mode, timing,
-        pollTimeoutMs, pollMaxMs, skeleton, wasHidden,
+        pollTimeoutMs, pollMaxMs, verifyBeforeSwitch, skeleton, wasHidden,
       });
       row.n = rows.length + 1;
       rows.push(row);
@@ -167,7 +186,7 @@ async function lateCheck(device, slot, row, when, skeleton, log) {
   }
   const diffs = diffPrstContent(row.data, now, DEAD_BYTE_FILE_OFFSETS);
   row.late = diffs.length ? "CHANGED" : "ok";
-  row.lateDiff = diffs.map((m) => `0x${m.off.toString(16)}:${m.expected}->${m.actual}`).join(" ");
+  row.lateDiff = formatDiffs(diffs);
   if (diffs.length) {
     log.error(`Late check #${row.n} ${row.label} "${row.patch}" (${when}): CHANGED since it was written ` +
       `(${row.verified ? "its verify had passed" : "its verify had failed"}): ${row.lateDiff}`);
@@ -177,14 +196,16 @@ async function lateCheck(device, slot, row, when, skeleton, log) {
   return now;
 }
 
-async function tuneOneWrite(device, { slot, entry, set, previous, mode, timing, pollTimeoutMs, pollMaxMs, skeleton, wasHidden }) {
+async function tuneOneWrite(device, {
+  slot, entry, set, previous, mode, timing, pollTimeoutMs, pollMaxMs, verifyBeforeSwitch, skeleton, wasHidden,
+}) {
   const t0 = performance.now();
   const row = {
     slot, data: entry.data, late: "", lateWhen: "", lateDiff: "",
-    label: slotToLabel(slot), set, file: entry.name, patch: prstFileName(entry.data), mode,
+    label: slotToLabel(slot), set, file: entry.name, patch: prstFileName(entry.data), mode, verifyBeforeSwitch,
     chunkGapMs: timing.chunkGapMs, settleMs: timing.settleMs, presetChangeMs: timing.presetChangeMs,
     plannedMs: plannedWriteMs(timing),
-    polls: 0, firstReply: null, firstReplyMs: null, newAtMs: null, pollTrace: "",
+    polls: 0, firstReply: null, firstReplyMs: null, newAtMs: null, pollTrace: "", otherDiff: "", otherDiffLast: "",
   };
   row.burstMs = await device.sendUpload(slot, entry.data, timing);
   const tBurst = performance.now();
@@ -193,12 +214,19 @@ async function tuneOneWrite(device, { slot, entry, set, previous, mode, timing, 
   if (mode === "poll") {
     Object.assign(row, await pollUntilNew(device, slot, entry.data, previous, skeleton, tBurst, { pollTimeoutMs, pollMaxMs }));
   }
-  await device.selectSlot(slot, timing);
-  row.writeMs = performance.now() - t0; // everything before the verify
-  const v = await device.verifyWrite(slot, entry.data, skeleton);
+  let v;
+  if (verifyBeforeSwitch) {
+    row.writeMs = performance.now() - t0;
+    v = await device.verifyWrite(slot, entry.data, skeleton);
+    await device.selectSlot(slot, timing);
+  } else {
+    await device.selectSlot(slot, timing);
+    row.writeMs = performance.now() - t0; // everything before the verify
+    v = await device.verifyWrite(slot, entry.data, skeleton);
+  }
   row.verified = v.ok;
   row.rechecked = v.recheckedAfterMismatch;
-  row.reason = v.reason ?? "";
+  row.reason = (v.reason ?? "") + (v.mismatches?.length ? `: ${formatDiffs(v.mismatches, OTHER_DIFF_MAX)}` : "");
   row.roundtrip = v.roundtrip;
   row.totalMs = performance.now() - t0;
   row.hidden = wasHidden(t0);
@@ -209,10 +237,13 @@ async function tuneOneWrite(device, { slot, entry, set, previous, mode, timing, 
  * Read `slot` repeatedly from the end of the upload burst until it holds
  * `expected` or `pollMaxMs` has passed. Each answer is classed as the new
  * patch, the old one, or "other" (neither: a partial commit, or chunks from
- * two replies mixed after a timed-out poll).
+ * two replies mixed after a timed-out poll). For "other" answers, records
+ * where the first and the last one differed from the new patch
+ * (`otherDiff`; `otherDiffLast` only if it differs from the first).
  */
 async function pollUntilNew(device, slot, expected, previous, skeleton, tBurst, { pollTimeoutMs, pollMaxMs }) {
-  const out = { polls: 0, firstReply: "none", firstReplyMs: null, newAtMs: null };
+  const out = { polls: 0, firstReply: "none", firstReplyMs: null, newAtMs: null, otherDiff: "", otherDiffLast: "" };
+  let lastOther = "";
   const trace = [];
   while (performance.now() - tBurst < pollMaxMs) {
     const r = await device.readOnce(slot, pollTimeoutMs);
@@ -225,12 +256,17 @@ async function pollUntilNew(device, slot, expected, previous, skeleton, tBurst, 
     const got = buildPrstFromDump(r.decoded, skeleton);
     const kind = sameContent(got, expected) ? "new" : sameContent(got, previous) ? "old" : "other";
     trace.push(`${at}:${kind}`);
+    if (kind === "other") {
+      lastOther = formatDiffs(diffPrstContent(expected, got, DEAD_BYTE_FILE_OFFSETS), OTHER_DIFF_MAX);
+      if (!out.otherDiff) out.otherDiff = lastOther;
+    }
     if (out.firstReplyMs === null) Object.assign(out, { firstReply: kind, firstReplyMs: at });
     if (kind === "new") {
       out.newAtMs = at;
       break;
     }
   }
+  if (lastOther !== out.otherDiff) out.otherDiffLast = lastOther;
   out.pollTrace = trace.join(" ");
   return out;
 }
@@ -244,7 +280,10 @@ function describeRow(r) {
     text += r.firstReplyMs === null
       ? `; no reply to ${r.polls} poll(s)`
       : `; first reply at ${r.firstReplyMs} ms after the burst was ${r.firstReply}, ` +
-        (r.newAtMs === null ? "new patch never seen" : `new patch at ${r.newAtMs} ms`) + ` [${r.pollTrace}]`;
+        (r.newAtMs === null ? "new patch never seen" : `new patch at ${r.newAtMs} ms`) +
+        (r.otherDiff ? `; "other" replies differed from the new patch at ${r.otherDiff}` +
+          (r.otherDiffLast ? `, the last one at ${r.otherDiffLast}` : "") : "") +
+        ` [${r.pollTrace}]`;
   }
   return text + (r.hidden ? "; PAGE WAS HIDDEN" : "");
 }
@@ -306,6 +345,7 @@ const CSV_COLUMNS = [
   "n", "label", "set", "file", "patch", "mode", "chunkGapMs", "settleMs", "presetChangeMs", "plannedMs",
   "burstMs", "settleActualMs", "writeMs", "totalMs", "polls", "firstReply", "firstReplyMs", "newAtMs",
   "pollTrace", "verified", "rechecked", "hidden", "reason", "late", "lateWhen", "lateDiff",
+  "otherDiff", "otherDiffLast", "verifyBeforeSwitch",
 ];
 
 /** One row per write, for pasting into a spreadsheet or the journal. */

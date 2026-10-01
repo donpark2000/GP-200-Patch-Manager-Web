@@ -18,7 +18,15 @@
 // `fragile: {off, windowMs}` models the fault the 2026-10-01 full restore
 // found: if an upload or a preset change to another slot arrives within
 // `windowMs` of a preset change, the pedal zeroes file offset `off` in the
-// slot it had just switched to -- after any verify of that slot.
+// slot it had just switched to -- after any verify of that slot. With
+// `readEndsWindow: true`, a read request after the preset change ends the
+// window (the working hypothesis for why the timing test, whose verify read
+// comes right after the switch, didn't reproduce the fault on hardware).
+//
+// `unloadedReads: {off, value}` models what "Love Yourself" did on
+// 2026-10-01 (runs B and C): after an upload, reads of that slot show
+// `value` at file offset `off` until a preset change selects the slot;
+// from then on they show what was written.
 
 import { HEADER, nibbleDecode, nibbleEncode } from "../../src/core/sysex.js";
 
@@ -28,8 +36,10 @@ const DUMP_SHIFT = 0x28;
 export class FakePedal {
   constructor({
     dumps = new Map(), defaultDump, faults = null, writeFaults = null, answerIdentity = true,
-    commitMs = 0, readsDuringCommit = "old", fragile = null,
+    commitMs = 0, readsDuringCommit = "old", fragile = null, unloadedReads = null,
   } = {}) {
+    this.unloadedReads = unloadedReads;
+    this._unloaded = new Set(); // slots uploaded to and not selected since
     this.dumps = dumps;
     this.defaultDump = defaultDump;
     this.faults = faults;
@@ -69,6 +79,7 @@ export class FakePedal {
       this.editorMode = true;
     } else if (cmd === 0x11 && sub === 0x10) {
       const slot = (msg[25] << 4) | msg[26];
+      if (this.fragile?.readEndsWindow) this.selectedAt = null;
       this._finishCommitIfDue();
       if (this._pending && this.readsDuringCommit === "ignore") {
         this.readsIgnored++;
@@ -76,7 +87,12 @@ export class FakePedal {
       }
       const n = (this.reads.get(slot) ?? 0) + 1;
       this.reads.set(slot, n);
-      let chunks = FakePedal.dumpChunks(this.dumpOf(slot));
+      let dump = this.dumpOf(slot);
+      if (this.unloadedReads && this._unloaded.has(slot)) {
+        dump = Uint8Array.from(dump);
+        dump[this.unloadedReads.off - DUMP_SHIFT] = this.unloadedReads.value;
+      }
+      let chunks = FakePedal.dumpChunks(dump);
       if (this.faults) chunks = this.faults(slot, n, chunks) ?? chunks;
       for (const c of chunks) this._emit(c);
     } else if (cmd === 0x12 && sub === 0x20) {
@@ -88,6 +104,7 @@ export class FakePedal {
       const slot = (msg[25] << 4) | msg[26];
       if (slot !== this.activeSlot) this._maybeDisturb();
       this.activeSlot = slot;
+      this._unloaded.delete(slot);
       this.selectedAt = performance.now();
     }
   }
@@ -110,6 +127,7 @@ export class FakePedal {
       end = Math.max(end, off + raw.length);
     }
     const slot = image[6];
+    this._unloaded.add(slot);
     const dump = Uint8Array.from(this.dumpOf(slot));
     const content = image.subarray(14, end); // file bytes from 0x2E
     dump.set(content.subarray(0, dump.length - (0x2e - DUMP_SHIFT)), 0x2e - DUMP_SHIFT);

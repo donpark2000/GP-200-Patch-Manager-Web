@@ -28,7 +28,7 @@ const ui = {
   tuning: $("dev-tuning"), tuneX: $("tune-x"), tuneY: $("tune-y"), tuneMode: $("tune-mode"), tuneCycles: $("tune-cycles"),
   tuneChunk: $("tune-chunk"), tuneSettle: $("tune-settle"), tunePreset: $("tune-preset"), tuneBetween: $("tune-between"),
   tunePollTimeout: $("tune-poll-timeout"), tunePollMax: $("tune-poll-max"), tuneDefaults: $("tune-defaults"),
-  tuneLateEach: $("tune-late-each"),
+  tuneLateEach: $("tune-late-each"), tuneVerifyFirst: $("tune-verify-first"),
   tuneWarnings: $("tune-warnings"), tuneRun: $("tune-run"), tuneStop: $("tune-stop"), tuneStatus: $("tune-status"),
   tuneCsv: $("tune-csv"),
 };
@@ -382,7 +382,8 @@ function setUpTuning() {
   log.info("Developer tools shown (?dev in the address)");
   ui.tuneX.addEventListener("change", checkTuneInputs);
   ui.tuneY.addEventListener("change", checkTuneInputs);
-  ui.tuneDefaults.addEventListener("click", () => resetTuneInputs(TUNING_DEFAULTS));
+  // Writes per slot isn't timing, so the reset leaves it as typed.
+  ui.tuneDefaults.addEventListener("click", () => resetTuneInputs({ ...TUNING_DEFAULTS, cycles: ui.tuneCycles.value }));
   ui.tuneRun.addEventListener("click", onTune);
   ui.tuneStop.addEventListener("click", () => {
     cancelRequested = true;
@@ -391,7 +392,7 @@ function setUpTuning() {
   ui.tuneCsv.addEventListener("click", () => {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const r = tuneRows[0];
-    download(`gp200_timing_${r.mode}_settle${r.settleMs}_${stamp}.csv`, new TextEncoder().encode(tuningCsv(tuneRows)), "text/csv");
+    download(`gp200_timing_${r.mode}_settle${r.settleMs}${r.verifyBeforeSwitch ? "_vfirst" : ""}_${stamp}.csv`, new TextEncoder().encode(tuningCsv(tuneRows)), "text/csv");
   });
 }
 
@@ -481,6 +482,7 @@ async function onTune() {
       betweenSlotsMs: s.betweenSlotsMs,
       pollTimeoutMs: s.pollTimeoutMs,
       pollMaxMs: s.pollMaxMs,
+      verifyBeforeSwitch: ui.tuneVerifyFirst.checked,
       lateBeforeOverwrite: ui.tuneLateEach.checked,
       skeleton: skeletonBytes(),
       log,
