@@ -23,7 +23,7 @@ import { FakePedal } from "./helpers/fake-pedal.js";
 
 const golden = goldenManifest();
 // Short read-back limits keep the failure tests fast.
-const NO_DELAY = { chunkGapMs: 0, settleMs: 0, presetChangeMs: 0, readBackTimeoutMs: 50, readBackRetryMs: 0, readBackLimitMs: 150 };
+const NO_DELAY = { chunkGapMs: 0, settleMs: 0, presetChangeMs: 0 };
 const prstNamed = (name) => exportPrst(dumpWithName(name), skeletonBytes());
 
 function setup(pedalOpts = {}) {
@@ -154,8 +154,8 @@ test("read noise on the read-back is re-checked, not reported as a failed write"
   const { failed, results } = await writeSlots(dev, plan.items, { skeleton: skeletonBytes(), log, betweenSlotsMs: 0 });
   assert.equal(failed.length, 0);
   assert.equal(results[0].recheckedAfterMismatch, true);
-  assert.ok(log.lines.some((l) => l.includes("read noise or a slow save, not a failed write")));
-  assert.ok(log.lines.some((l) => l.includes("1 verified only after more than one read-back (64C)")));
+  assert.ok(log.lines.some((l) => l.includes("read noise, not a failed write")));
+  assert.ok(log.lines.some((l) => l.includes("1 verified only after a confirming re-read (64C)")));
 });
 
 test("cancel stops between patches, never mid-patch", async () => {

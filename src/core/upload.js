@@ -113,16 +113,15 @@ export function planWarnings(plan) {
 
 /**
  * Write and verify each planned item, in order (device.writeSlot: upload,
- * read back until it matches, preset change). Stops between patches (never
- * mid-patch) if cancelled. `betweenSlotsMs` is 0: the CLI's 300 ms pause
- * proved unnecessary on hardware (DEV_JOURNAL.md T2).
+ * settle, preset change, read-back compare), with the CLI's 300 ms between
+ * patches. Stops between patches (never mid-patch) if cancelled.
  * @param {import("./device.js").GP200} device
  * @param {object} opts
  * @param {(sinceMs: number) => boolean} [opts.wasHidden] true if the page was
  *   hidden at any point since performance.now() was `sinceMs` (UI supplies it)
  */
 export async function writeSlots(device, items, {
-  skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = 0, wasHidden = () => false,
+  skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = 300, wasHidden = () => false,
 }) {
   const results = [];
   let cancelled = false;
@@ -139,7 +138,7 @@ export async function writeSlots(device, items, {
     const v = await device.writeSlot(it.slot, it.data, skeleton);
     const slow = slowWriteWarning(it.label, { totalMs: v.totalMs, plannedMs: plannedWriteMs(device.timing) }, wasHidden(writeStarted));
     if (slow) log.warn(slow);
-    else log.debug(`${it.label}: written in ${v.totalMs.toFixed(0)} ms (read back after ${v.readBackMs.toFixed(0)} ms, ${v.reads} read(s))`);
+    else log.debug(`${it.label}: written and read back in ${v.totalMs.toFixed(0)} ms`);
     if (v.ok) {
       log.info(`${it.label}: verified, now reads "${v.deviceName}"`);
     } else {
@@ -155,12 +154,12 @@ export async function writeSlots(device, items, {
     if (i < items.length - 1 && betweenSlotsMs > 0) await sleep(betweenSlotsMs);
   }
   const failed = results.filter((r) => !r.ok);
-  const reread = results.filter((r) => r.ok && r.reads > 1);
+  const reread = results.filter((r) => r.ok && r.recheckedAfterMismatch);
   const secs = ((performance.now() - started) / 1000).toFixed(1);
   log.info(`Wrote ${results.length} of ${items.length} patch(es) in ${secs} s: ` +
     `${results.length - failed.length} verified, ${failed.length} not verified` +
     (failed.length ? ` (${failed.map((r) => r.label).join(", ")})` : "") +
-    (reread.length ? `; ${reread.length} verified only after more than one read-back (${reread.map((r) => r.label).join(", ")})` : ""));
+    (reread.length ? `; ${reread.length} verified only after a confirming re-read (${reread.map((r) => r.label).join(", ")})` : ""));
   return { results, failed, cancelled };
 }
 

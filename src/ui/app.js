@@ -8,7 +8,7 @@ import { Logger } from "../core/log.js";
 import { prstFileName } from "../core/prst.js";
 import { skeletonBytes } from "../core/skeleton.js";
 import { labelToSlot, slotsBetween, slotToLabel } from "../core/slots.js";
-import { checkTuningSets, runTuning, SCRATCH_SLOTS, TUNING_CLI, TUNING_DEFAULTS, tuningCsv } from "../core/tuning.js";
+import { checkTuningSets, runTuning, SCRATCH_SLOTS, TUNING_DEFAULTS, tuningCsv } from "../core/tuning.js";
 import { expandSources, orderEntries, planUpload, planWarnings, writeSlots } from "../core/upload.js";
 import { createZip } from "../core/zip.js";
 import { VERSION } from "../version.js";
@@ -28,7 +28,6 @@ const ui = {
   tuning: $("dev-tuning"), tuneX: $("tune-x"), tuneY: $("tune-y"), tuneMode: $("tune-mode"), tuneCycles: $("tune-cycles"),
   tuneChunk: $("tune-chunk"), tuneSettle: $("tune-settle"), tunePreset: $("tune-preset"), tuneBetween: $("tune-between"),
   tunePollTimeout: $("tune-poll-timeout"), tunePollMax: $("tune-poll-max"), tuneDefaults: $("tune-defaults"),
-  tuneCli: $("tune-cli"),
   tuneWarnings: $("tune-warnings"), tuneRun: $("tune-run"), tuneStop: $("tune-stop"), tuneStatus: $("tune-status"),
   tuneCsv: $("tune-csv"),
 };
@@ -383,7 +382,6 @@ function setUpTuning() {
   ui.tuneX.addEventListener("change", checkTuneInputs);
   ui.tuneY.addEventListener("change", checkTuneInputs);
   ui.tuneDefaults.addEventListener("click", () => resetTuneInputs(TUNING_DEFAULTS));
-  ui.tuneCli.addEventListener("click", () => resetTuneInputs(TUNING_CLI));
   ui.tuneRun.addEventListener("click", onTune);
   ui.tuneStop.addEventListener("click", () => {
     cancelRequested = true;

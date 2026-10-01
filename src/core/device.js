@@ -37,27 +37,21 @@ import { slotToLabel } from "./slots.js";
 export const READ_TIMEOUT_MS = 2000; // same budget as the CLI's READ_TIMEOUT_S
 export const READ_ATTEMPTS = 3;
 
-/** The CLI's write_slot pacing: 40 ms between chunks (RigSheet's spacing),
- *  a 1 s settle, a preset change, 300 ms. Kept as the reference for the
- *  timing test; the restore no longer uses it. */
-export const CLI_WRITE_TIMING = { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 };
-
 /**
- * Restore pacing. The pedal sends no write ACK, so the CLI waited fixed
- * times. Here the read-back is the ACK instead: send all 7 chunks at once,
- * read the slot until it holds the new patch (each read waits up to
- * `readBackTimeoutMs`, re-reads `readBackRetryMs` apart, giving up after
- * `readBackLimitMs`), then the preset change. Hardware evidence for every
- * zero is in DEV_JOURNAL.md (2026-09-30 and 10-01, T2): 516 writes with no
- * settle, 200 of them with no pause anywhere, all verified, the slot switch
- * obeyed, and the patches intact after a power cycle. The pedal answered
- * with the new patch 12-155 ms after the upload, depending on the patch.
- * With no pauses there are no timers for a hidden tab to slow (T1).
+ * Write pacing, copied from the CLI's write_slot: 40 ms between chunks
+ * (RigSheet's spacing), a 1 s settle, a preset change, 300 ms; the restore
+ * adds 300 ms between patches. There's no write ACK, so these pauses are
+ * all the flow control there is.
+ *
+ * Back on the CLI's values after a faster read-back pacing (all pauses 0)
+ * passed 516 timing-test writes but, in a full restore, let the pedal
+ * change a byte (0x44e/0x456, a 2 became 0) in 44 slots after their
+ * read-back had matched (DEV_JOURNAL.md, 2026-10-01). The CLI's pacing kept
+ * those bytes in a full round robin. Change these only with evidence from a
+ * test that re-reads slots after moving on, using patches that carry
+ * nonzero values there. Tests pass zeros.
  */
-export const WRITE_TIMING = {
-  chunkGapMs: 0, settleMs: 0, presetChangeMs: 0,
-  readBackTimeoutMs: 500, readBackRetryMs: 25, readBackLimitMs: 3000,
-};
+export const WRITE_TIMING = { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -183,18 +177,18 @@ export class GP200 {
   }
 
   /**
-   * Restore one .prst file to `slot`: flash upload (the CLI's write_slot,
-   * without its experimental save-commit), read back until the slot holds
-   * it (verifyWrite), then a preset change, which leaves the pedal on
-   * `slot`. Only called from the restore feature, after the user confirms.
+   * Restore one .prst file to `slot` the CLI's way (write_slot, without its
+   * experimental save-commit): flash upload, settle, preset change (which
+   * leaves the pedal on `slot`), then the read-back compare.
+   * Only called from the restore feature, after the user confirms.
    * @returns the verifyWrite result, plus `uploadMs` and `totalMs`
    */
   async writeSlot(slot, fileBytes, skeleton) {
     const t0 = performance.now();
     const uploadMs = await this.sendUpload(slot, fileBytes);
     if (this.timing.settleMs > 0) await sleep(this.timing.settleMs);
-    const v = await this.verifyWrite(slot, fileBytes, skeleton);
     await this.selectSlot(slot);
+    const v = await this.verifyWrite(slot, fileBytes, skeleton);
     return { ...v, uploadMs, totalMs: performance.now() - t0 };
   }
 
@@ -217,59 +211,41 @@ export class GP200 {
   }
 
   /**
-   * Read `slot` back until it matches the file that was written, ignoring
+   * Read `slot` back and compare it with the file that was written, ignoring
    * the device-owned bytes and the dead bytes (the CLI's verify_write_full).
-   * The read-back doubles as the write ACK the pedal doesn't send: on
-   * hardware the first read has always matched, 12-155 ms after the upload.
-   * A failed or mismatching read is retried (at least once, then until
-   * `readBackLimitMs`), so read noise or a slow save can't pose as a failed
-   * write; a write that really didn't land still fails, with the last
-   * mismatches. Never rewrites anything itself.
+   * One read, as DESIGN.md says; but a mismatch gets one confirming re-read
+   * before it's called a write failure, so read noise can't masquerade as a
+   * failed write. Never rewrites anything itself.
    * @returns {Promise<{ok: boolean, mismatches: {off: number, expected: number, actual: number}[],
-   *   deviceName: string|null, roundtrip: Uint8Array|null, reason?: string, recheckedAfterMismatch: boolean,
-   *   reads: number, readBackMs: number}>}
+   *   deviceName: string|null, roundtrip: Uint8Array|null, reason?: string, recheckedAfterMismatch: boolean}>}
    */
   async verifyWrite(slot, fileBytes, skeleton) {
     const label = slotToLabel(slot);
-    const { readBackTimeoutMs, readBackRetryMs, readBackLimitMs } = { ...WRITE_TIMING, ...this.timing };
-    const started = performance.now();
-    const elapsed = () => performance.now() - started;
     let recheckedAfterMismatch = false;
     let last = null;
-    let reason = "";
-    let reads = 0;
-    while (reads < 2 || elapsed() < readBackLimitMs) {
-      if (reads > 0 && readBackRetryMs > 0) await sleep(readBackRetryMs);
-      reads++;
-      const r = await this.readOnce(slot, readBackTimeoutMs);
-      if (!r.ok) {
-        reason = r.reason;
-        this.log.debug(`${label}: read-back ${reads} ${reason}`);
-        continue;
+    for (let read = 1; read <= 2; read++) {
+      let decoded;
+      try {
+        ({ decoded } = await this.readDump(slot));
+      } catch (e) {
+        if (!(e instanceof ReadError)) throw e;
+        return { ok: false, mismatches: [], deviceName: null, roundtrip: null, reason: e.reason, recheckedAfterMismatch };
       }
-      const roundtrip = buildPrstFromDump(r.decoded, skeleton);
+      const roundtrip = buildPrstFromDump(decoded, skeleton);
       const mismatches = diffPrstContent(fileBytes, roundtrip, DEAD_BYTE_FILE_OFFSETS);
       last = { mismatches, deviceName: prstFileName(roundtrip), roundtrip };
       if (mismatches.length === 0) {
-        const readBackMs = elapsed();
-        if (reads > 1) {
-          // Info, not a warning: a slow save is normal; the restore summary counts these.
-          this.log.info(`${label}: matched on read-back ${reads}, after ${readBackMs.toFixed(0)} ms` +
-            (recheckedAfterMismatch ? " (earlier reads differed: read noise or a slow save, not a failed write)" : ""));
+        if (recheckedAfterMismatch) {
+          this.log.warn(`${label}: the first read-back mismatched but the re-read matched -- read noise, not a failed write`);
         }
-        return { ok: true, ...last, recheckedAfterMismatch, reads, readBackMs };
+        return { ok: true, ...last, recheckedAfterMismatch };
       }
-      reason = `${mismatches.length} byte(s) differ from the file`;
-      if (!recheckedAfterMismatch) {
-        this.log.info(`${label}: read-back differs in ${mismatches.length} byte(s); re-reading for up to ` +
-          `${(readBackLimitMs / 1000).toFixed(0)} s to rule out read noise or a slow save`);
+      if (read === 1) {
+        this.log.warn(`${label}: read-back differs in ${mismatches.length} byte(s); re-reading once to rule out read noise`);
         recheckedAfterMismatch = true;
       }
     }
-    return {
-      ok: false, mismatches: last?.mismatches ?? [], deviceName: last?.deviceName ?? null, roundtrip: last?.roundtrip ?? null,
-      reason, recheckedAfterMismatch, reads, readBackMs: elapsed(),
-    };
+    return { ok: false, ...last, reason: `${last.mismatches.length} byte(s) differ from the file`, recheckedAfterMismatch };
   }
 
   _send(msg) {

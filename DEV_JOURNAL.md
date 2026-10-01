@@ -50,11 +50,11 @@ This journal records only what's new or different for the browser.
   fix the remaining timers (a Web Worker clock, or timestamped
   `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
   replaced by read-backs, only the 7 chunk gaps would still need timers.
-- **T2. Restore speed.** *Answered on hardware (entries below, ending
-  "Restore switched to read-back pacing"): no fixed pause is needed; the
-  restore now reads back until the patch matches, about 0.13 s per patch.
-  Moves to Resolved once the phase 2 gate passes with it.* Original
-  question: about 1.9 s per patch at the CLI's pacing (a full
+- **T2. Restore speed.** *Reopened. The read-back pacing (no pauses) was
+  shipped, then withdrawn after the phase 2 gate showed the pedal changing
+  a byte after verify (entries of 2026-10-01). The restore is back on the
+  CLI's pacing. Any speed-up needs a test that re-reads slots after moving
+  on, with patches carrying nonzero 0x44e/0x456.* Original question: about 1.9 s per patch at the CLI's pacing (a full
   restore takes about 8 minutes); the 1 s settle dominates. The CLI's
   `calibrate-settle` history shows settle was once suspected in write
   failures that later traced to the dead bytes, so a shorter settle may be
@@ -623,3 +623,96 @@ Planning note for the gate: in the 15:48 export
 put an identical patch over itself (a run of 45 "Template" patches from
 36D, and neighbouring "It's GP-200" defaults), so they can't show whether
 they landed. About 154 slots really change.
+
+## 2026-10-01: Phase 2 gate, first pass: 50 bytes changed by the pedal
+
+The developer ran the copy-and-shift gate with the new read-back pacing.
+Files: `gp200_all_patches-roundrobin.zip` (15:48, "O", the state before
+today's writes apart from 64A-64D), `gp200_1A_to_32D.zip` (18:13),
+`gp200_all_patches.zip` (18:22, "X"), `gp200_all_patches-S.zip` (18:24, "S").
+X turned out to hold 1A-32D already shifted up by one (1B = O's 1A, ...)
+plus an unshifted copy of O's 1A-32D in 33A-64D, i.e. the 1A-32D zip was
+apparently restored once from 1B before being restored to 33A. S is X
+restored from 1B. The checks below use the files as they are.
+
+- **Shift X -> S:** 1A unchanged; every patch landed one slot up with the
+  right name. 205 of 255 shifted slots match X's patch from the slot below
+  byte for byte (all content bytes except the slot mirrors). **50 differ in
+  exactly one byte, always a value 2 that became 0:** 0x456 in 32 slots,
+  0x44e in 18. No other offset differs anywhere.
+- **Copy O -> X (33A-64D):** 0 differences in 128 slots, including the
+  nonzero values at those two offsets. So the same values survived one
+  restore and were reset in another.
+- Not every nonzero value was reset: X had 60 slots with 2 at 0x456 and 20
+  at 0x44e; S still has 28 and 2.
+- The last slot written in the shift (64D, never switched away from before
+  the export) matches exactly.
+- The region looks like 8-byte records at 0x448, 0x450, 0x458
+  (`10 00 04 00 | n p v 00`, n = 0, 1, 2); 0x44e and 0x456 are the `v`
+  byte of records 0 and 1. Not mentioned in the local copy of the CLI's
+  `PROTOCOL_NOTES.md` (2026-09-27).
+
+Open: did the restore's verify pass for these slots (then the pedal
+changed the byte after the read-back, e.g. on the preset change or on
+switching away), or did they fail? Needs the restore log. Also whether the
+first restores ran the old or the new code (the summary line's seconds
+per patch tells). The developer saw "a few pauses" during the restores.
+
+**From the log (`gp200_web_2026-10-01T01-34-27.log`), the actual steps:**
+export 1A-32D (18:13 zip) -> restore it to 33A (125/128 verified) ->
+export all -> restore the 1A-32D zip from 1B (125/128) -> restore it to 33A
+again (125/128) -> export all (X) -> restore X from 1B (249/255) -> export
+all (S). All four restores ran the new pacing (about 0.2 s per patch).
+
+- **Verify caught 15 failures, all from three source patches:** Hi Sweety
+  (1D), Twiggy Blues (4B), Classic 900 (11A). Every time one of them was
+  written, the read-back right after the upload had 0 where the file has 2
+  (0x456 or 0x44e). Yet the later exports show 2 in those same slots (e.g.
+  X 2A, written as Hi Sweety in restore 2, failed verify but exports with
+  2). So for these patches the byte reads 0 straight after the upload and
+  2 later.
+- **44 slots passed verify and changed afterwards** (S vs X: 50 slots
+  differ, 6 of them the verify failures). Every one is a 2 that became 0.
+  Values of 1 were never changed (12 slots), "I Was a Bass Am" (2/3) kept
+  both, and some 2s were kept (Love Yourself, Slow Dancing, COMP Clean,
+  Real Jazz, Nathania Jualim4). The same patches behaved the same way in
+  both halves of the pedal (e.g. Rock Soul reset at 2C and 34B, Love
+  Yourself kept at 5B and 37A), so it depends on the patch, not chance.
+- 1A-32D did not change between the 15:48 and 18:13 exports (0 differences).
+- With the CLI's pacing this morning, the full round robin (export,
+  restore all, export) matched in all 256 slots, and those patches carry
+  the same 2s. So the CLI pacing preserved these bytes and the new pacing
+  doesn't.
+
+**Conclusion so far:** the no-pause pacing lets the pedal change a byte
+after the read-back, which the verify can't see. The timing test missed it
+because its 8 patches have 0 in both bytes, and it never re-reads a slot
+after moving on. Working hypothesis (untested): with no pause after the
+preset change, the next upload arrives while the pedal is still loading
+the slot it just switched to, and when it later switches away it saves a
+half-initialized state of these bytes back into that slot. Next: put the
+restore back on the proven CLI pacing, repair the pedal from the 15:48
+export, and then test which pause matters using patches that carry these
+values, with a re-read of every slot at the end of the run.
+
+## 2026-10-01: Restore back on the CLI's pacing
+
+On the developer's call, the restore is back to exactly the CLI's sequence
+and the original verify: upload with 40 ms gaps, 1 s settle, preset change,
+300 ms, one read-back (one confirming re-read on a mismatch), 300 ms
+between patches. The read-until-match verify is removed. The timing test
+stays (defaults: the CLI's pacing again), and its chunk gap 0 still sends
+with no timer. `DESIGN.md` records the withdrawn attempt and the condition
+for trying again. Tests: 80, all passing; they pin the CLI values and the
+order upload -> preset change -> read-back.
+
+Lesson for the standards skill (proposed): *a timing test must check the
+state after the whole operation, not only each step's own read-back, and
+its test data must cover the value ranges the real data has.* The 516
+clean timing-test writes used 8 patches with 0 in the affected bytes and
+never re-read a slot after moving on, so they couldn't see this.
+
+Next: the developer restores `gp200_all_patches-roundrobin.zip` (15:48) from
+1A with this pacing, exports all, and `compare-zips` against it. Expected:
+MATCH, as this morning; that also re-tests the CLI pacing on the patches
+with 2s at 0x44e/0x456.
