@@ -114,6 +114,57 @@ test("summary and CSV: medians, first-reply counts, quoting", () => {
   assert.deepEqual(s.firstReply, { old: 1, none: 1 });
   const csv = tuningCsv(rows).trim().split("\n");
   assert.equal(csv.length, 3);
-  assert.ok(csv[2].endsWith(`"a ""b"", c"`));
+  assert.ok(csv[0].endsWith(",reason,late,lateWhen,lateDiff"));
+  assert.ok(csv[2].includes(`,"a ""b"", c",`));
   assert.equal(summarizeTuning([]).writeMs, null);
+});
+
+// ---- Late check (the fault the 2026-10-01 full restore found) -------------
+
+const FRAGILE = 0x456;
+const entry2 = (name) => {
+  const d = dumpWithName(name);
+  d[FRAGILE - 0x28] = 2; // like Rock Soul or Radio Cat: a 2 the fault turns into 0
+  return { name: `${name}.prst`, data: exportPrst(d, skeletonBytes()) };
+};
+const fragX = [entry2("FX-A"), entry2("FX-B")];
+const fragY = [entry2("FY-A"), entry2("FY-B")];
+
+test("late check: catches a byte the pedal changes after the verify passed", async () => {
+  const { pedal, log, dev } = await setup({ fragile: { off: FRAGILE, windowMs: 40 } });
+  const { rows, summary } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 3 });
+  assert.ok(rows.every((r) => r.verified), "every immediate verify passed");
+  assert.ok(pedal.fragileHits > 0);
+  assert.ok(summary.lateChanged.length > 0 && summary.lateChangedAfterVerify === summary.lateChanged.length);
+  assert.ok(rows.some((r) => r.late === "CHANGED" && r.lateDiff === "0x456:2->0"), JSON.stringify(rows.map((r) => r.late)));
+  assert.ok(log.lines.some((l) => l.includes("ERROR") && l.includes("CHANGED since it was written (its verify had passed)")));
+  assert.ok(log.lines.some((l) => /late check: \d+ of 6 write\(s\) re-read after moving on; \d+ CHANGED/.test(l)));
+});
+
+test("late check: with pauses longer than the fault window, nothing changes", async () => {
+  const { pedal, log, dev } = await setup({ fragile: { off: FRAGILE, windowMs: 40 } });
+  const { rows, summary } = await run(dev, log, {
+    setX: fragX, setY: fragY, cycles: 3, timing: { ...NO_DELAY, presetChangeMs: 60 }, betweenSlotsMs: 0,
+  });
+  assert.equal(pedal.fragileHits, 0);
+  assert.equal(summary.lateChanged.length, 0);
+  assert.equal(summary.lateChecked, rows.length, "before-overwrite plus end-of-run covers every write");
+  assert.ok(rows.every((r) => r.late === "ok"));
+});
+
+test("late check: the end-of-run check alone still covers each slot's last write", async () => {
+  const { log, dev } = await setup({ fragile: { off: FRAGILE, windowMs: 40 } });
+  const { rows, summary } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 2, lateBeforeOverwrite: false, lateSettleMs: 0 });
+  assert.deepEqual(rows.map((r) => r.lateWhen), ["", "", "end of run", "end of run"]);
+  assert.equal(summary.lateChecked, 2);
+  assert.ok(summary.lateChanged.length >= 1, "64A's last write was disturbed by the upload to 64B");
+});
+
+test("late check: the final switch waits the between-writes pause, so it doesn't cause the fault itself", async () => {
+  const { pedal, log, dev } = await setup({ fragile: { off: FRAGILE, windowMs: 40 } });
+  await run(dev, log, {
+    setX: fragX.slice(0, 1), setY: fragY.slice(0, 1), cycles: 1, timing: NO_DELAY, betweenSlotsMs: 60, lateSettleMs: 0,
+  });
+  assert.equal(pedal.fragileHits, 0);
+  assert.equal(pedal.activeSlot, SCRATCH_SLOTS[1], "with one slot in use it switches to the next scratch slot");
 });

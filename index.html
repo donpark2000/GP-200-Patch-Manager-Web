@@ -74,6 +74,8 @@
       <p class="muted">Shown only when the page is opened with <code>?dev</code>. Pick 1-4 patches for set X and the
         same number of different patches for set Y; patch 1 goes to 64A, 2 to 64B, and so on. Each write switches a
         slot to whichever set it doesn't hold, so every write changes it, and each is verified like a restore.
+        A late check re-reads every write again after the test has moved on (the pedal can change a byte after
+        the verify): always at the end, and optionally before each overwrite.
         Afterwards, restore your 64A-64D backup.</p>
       <div class="row">
         <label>Set X <input id="tune-x" type="file" accept=".prst,.zip" multiple></label>
@@ -96,6 +98,10 @@
         <label>Poll timeout <input id="tune-poll-timeout" class="num" type="number" min="10"> ms</label>
         <label>Poll limit <input id="tune-poll-max" class="num" type="number" min="100"> ms</label>
         <button id="tune-defaults" class="secondary">Reset to restore's timing</button>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="tune-late-each" checked> Late-check each slot before overwriting it
+          (more checks; adds one read, a few ms, before each upload)</label>
       </div>
       <ul id="tune-warnings" class="warnings"></ul>
       <div class="row">

@@ -34,3 +34,25 @@ this is the short version:
   without the user's confirmation in the app. One exception: the
   developer-only write-timing test (`?dev`, `src/core/tuning.js`), which
   may write only to the scratch slots 64A-64D, also after confirmation.
+
+## Files: repo vs. test output vs. backups
+
+| Place | Holds | Lifetime |
+|---|---|---|
+| `C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\` (this repo) | code, tests, docs, journal only | permanent (git) |
+| `C:\Users\dpark\Documents\GP-200\Backups\` | real patch backups worth keeping | permanent, the developer's |
+| `C:\Users\dpark\Documents\GP-200-testing\<date>_<topic>\` | one hardware test session: exports, logs, CSVs, set files | disposable |
+
+- Never put test output in the repo folder. Files Claude makes for a test
+  go in the session folder; Claude's own helper scripts stay in its
+  scratchpad.
+- Test instructions start with `cd` into the session folder and give repo
+  tools by full path, e.g.
+  `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\compare-zips.js before.zip after.zip`.
+  Keep using the same commands and names from one instruction to the next.
+- Purge: once a session's results (numbers, conclusion, folder name) are in
+  `DEV_JOURNAL.md`, ask "OK to purge `<folder>`?"; on a yes, send the whole
+  folder to the Recycle Bin (not a permanent delete) and note the purge in
+  the journal. Never purge `GP-200\Backups`.
+- This is the project-specific half of a general practice proposed for the
+  standards skill (journal, "Proposed additions to the standards skill").

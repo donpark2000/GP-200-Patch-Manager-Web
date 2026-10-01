@@ -5,9 +5,16 @@
 // took and, in "poll" mode, when the pedal first answered a read after the
 // upload and whether that answer already held the new patch.
 //
-// Pass/fail is exactly a restore's: the same verifyWrite after the same
-// preset change. Nothing here changes the shipped timing; the numbers are
-// evidence for deciding whether to.
+// Pass/fail is a restore's (the same verifyWrite after the same preset
+// change) plus a LATE CHECK: each write is re-read again after the test
+// has moved on to other slots, because the pedal can change a byte after
+// the immediate verify has passed (DEV_JOURNAL.md 2026-10-01: 0x44e/0x456,
+// a 2 became 0, in 44 slots of a full restore). The late check runs at the
+// end of every run (after switching to another slot and waiting
+// LATE_SETTLE_MS) and, optionally, before each slot is overwritten; that
+// option adds one read before each upload, i.e. a few ms to the gap under
+// test. Nothing here changes the shipped timing; the numbers are evidence
+// for deciding whether to.
 
 import { plannedWriteMs, WRITE_TIMING } from "./device.js";
 import { buildPrstFromDump, DEAD_BYTE_FILE_OFFSETS, diffPrstContent, isPrst, prstFileName } from "./prst.js";
@@ -22,6 +29,9 @@ export const TUNING_DEFAULTS = {
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Pause after the final switch before the end-of-run late check. */
+export const LATE_SETTLE_MS = 1000;
 
 /** Same patch as far as a verify can tell (device-owned and dead bytes ignored). */
 export function sameContent(a, b) {
@@ -60,12 +70,16 @@ export function checkTuningSets(setX, setY) {
  * @param {"fixed"|"poll"} o.mode fixed: settle, preset change, verify (a
  *   restore). poll: settle, then read until the new patch appears (bounded
  *   by pollMaxMs), then the same preset change and verify.
+ * @param {boolean} [o.lateBeforeOverwrite] also late-check each slot just
+ *   before it's overwritten (adds one read before each upload)
+ * @param {number} [o.lateSettleMs] pause before the end-of-run late check
  * @param {(sinceMs: number) => boolean} [o.wasHidden] see writeSlots
  * @returns {Promise<{rows: object[], summary: object, cancelled: boolean}>}
  */
 export async function runTuning(device, {
   setX, setY, mode = TUNING_DEFAULTS.mode, cycles = TUNING_DEFAULTS.cycles, timing, betweenSlotsMs = 300,
   pollTimeoutMs = TUNING_DEFAULTS.pollTimeoutMs, pollMaxMs = TUNING_DEFAULTS.pollMaxMs,
+  lateBeforeOverwrite = true, lateSettleMs = LATE_SETTLE_MS,
   skeleton, log, wasHidden = () => false, isCancelled = () => false, onProgress = () => {},
 }) {
   const problems = checkTuningSets(setX, setY);
@@ -74,7 +88,8 @@ export async function runTuning(device, {
   const total = cycles * slots.length;
   log.info(`Timing test: ${mode} mode, ${cycles} write(s) to each of ${slots.map(slotToLabel).join(", ")} (${total} in all); ` +
     `chunk gap ${timing.chunkGapMs} ms, settle ${timing.settleMs} ms, after preset change ${timing.presetChangeMs} ms, ` +
-    `between patches ${betweenSlotsMs} ms` + (mode === "poll" ? `, poll timeout ${pollTimeoutMs} ms, poll limit ${pollMaxMs} ms` : ""));
+    `between patches ${betweenSlotsMs} ms` + (mode === "poll" ? `, poll timeout ${pollTimeoutMs} ms, poll limit ${pollMaxMs} ms` : "") +
+    `; late check at the end${lateBeforeOverwrite ? " and before each overwrite" : " only"}`);
 
   const current = [];
   for (const slot of slots) {
@@ -84,6 +99,7 @@ export async function runTuning(device, {
   }
 
   const rows = [];
+  const lastRow = []; // per slot: the row of the latest write, awaiting its late check
   let cancelled = false;
   outer: for (let c = 0; c < cycles; c++) {
     for (let i = 0; i < slots.length; i++) {
@@ -91,6 +107,10 @@ export async function runTuning(device, {
         cancelled = true;
         log.warn(`Timing test stopped after ${rows.length} of ${total} writes`);
         break outer;
+      }
+      if (lateBeforeOverwrite && lastRow[i]) {
+        const now = await lateCheck(device, slots[i], lastRow[i], "before overwrite", skeleton, log);
+        if (now) current[i] = now;
       }
       // X unless the slot already holds X. After a failed write the slot
       // still holds its old patch, so this still picks a different one.
@@ -102,10 +122,26 @@ export async function runTuning(device, {
       });
       row.n = rows.length + 1;
       rows.push(row);
+      lastRow[i] = row;
       log[row.verified ? "info" : "error"](describeRow(row));
       if (row.roundtrip) current[i] = row.roundtrip; // what the pedal really holds now
       onProgress({ done: rows.length, total, row });
       if (rows.length < total) await sleep(betweenSlotsMs);
+    }
+  }
+  if (rows.length) {
+    // End of run: after the usual between-writes pause (so the last slot
+    // gets the same treatment as the others), switch to another scratch
+    // slot so every written slot has been left, let the pedal settle, then
+    // re-read them all.
+    await sleep(betweenSlotsMs);
+    const last = rows.at(-1).slot;
+    const away = slots.find((s) => s !== last) ?? SCRATCH_SLOTS.find((s) => s !== last);
+    log.info(`Late check: switching to ${slotToLabel(away)}, waiting ${lateSettleMs} ms, then re-reading ${slots.map(slotToLabel).join(", ")}`);
+    await device.selectSlot(away, { ...timing, presetChangeMs: 0 });
+    await sleep(lateSettleMs);
+    for (let i = 0; i < slots.length; i++) {
+      if (lastRow[i]) await lateCheck(device, slots[i], lastRow[i], "end of run", skeleton, log);
     }
   }
   const summary = summarizeTuning(rows);
@@ -113,9 +149,38 @@ export async function runTuning(device, {
   return { rows, summary, cancelled };
 }
 
+/**
+ * Re-read `slot` and compare it with the file its latest write (`row`)
+ * sent; record the outcome on that row. Returns what the slot holds now
+ * (as a .prst), or null if the read failed.
+ */
+async function lateCheck(device, slot, row, when, skeleton, log) {
+  row.lateWhen = when;
+  let now;
+  try {
+    now = buildPrstFromDump((await device.readDump(slot)).decoded, skeleton);
+  } catch (e) {
+    row.late = "read failed";
+    row.lateDiff = e.reason ?? String(e);
+    log.error(`Late check #${row.n} ${row.label} (${when}): couldn't read it (${row.lateDiff})`);
+    return null;
+  }
+  const diffs = diffPrstContent(row.data, now, DEAD_BYTE_FILE_OFFSETS);
+  row.late = diffs.length ? "CHANGED" : "ok";
+  row.lateDiff = diffs.map((m) => `0x${m.off.toString(16)}:${m.expected}->${m.actual}`).join(" ");
+  if (diffs.length) {
+    log.error(`Late check #${row.n} ${row.label} "${row.patch}" (${when}): CHANGED since it was written ` +
+      `(${row.verified ? "its verify had passed" : "its verify had failed"}): ${row.lateDiff}`);
+  } else {
+    log.debug(`Late check #${row.n} ${row.label} (${when}): still as written`);
+  }
+  return now;
+}
+
 async function tuneOneWrite(device, { slot, entry, set, previous, mode, timing, pollTimeoutMs, pollMaxMs, skeleton, wasHidden }) {
   const t0 = performance.now();
   const row = {
+    slot, data: entry.data, late: "", lateWhen: "", lateDiff: "",
     label: slotToLabel(slot), set, file: entry.name, patch: prstFileName(entry.data), mode,
     chunkGapMs: timing.chunkGapMs, settleMs: timing.settleMs, presetChangeMs: timing.presetChangeMs,
     plannedMs: plannedWriteMs(timing),
@@ -209,6 +274,10 @@ export function summarizeTuning(rows) {
     firstReplyMs: stats(polled.filter((r) => r.firstReplyMs !== null).map((r) => r.firstReplyMs)),
     newAtMs: stats(polled.filter((r) => r.newAtMs !== null).map((r) => r.newAtMs)),
     neverNew: polled.filter((r) => r.newAtMs === null).length,
+    lateChecked: rows.filter((r) => r.late === "ok" || r.late === "CHANGED").length,
+    lateChanged: rows.filter((r) => r.late === "CHANGED").map((r) => `#${r.n} ${r.label}`),
+    lateChangedAfterVerify: rows.filter((r) => r.late === "CHANGED" && r.verified).length,
+    lateUnread: rows.filter((r) => r.late === "read failed").length,
   };
 }
 
@@ -219,6 +288,11 @@ export function describeSummary(s, mode) {
     `Timing test result: ${s.writes} write(s), ${s.notVerified} NOT verified, ${s.rechecked} needed a confirming re-read, ` +
       `${s.hidden} while the page was hidden`,
     `  write (before verify): ${st(s.writeMs)}; with verify: ${st(s.totalMs)}`,
+    `  late check: ${s.lateChecked} of ${s.writes} write(s) re-read after moving on; ` +
+      (s.lateChanged.length
+        ? `${s.lateChanged.length} CHANGED (${s.lateChangedAfterVerify} of them had passed verify): ${s.lateChanged.join(", ")}`
+        : "none changed") +
+      (s.lateUnread ? `; ${s.lateUnread} couldn't be read` : ""),
   ];
   if (mode === "poll" || s.polled) {
     const kinds = Object.entries(s.firstReply).map(([k, n]) => `${k} ${n}`).join(", ") || "none";
@@ -231,7 +305,7 @@ export function describeSummary(s, mode) {
 const CSV_COLUMNS = [
   "n", "label", "set", "file", "patch", "mode", "chunkGapMs", "settleMs", "presetChangeMs", "plannedMs",
   "burstMs", "settleActualMs", "writeMs", "totalMs", "polls", "firstReply", "firstReplyMs", "newAtMs",
-  "pollTrace", "verified", "rechecked", "hidden", "reason",
+  "pollTrace", "verified", "rechecked", "hidden", "reason", "late", "lateWhen", "lateDiff",
 ];
 
 /** One row per write, for pasting into a spreadsheet or the journal. */

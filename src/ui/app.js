@@ -28,6 +28,7 @@ const ui = {
   tuning: $("dev-tuning"), tuneX: $("tune-x"), tuneY: $("tune-y"), tuneMode: $("tune-mode"), tuneCycles: $("tune-cycles"),
   tuneChunk: $("tune-chunk"), tuneSettle: $("tune-settle"), tunePreset: $("tune-preset"), tuneBetween: $("tune-between"),
   tunePollTimeout: $("tune-poll-timeout"), tunePollMax: $("tune-poll-max"), tuneDefaults: $("tune-defaults"),
+  tuneLateEach: $("tune-late-each"),
   tuneWarnings: $("tune-warnings"), tuneRun: $("tune-run"), tuneStop: $("tune-stop"), tuneStatus: $("tune-status"),
   tuneCsv: $("tune-csv"),
 };
@@ -480,6 +481,7 @@ async function onTune() {
       betweenSlotsMs: s.betweenSlotsMs,
       pollTimeoutMs: s.pollTimeoutMs,
       pollMaxMs: s.pollMaxMs,
+      lateBeforeOverwrite: ui.tuneLateEach.checked,
       skeleton: skeletonBytes(),
       log,
       wasHidden,
@@ -490,9 +492,10 @@ async function onTune() {
     });
     tuneRows = out.rows;
     for (const r of out.rows) if (r.roundtrip) knownNames.set(labelToSlot(r.label), prstFileName(r.roundtrip));
-    const { writes, notVerified, rechecked } = out.summary;
+    const { writes, notVerified, rechecked, lateChecked, lateChanged } = out.summary;
     ui.tuneStatus.textContent = `${writes - notVerified} of ${writes} verified` +
       (notVerified ? `, ${notVerified} NOT verified` : "") + (rechecked ? `, ${rechecked} needed a re-read` : "") +
+      `; late check: ${lateChanged.length ? `${lateChanged.length} of ${lateChecked} CHANGED` : `${lateChecked} re-read, none changed`}` +
       (out.cancelled ? "; stopped early" : "") + ". Details in the log.";
     ui.tuneCsv.hidden = tuneRows.length === 0;
   } catch (e) {

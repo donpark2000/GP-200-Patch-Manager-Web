@@ -11,6 +11,14 @@
 // `faults(slot, readNumber, chunks)` can return modified read-reply chunks
 // (drop, reorder, duplicate, corrupt); `writeFaults(slot, writeNumber,
 // chunks)` does the same for incoming upload chunks. Counters start at 1.
+//
+// `commitMs` delays when an upload lands; reads during it get the old patch,
+// or no reply at all with `readsDuringCommit: "ignore"`.
+//
+// `fragile: {off, windowMs}` models the fault the 2026-10-01 full restore
+// found: if an upload or a preset change to another slot arrives within
+// `windowMs` of a preset change, the pedal zeroes file offset `off` in the
+// slot it had just switched to -- after any verify of that slot.
 
 import { HEADER, nibbleDecode, nibbleEncode } from "../../src/core/sysex.js";
 
@@ -20,7 +28,7 @@ const DUMP_SHIFT = 0x28;
 export class FakePedal {
   constructor({
     dumps = new Map(), defaultDump, faults = null, writeFaults = null, answerIdentity = true,
-    commitMs = 0, readsDuringCommit = "old",
+    commitMs = 0, readsDuringCommit = "old", fragile = null,
   } = {}) {
     this.dumps = dumps;
     this.defaultDump = defaultDump;
@@ -31,6 +39,9 @@ export class FakePedal {
     this.readsDuringCommit = readsDuringCommit;
     this._pending = null; // an upload still committing (commitMs)
     this.readsIgnored = 0;
+    this.fragile = fragile;
+    this.selectedAt = null;
+    this.fragileHits = 0;
     this.editorMode = false;
     this.activeSlot = null;
     this.reads = new Map();
@@ -69,11 +80,15 @@ export class FakePedal {
       if (this.faults) chunks = this.faults(slot, n, chunks) ?? chunks;
       for (const c of chunks) this._emit(c);
     } else if (cmd === 0x12 && sub === 0x20) {
+      if (this._upload.length === 0) this._maybeDisturb();
       this._upload.push(msg);
       // A burst ends with its one short chunk (the image isn't a multiple of 183).
       if (msg.length - 14 < CHUNK_RAW * 2) this._commitUpload();
     } else if (cmd === 0x12 && sub === 0x08) {
-      this.activeSlot = (msg[25] << 4) | msg[26];
+      const slot = (msg[25] << 4) | msg[26];
+      if (slot !== this.activeSlot) this._maybeDisturb();
+      this.activeSlot = slot;
+      this.selectedAt = performance.now();
     }
   }
 
@@ -106,6 +121,18 @@ export class FakePedal {
     }
     this._pending = { slot, dump, due: performance.now() + this.commitMs };
     setTimeout(() => this._finishCommitIfDue(), this.commitMs);
+  }
+
+  /** The `fragile` fault: a command too soon after a preset change. */
+  _maybeDisturb() {
+    const f = this.fragile;
+    if (!f || this.activeSlot === null || this.selectedAt === null) return;
+    if (performance.now() - this.selectedAt >= f.windowMs) return;
+    const dump = Uint8Array.from(this.dumpOf(this.activeSlot));
+    if (dump[f.off - DUMP_SHIFT] === 0) return;
+    dump[f.off - DUMP_SHIFT] = 0;
+    this.dumps.set(this.activeSlot, dump);
+    this.fragileHits++;
   }
 
   // Timers can fire late, so a read checks the clock too.

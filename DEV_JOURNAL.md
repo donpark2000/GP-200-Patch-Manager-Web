@@ -716,3 +716,154 @@ Next: the developer restores `gp200_all_patches-roundrobin.zip` (15:48) from
 1A with this pacing, exports all, and `compare-zips` against it. Expected:
 MATCH, as this morning; that also re-tests the CLI pacing on the patches
 with 2s at 0x44e/0x456.
+
+**Order agreed with the developer:** get computer 1 solid first (repair
+restore + compare, then any speed-up proven with the stronger test and a
+full-pedal gate). The second computer comes after that, not in parallel.
+The developer notes that earlier second-computer testing showed no
+difference; this journal has no web-app run on that computer yet, so it
+is still to do once computer 1 is solid.
+
+**Pedal repaired: MATCH.** The developer restored
+`gp200_all_patches-roundrobin.zip` (15:48) from 1A with the CLI pacing
+(commit e651c97), exported all (`1-gp200_all_patches.zip`, 19:28), and
+`node tools/compare-zips.js` reported 256 slots identical, MATCH (re-run
+here, same result). So the pedal is back to its pre-test state, with
+64A-64D at factory defaults, and the CLI pacing again kept every byte,
+including the 2s at 0x44e/0x456 that the fast pacing lost, and wrote Hi
+Sweety, Twiggy Blues and Classic 900 correctly. (The restore log for this
+run wasn't saved; the compare is the evidence.)
+
+## 2026-10-01: Test files moved out of the repo; purge
+
+The repo folder had collected 22 test files (10 exports, 9 timing CSVs, 1
+log, 2 stray `.prst` files), all git-ignored, because the browser
+downloaded into it and test instructions used repo-relative paths. Agreed
+with the developer: test output lives outside the repo, in
+`C:\Users\dpark\Documents\GP-200-testing\<date>_<topic>\`; real backups in
+`C:\Users\dpark\Documents\GP-200\Backups\`; rules in `CLAUDE.md` ("Files").
+
+- Kept: `gp200_all_patches-roundrobin.zip` (15:48, the pre-test state with
+  the developer's own patches) copied to
+  `GP-200\Backups\2026-09-30_full-backup.zip`; same SHA-256, and
+  `compare-zips` MATCH against the original.
+- **Purged to the Recycle Bin on 2026-10-01:** all 22 files, including every
+  export, CSV and log named in the entries above. Their results are
+  recorded above; those numbers are now the record.
+
+## Proposed additions to the standards skill
+
+For the developer to add to `software-project-standards` (CLAUDE.md
+working standard 5). Project-specific details stay in `CLAUDE.md`.
+
+1. **Keep disposable test artifacts out of the repo.** Hardware or manual
+   test runs write their outputs (exports, logs, CSVs, fixtures made for
+   one run) to a dated session folder outside the repo
+   (`<testing root>/<date>_<topic>/`). Real data worth keeping (e.g.
+   device backups) lives in its own permanent place, never in a session
+   folder. Test instructions `cd` into the session folder and refer to repo
+   tools by full path, consistently from one instruction to the next.
+   Once a session's results are recorded in the dev journal, its folder is
+   purged, to the recycle bin and with the developer's OK, and the journal
+   notes the purge.
+2. **A timing or reliability test must check the end state, with
+   representative data.** Verify the state after the whole operation (e.g.
+   re-read every item after the run has moved on), not only each step's own
+   immediate check, and make the test data cover the value ranges real
+   data has. Evidence here: 516 clean timing-test writes missed a pedal
+   behaviour that changed 44 patches after their per-write verify had
+   passed; the 8 test patches had 0 in the affected bytes, and no slot was
+   re-read after moving on.
+3. **Keep sessions to a manageable length; the journal is the handoff.**
+   Long AI-assisted sessions eventually get summarized automatically, and
+   detail (exact numbers, file names, what was already tried) can be lost
+   or blurred. At natural break points (a result recorded in the journal
+   and committed), the assistant says when the session is getting long and
+   suggests starting a fresh one. Before switching, it writes a short
+   status entry in the journal (what's known, what's left, next steps) and
+   commits, so the new session starts from the repo, not from memory.
+
+## 2026-10-01: Status at end of day (start here next session)
+
+**Known (evidence above):**
+- Reading: the web export matches the CLI's byte for byte (all 256 slots).
+- Writing at the CLI's pacing (40 ms chunk gaps, 1 s settle, preset
+  change, 300 ms, verify, 300 ms between patches; about 1.9 s per patch,
+  about 8 min for 256): faithful. Two full restores matched in all 256
+  slots, the second one including the patches the fast pacing damaged.
+  This is what the restore ships now (commit e651c97).
+- Fast pacing (no pauses, about 0.13 s per patch): withdrawn. Each write
+  verified, but the pedal later changed a byte (0x44e/0x456, 2 -> 0) in 44
+  slots, and 3 patches (Hi Sweety, Twiggy Blues, Classic 900) read back
+  wrong right after writing. The verify only checks immediately, so it
+  can't see the later change.
+- The pedal's save time after an upload is about 12-155 ms depending on
+  the patch; with the CLI's 1 s settle, reads always see the new patch.
+
+**Not yet known (performance vs. accuracy decision):**
+- Which pause matters. Hypothesis: the pauses after the slot switch (300 ms
+  after the preset change, 300 ms between patches) protect those bytes;
+  the upload-side pauses (40 ms gaps, 1 s settle) don't. Dropping only the
+  upload-side ones would be about 0.6 s per patch (about 2.5 min for 256).
+- T1 (hidden tab) with whatever pacing we end up with.
+- The second computer: deliberately last, once computer 1 is solid.
+
+**Next steps, in order:**
+1. Build the stronger timing test (plan agreed): a late check that re-reads
+   each scratch slot before it's overwritten and all of them at the end
+   (after switching away), and set files of patches that carry 2s at
+   0x44e/0x456 (X: Hi Sweety, Rock Soul, Radio Cat, Shalala; Y: Twiggy
+   Blues, Classic 900, Scotland Kiss, Love Yourself), made from
+   `GP-200\Backups\2026-09-30_full-backup.zip` into the session folder.
+2. Run A (CLI pacing, expect clean), B (all 0, expect late-check failures:
+   proves the test can fail), C (chunk gap 0 + settle 0, keep the 300 ms
+   pauses), then D (reduce the post-switch pauses one at a time) only if C
+   is clean.
+3. Anything that passes: the full-pedal shifted gate again, then decide the
+   shipped pacing.
+4. Then T1, then the second computer, then merge and GitHub Pages.
+
+**Housekeeping:** test files now live outside the repo (`CLAUDE.md`,
+"Files"); the developer's pedal will be factory-reset at the end, so its
+contents don't matter for testing. At the time of writing, the `CLAUDE.md`
+"Files" section and these last journal entries were not yet committed.
+
+## 2026-10-01: Timing test gets a late check
+
+Built as agreed, to look for a faster pacing that keeps the bytes the fast
+restore lost. Test tool only (`src/core/tuning.js`, the `?dev` panel);
+the restore is unchanged (CLI pacing).
+
+- **Late check:** each write is re-read again after the test has moved on
+  and compared with the file (dead bytes ignored, as verify does). Always
+  at the end of a run: wait the between-writes pause (so the last slot is
+  treated like the others), switch to another scratch slot, wait 1 s,
+  re-read every slot used. Optionally (checkbox, on by default) also just
+  before each slot is overwritten, which gives a check of every write but
+  adds one read (a few ms) before each upload, i.e. slightly lengthens the
+  gap under test. Results per write in the log and new CSV columns
+  `late`, `lateWhen`, `lateDiff`; the summary counts changed writes and
+  how many of them had passed their verify.
+- **Fake pedal `fragile` model** of the 2026-10-01 fault: an upload or a
+  slot switch within a window after a preset change zeroes a byte in the
+  slot just switched to. Tests (84, all passing): the late check catches
+  it when every verify passed; longer pauses give no changes; the
+  end-of-run check alone still catches it; the final switch doesn't cause
+  it.
+- **In-page check (built-in browser, fake pedal, 40 ms fault window):**
+  all pauses 0: 12 of 12 verified, late check 12 of 12 CHANGED (the old
+  test would have reported a clean pass); pauses of 60 ms after the switch
+  and between writes: 12 of 12 verified, 12 re-read, none changed.
+- **Set files** (session folder
+  `C:\Users\dpark\Documents\GP-200-testing\2026-10-01_timing-late-check\`),
+  made from `GP-200\Backups\2026-09-30_full-backup.zip`:
+  `tuning-set-X.zip` = Hi Sweety, Rock Soul, Radio Cat, Shalala;
+  `tuning-set-Y.zip` = Twiggy Blues, Classic 900, Scotland Kiss, Love
+  Yourself. Each carries a 2 at 0x44e or 0x456. Files are numbered 1-4 so
+  the test keeps that order (64A-64D).
+
+**Runs planned** (10 writes per slot, late check before each overwrite on):
+A: CLI pacing, expect clean. B: all four pauses 0, expect late-check
+failures (if B is clean, repeat with the checkbox off before trusting the
+test). C: chunk gap 0, settle 0, after preset change 300, between 300.
+D: only if C is clean, reduce the post-switch pauses one at a time.
