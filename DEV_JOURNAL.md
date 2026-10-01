@@ -1027,3 +1027,70 @@ Reset keeps Writes per slot.
 **Expect in B4 (hardware):** Love Yourself's 10 writes fail their verify
 (it reads 0x456 = 1 until selected); that is the known quirk, not the
 fault. The fault shows as late-check CHANGED rows.
+
+## 2026-10-01: Run B4 (fast restore's order): fault still not reproduced
+
+`gp200_timing_poll_settle0_vfirst_2026-10-01T23-42-02.csv`,
+`gp200_web_2026-10-01T23-42-14.log` (commit 13c3222). Poll mode, all four
+pauses 0, verify before the preset change, late check at the end only, 10
+writes per slot (40), page visible.
+
+- 35 of 40 verified. The 5 failures are all Love Yourself (64D), each
+  `0x456:2->1` after a confirming re-read: the known quirk, now seen by a
+  verify because it runs before the switch. At the end-of-run late check
+  Love Yourself (#40) read as written (2).
+- Late check: 4 of 40 re-read, **none changed.** The other 35 writes
+  matched on the first poll (69-145 ms).
+
+**Weakness found: the end-of-run late check only covered set Y.** With
+"before each overwrite" off, only each slot's last write is re-read, and
+with an even number of writes per slot those are all set Y (Twiggy Blues,
+Classic 900, Scotland Kiss, Love Yourself). **Rock Soul, the one set patch
+known to have been damaged by the fast restore (2C, 34B), was never
+late-checked in B2, B3 or B4.** Which of the other set patches were among
+the 44 damaged slots isn't known any more (the S export was purged); Hi
+Sweety, Twiggy Blues and Classic 900 were the fast restore's *verify*
+failures, a different symptom. So B2-B4 check too little to say the fault
+is absent: 4 writes each, and the wrong ones. Runs A, B and C did check
+every write (before-overwrite check on), but that check puts a read in
+the gap under test.
+
+**Proposed fix (not built):** a late check that re-reads each slot *two
+writes later*, after that later write's verify and before its preset
+change. That's outside the gap after a switch, and it comes after the
+pedal has switched away from the slot (in case the damage happens on
+switching away). With 4 slots it still comes before the slot is
+overwritten. It gives every write a late check without disturbing the
+order under test. Cheaper stopgap: an odd number of writes per slot (e.g.
+11), so the end-of-run check covers set X including Rock Soul, but still
+only 4 checks per run.
+
+## 2026-10-01: Status (start here next session)
+
+**Known:**
+- The shipped restore (CLI pacing) is unchanged and faithful.
+- Timing test runs this session (scratch slots 64A-64D, sets with 2s at
+  0x44e/0x456): A clean; B, C, B2, B3, B4 never reproduced the fast
+  restore's late byte change. A, B and C checked every write but with a
+  read in the gap after the switch; B2-B4 checked only set Y's last writes
+  (see B4).
+- Love Yourself reads 0x456 as 1 (file: 2) until its slot is selected;
+  after that it reads 2. Repeatable (every write in B, C, B2, B3, B4).
+- The pedal's patch-change sound lag is 3-5 ms (developer); its screen
+  takes visibly longer.
+
+**Next steps, in order:**
+1. Build the "two writes later" late check (above), with a test, then
+   B5: poll mode, all pauses 0, verify before the switch, before-overwrite
+   check off, 10 writes per slot. Expect late-check CHANGED rows; if none,
+   the 4-slot test can't reproduce the fault and the next test needs more
+   slots in a row (e.g. a shifted restore over a larger range of scratch
+   or real slots: the developer's pedal will be factory-reset at the end).
+2. Once the test can fail: C with the same checks, then D (post-switch
+   pauses 300, 100, 50, 20, 10, 5 ms).
+3. Then the full-pedal shifted gate for whatever passes, T1, the second
+   computer, merge and Pages.
+
+Session folder `2026-10-01_timing-late-check\` holds the baseline 64A-64D
+export, the set files, and the B3 and B4 CSVs and logs; keep it until
+these runs are done.
