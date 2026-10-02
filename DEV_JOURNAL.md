@@ -30,9 +30,19 @@ This journal records only what's new or different for the browser.
   them (PROTOCOL.md §2). The web app does the same, for parity with the
   tested CLI. Open: does editor mode have any visible effect on the pedal?
 
-- **T1. Background-tab timer throttling.** Chrome slows timers in hidden
-  tabs (to about once a second as soon as the tab is hidden, and after
-  about 5 minutes hidden it can throttle chained timers to roughly once a
+## Resolved
+
+- **T1. Background-tab timer throttling.** *Resolved 2026-10-02: a hidden
+  tab doesn't slow the fast restore.* Two full restores on this computer
+  (Edge, live site), each hidden for all but its first second or so: 27.8 s
+  and 27.4 s, writes about 108 ms apart hidden vs about 124 ms visible,
+  511 of 511 verified, both compares MATCH (entry "Hidden-tab round
+  trip"). Not covered: a write needing re-reads while hidden (the 25 ms
+  re-read pause is the one timer left; none was needed), and a hidden tab
+  on laptop battery. The original question:
+
+  Chrome slows timers in hidden tabs (to about once a second as soon as
+  the tab is hidden, and after about 5 minutes hidden it can throttle chained timers to roughly once a
   minute). The write pacing (40 ms chunk gaps, 1 s settle) runs on
   `setTimeout`, so a restore in a hidden tab could slow down drastically.
   Longer gaps are probably harmless to the pedal, but this is untested.
@@ -43,7 +53,6 @@ This journal records only what's new or different for the browser.
   fix the remaining timers (a Web Worker clock, or timestamped
   `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
   replaced by read-backs, only the 7 chunk gaps would still need timers.
-## Resolved
 
 - **Q1. Does the browser's MIDI path behave like Python's?** The CLI's
   read noise (dead bytes `0x43`/`0x9F`, about 10% of reads) is suspected to
@@ -1676,6 +1685,43 @@ compares; once closed, the delete worked. Lesson for test instructions:
 end with `cd` back out of the session folder (or close the window), or
 the purge fails.
 
+## 2026-10-02: Hidden-tab round trip (T1): MATCH, no slowdown
+
+Pass criteria set beforehand (developer agreed): every write verified and
+both compares MATCH; the time is recorded, and over about 60 s hidden
+(twice the visible time) would mean removing the one slow-able wait, but
+wouldn't fail the test. Session folder `GP-200-testing6-10-02_hidden-tab\`;
+live site (`d263698`), Edge, this computer, restoring
+`GP-200\Backups6-09-30_full-backup.zip`. After clicking Write and
+confirming, the developer pressed Ctrl+T and stayed on the new tab until
+the pedal's display stopped changing (it shows every write), then went
+back.
+
+| Step | Hidden | Writes | Time | Spacing hidden / visible | Compare vs backup |
+|---|---|---|---|---|---|
+| Shifted from 1B (`hidden-after-shift_...21-35-47.log`) | 140.8-205.5 s; restore 139.4-167.2 s | 255 of 255 verified | 27.8 s | 108 ms (244) / 125 ms (10) | `--shift 1`: 256 identical, MATCH |
+| Back from 1A (`hidden-after-restore_...21-37-49.log`) | 442.8-475.8 s; restore 441.7-469.1 s | 256 of 256 verified | 27.4 s | 107 ms (247) / 123 ms (8) | 256 identical, MATCH |
+
+- Same three managed-byte read-backs as every fast restore (2A/4C/11B,
+  then 1D/4B/11A); no confirmation reads, no slow-write warnings, no
+  write needed a second read. So the one timer left in the fast path
+  (the 25 ms pause between re-reads) never ran: this shows the normal
+  path isn't slowed, not how a re-read behaves hidden.
+- Hidden writes were slightly *faster* than visible ones, as in the
+  incidental 8 s on 2026-10-01. Expected: the fast pacing waits on the
+  pedal's MIDI replies, which the browser doesn't throttle.
+- Both restores finished while hidden, so the page logged "Page visible
+  again" as INFO and showed **no banner**: the banner appears only when
+  the page comes back while still writing. (Claude's instructions said to
+  expect a banner; wrong.)
+- The restore-back log was saved before its export; the export is
+  checked by the compare. Export after the shift: 256 in 0.4 s, no
+  re-reads. The pedal is back to the backup.
+
+**Result: PASS, well inside the criteria.** T1 resolved (above).
+**For the designed UI:** the banner's advice "Keep this tab in front until
+writing finishes" is stronger than the evidence now supports; soften it.
+
 ## 2026-10-02: Status (start here next session)
 
 **Known:**
@@ -1686,14 +1732,15 @@ the purge fails.
 - Both gates passed on both computers, from the hosted site: backup
   matches the backup file (and the CLI) byte for byte; a full fast round
   trip (511 writes) verifies and compares MATCH. Q1 and Q2 resolved.
+- A hidden tab doesn't slow the restore (27.4-27.8 s hidden, 511 writes
+  verified, MATCH; T1 resolved).
 - Reads: about 1-3 ms per slot (0.3-0.8 s for all 256), never a re-read.
   Restore: about 30 s for 256 patches.
 - The pedal holds exactly `GP-200\Backups\2026-09-30_full-backup.zip`.
 
 **Next steps, in order:**
-1. T1: a deliberate hidden-tab restore (switch tabs or minimize during a
-   full restore; check timing and verify in the log).
-2. The designed UI (on a branch; publish deliberately). Notes so far: the
+1. The designed UI (on a branch; publish deliberately). Notes so far: the
    range entry should show its meaning in the grid; a backup is instant,
-   so no cancel button is needed for it.
+   so no cancel button is needed for it; soften the hidden-tab banner.
+2. Optional: a hidden-tab restore on the laptop on battery.
 3. Undecided: backport the fast pacing to the CLI.
