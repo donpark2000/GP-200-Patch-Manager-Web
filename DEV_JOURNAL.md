@@ -1611,3 +1611,30 @@ noise (dead bytes, about 10% of reads) hasn't appeared. Q1 resolved
 
 Next: the fast round trip on the laptop (phase 2 on the second
 computer).
+
+## 2026-10-02: Laptop round trip, step 1 (shifted from 1B): MATCH
+
+Live site on the laptop (`d263698`, Edge 155, no `?dev`), restoring the
+laptop's own export (`laptop_gp200_all_patches.zip`, which matches the
+backup byte for byte; the backup file isn't on the laptop). Files in
+`GP-200-testing\2026-10-02_hosted-site\`, renamed by Claude to the agreed
+names (the developer had used `shifter_...`/`shifted_upload_...`):
+`laptop_after-shift-upload_gp200_web_2026-10-02T21-02-50.log` (saved
+after the restore), `laptop_after-shift_gp200_web_2026-10-02T21-07-50.log`
+(after the export; contains the first log plus the export),
+`laptop_after-shift_gp200_all_patches.zip`.
+
+- Preview: 64D's file doesn't fit and isn't written; User-IR/NAM
+  warning for 48C and 49A (48B and 48D shifted up one).
+- **Wrote 255 of 255 in 29.9 s, 255 verified, 0 not verified**, no
+  confirmation reads, page visible throughout. The same three patches as
+  on this computer read back with a pedal-managed byte at 0: 2A Hi Sweety
+  0x456, 4C Twiggy Blues 0x44e, 11B Classic 900 0x456 (each 2->0).
+- Export about 4.3 min after the restore: 256 of 256 in 0.8 s, 0
+  re-reads.
+- `compare-zips --shift 1` backup vs `laptop_after-shift_...zip`: **256
+  identical, RESULT: MATCH**, no pedal-managed differences (the three
+  bytes export as 2 again). Unshifted vs the backup: 102 identical, so
+  154 slots really changed, the same count as on this computer.
+
+Next: step 2, restore back from 1A, export, compare unshifted.
