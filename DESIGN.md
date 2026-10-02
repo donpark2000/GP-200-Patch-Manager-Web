@@ -110,8 +110,9 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - **Fast pacing: the restore's pacing.** Upload with no pauses, read back
   until it matches (up to 3 s), then the preset change; none between
   patches: about 0.11 s per patch instead of about 1.9 s (a full restore
-  in about 30 s instead of 8 min). Passed the phase 2 gate on 2026-10-02;
-  made the default for a second, confirming round trip.
+  in about 30 s instead of 8 min). Passed the phase 2 gate and a
+  confirming round trip on 2026-10-02 (1,022 writes verified, four
+  compares MATCH).
 - **What counts as damage** (developer, 2026-10-01): a restore must
   preserve everything that affects how a patch plays, including the CTRL
   button, footswitch and expression-pedal settings, not only the effect

@@ -50,33 +50,43 @@ This journal records only what's new or different for the browser.
   fix the remaining timers (a Web Worker clock, or timestamped
   `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
   replaced by read-backs, only the 7 chunk gaps would still need timers.
-- **T2. Restore speed.** *Reopened. The read-back pacing (no pauses) was
-  shipped, then withdrawn after the phase 2 gate showed the pedal changing
-  a byte after verify (entries of 2026-10-01). The restore is back on the
-  CLI's pacing. Any speed-up needs a test that re-reads slots after moving
-  on, with patches carrying nonzero 0x44e/0x456.* Original question: about 1.9 s per patch at the CLI's pacing (a full
-  restore takes about 8 minutes); the 1 s settle dominates. The CLI's
-  `calibrate-settle` history shows settle was once suspected in write
-  failures that later traced to the dead bytes, so a shorter settle may be
-  safe now. Only change it with a measured test. Agreed approach:
-  - There is no write ACK (PROTOCOL.md section 2), and Web MIDI's `send()`
-    is fire-and-forget, so the pedal's flash-commit time is invisible. The
-    ~0.3 s is only our own chunk pacing, not the write time.
-  - **Sweep:** add a developer-only timing control plus an "alternate
-    set X / set Y on 64A-64D for N cycles" test mode. Every write must
-    *change* the slot's content, or a write that silently didn't land
-    would still verify. Try settle 1000, 500, 250, 100, 0 ms; count
-    verify failures per setting; finish with export + `compare-zips`.
-  - **Idea: the read-back as the ACK.** Instead of a fixed settle, start
-    reading back right after the burst and repeat (bounded) until the new
-    content appears, which measures the real commit time per write. Unknown:
-    whether a read during the flash commit can disturb the write. Test on
-    scratch slots before relying on it.
-  - Scratch slots 64A-64D are factory defaults, safe to overwrite (a
-    factory reset restores them). Keep the defaults unchanged until the
-    data supports a change.
-
 ## Resolved
+
+- **T2. Restore speed.** *Resolved 2026-10-02: the fast pacing (no
+  pauses, read back until it matches, then the preset change; about 0.11 s
+  per patch, a full restore in about 28 s) is the restore's pacing.* Two
+  full-pedal round trips (shifted from 1B, back from 1A), the second
+  without `?dev`: 1,022 of 1,022 writes verified, all four `compare-zips`
+  results MATCH (256 of 256 slots each), not even a pedal-managed byte
+  different. The only side effect ever seen, 0x44e/0x456 reading or
+  becoming 0, changes no setting in Valeton's editor. See the entries of
+  2026-10-02. The original question and plan, for the record:
+
+  T2 as it stood: *Reopened. The read-back pacing (no pauses) was
+    shipped, then withdrawn after the phase 2 gate showed the pedal changing
+    a byte after verify (entries of 2026-10-01). The restore is back on the
+    CLI's pacing. Any speed-up needs a test that re-reads slots after moving
+    on, with patches carrying nonzero 0x44e/0x456.* Original question: about 1.9 s per patch at the CLI's pacing (a full
+    restore takes about 8 minutes); the 1 s settle dominates. The CLI's
+    `calibrate-settle` history shows settle was once suspected in write
+    failures that later traced to the dead bytes, so a shorter settle may be
+    safe now. Only change it with a measured test. Agreed approach:
+    - There is no write ACK (PROTOCOL.md section 2), and Web MIDI's `send()`
+      is fire-and-forget, so the pedal's flash-commit time is invisible. The
+      ~0.3 s is only our own chunk pacing, not the write time.
+    - **Sweep:** add a developer-only timing control plus an "alternate
+      set X / set Y on 64A-64D for N cycles" test mode. Every write must
+      *change* the slot's content, or a write that silently didn't land
+      would still verify. Try settle 1000, 500, 250, 100, 0 ms; count
+      verify failures per setting; finish with export + `compare-zips`.
+    - **Idea: the read-back as the ACK.** Instead of a fixed settle, start
+      reading back right after the burst and repeat (bounded) until the new
+      content appears, which measures the real commit time per write. Unknown:
+      whether a read during the flash commit can disturb the write. Test on
+      scratch slots before relying on it.
+    - Scratch slots 64A-64D are factory defaults, safe to overwrite (a
+      factory reset restores them). Keep the defaults unchanged until the
+      data supports a change.
 
 - **W1. Does the pedal keep what's written at 0x3E/0x40 and tail +5/+10/+11?**
   *Yes, as far as tested.* Every hardware restore on 2026-09-30 (6 writes of
@@ -1402,3 +1412,42 @@ exactly what users get and there's no setting to forget.
 
 **Confirming run:** the same round trip without `?dev` (the page as users
 get it), files saved to `2026-10-01_fast-gate\` and renamed `confirm-...`.
+
+## 2026-10-02: Confirming round trip (fast by default): MATCH
+
+Page without `?dev` (developer tools off), commit 86f6b50, Edge 155,
+visible throughout. Files in `2026-10-01_fast-gate\` with prefix
+`confirm-`.
+
+| Step | Writes | Time | Compare vs backup |
+|---|---|---|---|
+| Shifted from 1B (`confirm-after-shift_...19-15-09.log`) | 255 of 255 verified | 27.0 s | `--shift 1`: 256 identical, MATCH |
+| Back from 1A (`confirm-after-restore_...19-18-16.log`) | 256 of 256 verified | 27.5 s | 256 identical, MATCH |
+
+Same three managed-byte read-backs each time (Hi Sweety, Twiggy Blues,
+Classic 900); no confirmation reads; step 3 changed 154 slots. **The fast
+pacing ships** (T2 resolved). The pedal is back to the 2026-09-30 backup.
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- Reading: the web export matches the CLI's byte for byte (computer 1).
+- Restore: fast pacing by default, about 28 s for 256 patches; 1,022 of
+  1,022 full-pedal writes verified, four compares MATCH. The CLI's pacing
+  stays as a `?dev` fallback.
+- Pedal-managed bytes 0x44e/0x456: change no setting; verify and
+  `compare-zips` list them without failing.
+- A failing read-back gets 3 confirmation reads (stable vs varies).
+
+**Next steps, in order:**
+1. T1: a deliberate hidden-tab restore (only 8 s of hidden writing seen
+   so far, no slowdown). Probably a short test now that nothing waits on
+   timers.
+2. The second computer: export vs CLI, and a fast round trip.
+3. Merge `read-path` to `main` and publish on GitHub Pages.
+
+**Housekeeping:** session folders `2026-10-01_timing-late-check\`,
+`2026-10-01_changed-patch\` and `2026-10-01_fast-gate\` have their
+results recorded here and are due for purging (with the developer's OK).
+The standards-skill proposal (item 4, "check whether a difference
+matters") is in "Proposed additions" for the developer to add.
