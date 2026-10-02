@@ -54,10 +54,10 @@ over unchanged:
   This project is GPL-3.0 too.
 - **RigSheet** (all rights reserved): read-only cross-check only.
   Independently confirmed *facts* may be used and credited; RigSheet's code
-  and text are never copied.
-
-When the write path is ported (phase 2), its RigSheet-derived addressing
-finding gets the same credit in the write code.
+  and text are never copied. Credited for the upload addressing (in the
+  write code, the README and the page footer), but **not recommended** as
+  a tool (developer, 2026-10-02: its UI is too hard to follow). GP200
+  Studio is the only editor the README and page point users to.
 
 ## Architecture
 
