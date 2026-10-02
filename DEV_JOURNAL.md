@@ -1690,9 +1690,9 @@ the purge fails.
 Pass criteria set beforehand (developer agreed): every write verified and
 both compares MATCH; the time is recorded, and over about 60 s hidden
 (twice the visible time) would mean removing the one slow-able wait, but
-wouldn't fail the test. Session folder `GP-200-testing6-10-02_hidden-tab\`;
+wouldn't fail the test. Session folder `GP-200-testing\2026-10-02_hidden-tab\`;
 live site (`d263698`), Edge, this computer, restoring
-`GP-200\Backups6-09-30_full-backup.zip`. After clicking Write and
+`GP-200\Backups\2026-09-30_full-backup.zip`. After clicking Write and
 confirming, the developer pressed Ctrl+T and stayed on the new tab until
 the pedal's display stopped changing (it shows every write), then went
 back.
