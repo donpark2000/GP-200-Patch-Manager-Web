@@ -56,8 +56,8 @@
         <label>Starting slot <input id="restore-start" placeholder="64A" size="5" autocomplete="off"></label>
         <label>Files <input id="restore-files" type="file" accept=".prst,.zip" multiple></label>
         <label id="restore-pacing-row" hidden>Pacing (developer) <select id="restore-pacing">
-          <option value="cli">The CLI's (about 1.9 s per patch)</option>
-          <option value="fast">Fast (about 0.2 s per patch; under test)</option>
+          <option value="fast">Fast (about 0.1 s per patch)</option>
+          <option value="cli">The CLI's (about 1.9 s per patch; fallback)</option>
         </select></label>
       </div>
       <table id="restore-plan" class="plan" hidden>
@@ -101,7 +101,7 @@
       <div class="row">
         <label>Poll timeout <input id="tune-poll-timeout" class="num" type="number" min="10"> ms</label>
         <label>Poll limit <input id="tune-poll-max" class="num" type="number" min="100"> ms</label>
-        <button id="tune-defaults" class="secondary">Reset to restore's timing</button>
+        <button id="tune-defaults" class="secondary">Reset to the CLI's timing</button>
       </div>
       <div class="row">
         <label>Late check <select id="tune-late">

@@ -212,7 +212,7 @@ test("fast restore: no pause between patches, the pacing logged, managed-byte ch
   assert.ok(log.lines.some((l) => l.includes("2 read back with pedal-managed byte(s) changed, not a setting (64A, 64C)")));
 });
 
-test("the CLI's pacing is still the default: 300 ms between patches, logged", async () => {
+test("the CLI's pacing (fallback): 300 ms between patches, logged", async () => {
   const { log, dev } = setup();
   await dev.connect();
   const plan = planUpload([{ name: "1.prst", data: prstNamed("One") }, { name: "2.prst", data: prstNamed("Two") }], 252);

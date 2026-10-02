@@ -95,11 +95,11 @@ These are deliberately simpler than the CLI's. See the journal entry of
   Report a clear pass/fail. No automatic rewrites (the CLI tries up to 10);
   the user decides whether to retry.
 - **Write method: flash upload only**, ported byte-for-byte from the CLI
-  (golden-tested) with the CLI's pacing: 40 ms between the 7 chunks, a
-  1 s settle, then a preset change to the written slot, 300 ms, the
-  read-back, and 300 ms between patches. So after a restore, **the pedal is
-  left on the last slot written**. The CLI's "live" method and experimental
-  save-commit are not ported.
+  (golden-tested), with the fast pacing below. After a restore, **the
+  pedal is left on the last slot written**. The CLI's "live" method and
+  experimental save-commit are not ported. The CLI's pacing (40 ms between
+  the 7 chunks, a 1 s settle, a preset change, 300 ms, the read-back,
+  300 ms between patches) stays available as a developer fallback (`?dev`).
 - **Pedal-managed bytes: 0x44e and 0x456.** With fast pacing the pedal
   changed these (a 2 became 0) in 44 slots after their read-back had
   matched, and some patches read back differently there until selected.
@@ -107,11 +107,11 @@ These are deliberately simpler than the CLI's. See the journal entry of
   editor, CTRL, footswitch and EXP included (journal, 2026-10-01). So the
   verify and `compare-zips` don't fail on them, but report every change.
   Any other byte that changes is still a failure.
-- **Fast pacing (goal: ship it).** Upload with no pauses, read back until
-  it matches (up to 3 s), then the preset change; none between patches:
-  about 0.2 s per patch instead of about 1.9 s. Available as a developer
-  setting on the restore (`?dev`) until the phase 2 gate below passes with
-  it; then it becomes the restore's pacing.
+- **Fast pacing: the restore's pacing.** Upload with no pauses, read back
+  until it matches (up to 3 s), then the preset change; none between
+  patches: about 0.11 s per patch instead of about 1.9 s (a full restore
+  in about 30 s instead of 8 min). Passed the phase 2 gate on 2026-10-02;
+  made the default for a second, confirming round trip.
 - **What counts as damage** (developer, 2026-10-01): a restore must
   preserve everything that affects how a patch plays, including the CTRL
   button, footswitch and expression-pedal settings, not only the effect

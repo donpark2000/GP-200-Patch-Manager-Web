@@ -2,7 +2,7 @@
 // a range, restore (test build), and a log that can be saved. Replaced by
 // the designed UI later; all protocol logic lives in src/core/.
 
-import { FAST_WRITE_TIMING, findGp200Ports, GP200, WRITE_TIMING } from "../core/device.js";
+import { CLI_WRITE_TIMING, findGp200Ports, GP200, WRITE_TIMING } from "../core/device.js";
 import { exportWarnings, packageExport, readSlots } from "../core/export.js";
 import { Logger } from "../core/log.js";
 import { prstFileName } from "../core/prst.js";
@@ -336,10 +336,10 @@ async function onRestore() {
   if (!plan?.items.length || !device) return;
   const n = plan.items.length;
   const range = `${plan.items[0].label}-${plan.items.at(-1).label}`;
-  const fast = DEV && ui.restorePacing.value === "fast";
+  const cliPacing = DEV && ui.restorePacing.value === "cli";
   if (!confirm(`Write ${n} patch(es) to ${range} on the pedal?\n\n` +
     "This replaces what's in those slots now. Make sure you have a backup." +
-    (fast ? "\n\nPacing: FAST (developer setting, under test)." : ""))) {
+    (cliPacing ? "\n\nPacing: the CLI's (developer fallback, about 1.9 s per patch)." : ""))) {
     log.info("Restore cancelled at the confirmation prompt; nothing written");
     return;
   }
@@ -349,7 +349,7 @@ async function onRestore() {
   setBusy("restore");
   const results = new Map();
   log.info(`Restoring ${n} patch(es) to ${range}`);
-  device.timing = fast ? FAST_WRITE_TIMING : WRITE_TIMING;
+  device.timing = cliPacing ? CLI_WRITE_TIMING : WRITE_TIMING;
   try {
     const out = await writeSlots(device, plan.items, {
       skeleton: skeletonBytes(),

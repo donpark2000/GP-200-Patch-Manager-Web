@@ -24,16 +24,17 @@
 // reports every byte. Nothing here changes the shipped timing; the numbers
 // are evidence for deciding whether to.
 
-import { plannedWriteMs, WRITE_TIMING } from "./device.js";
+import { CLI_WRITE_TIMING, plannedWriteMs } from "./device.js";
 import { buildPrstFromDump, DEAD_BYTE_FILE_OFFSETS, diffPrstContent, isPrst, prstFileName } from "./prst.js";
 import { labelToSlot, slotToLabel } from "./slots.js";
 
 /** Factory-default slots, safe to overwrite (a factory reset restores them). */
 export const SCRATCH_SLOTS = ["64A", "64B", "64C", "64D"].map(labelToSlot);
 
-/** Defaults: the restore's own timing (the CLI's), so a run checks what ships. */
+/** Defaults: the CLI's timing, the fixed-pause reference. (The restore's fast
+ *  pacing is poll mode, all pauses 0, verify before the switch.) */
 export const TUNING_DEFAULTS = {
-  mode: "fixed", cycles: 4, ...WRITE_TIMING, betweenSlotsMs: 300, pollTimeoutMs: 500, pollMaxMs: 5000,
+  mode: "fixed", cycles: 4, ...CLI_WRITE_TIMING, betweenSlotsMs: 300, pollTimeoutMs: 500, pollMaxMs: 5000,
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  checkDump, CONFIRM_READS, FAST_WRITE_TIMING, findGp200Ports, GP200, isFastTiming, plannedWriteMs, ReadError, slowWriteWarning, WRITE_TIMING,
+  checkDump, CLI_WRITE_TIMING, CONFIRM_READS, FAST_WRITE_TIMING, findGp200Ports, GP200, isFastTiming, plannedWriteMs, ReadError, slowWriteWarning, WRITE_TIMING,
 } from "../src/core/device.js";
 import { Logger } from "../src/core/log.js";
 import { exportPrst } from "../src/core/prst.js";
@@ -120,9 +120,12 @@ test("readOnce: one attempt with its own timeout, no retry and no warning", asyn
 const NO_DELAY = { chunkGapMs: 0, settleMs: 0, presetChangeMs: 0 };
 const kinds = (pedal) => pedal.sent.map((m) => (m[8] === 0x12 && m[9] === 0x20 ? "U" : m[9] === 0x10 ? "R" : m[9] === 0x08 ? "P" : "?"));
 
-test("restore timing: the CLI's pacing (a faster one changed bytes after verify, DEV_JOURNAL.md 2026-10-01)", () => {
-  assert.deepEqual(WRITE_TIMING, { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 });
-  assert.equal(plannedWriteMs(WRITE_TIMING), 1580);
+test("restore timing: fast by default (passed the gate, DEV_JOURNAL.md 2026-10-02); the CLI's kept as the fallback", () => {
+  assert.equal(WRITE_TIMING, FAST_WRITE_TIMING);
+  assert.deepEqual(CLI_WRITE_TIMING, { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 });
+  assert.equal(plannedWriteMs(CLI_WRITE_TIMING), 1580);
+  const { dev } = setup();
+  assert.equal(dev.timing, FAST_WRITE_TIMING, "a device made without a timing uses the fast pacing");
 });
 
 test("writeSlot: upload, preset change, then the read-back (the CLI's order)", async () => {
@@ -197,7 +200,7 @@ test("fast pacing: the withdrawn restore's values, recognised as fast; the CLI's
     chunkGapMs: 0, settleMs: 0, presetChangeMs: 0, betweenSlotsMs: 0, readBackTimeoutMs: 500, readBackRetryMs: 25, readBackLimitMs: 3000,
   });
   assert.equal(plannedWriteMs(FAST_WRITE_TIMING), 0);
-  assert.ok(isFastTiming(FAST_WRITE_TIMING) && !isFastTiming(WRITE_TIMING));
+  assert.ok(isFastTiming(FAST_WRITE_TIMING) && !isFastTiming(CLI_WRITE_TIMING));
 });
 
 test("fast writeSlot: upload, read-back until it matches, then the preset change", async () => {

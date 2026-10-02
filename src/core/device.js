@@ -54,35 +54,32 @@ function patterns(keys) {
 }
 
 /**
- * Write pacing, copied from the CLI's write_slot: 40 ms between chunks
- * (RigSheet's spacing), a 1 s settle, a preset change, 300 ms; the restore
- * adds 300 ms between patches. There's no write ACK, so these pauses are
- * all the flow control there is.
- *
- * Back on the CLI's values after a faster read-back pacing (all pauses 0)
- * passed 516 timing-test writes but, in a full restore, let the pedal
- * change a byte (0x44e/0x456, a 2 became 0) in 44 slots after their
- * read-back had matched (DEV_JOURNAL.md, 2026-10-01). The CLI's pacing kept
- * those bytes in a full round robin. Change these only with evidence from a
- * test that re-reads slots after moving on, using patches that carry
- * nonzero values there. Tests pass zeros.
+ * The CLI's write_slot pacing: 40 ms between chunks (RigSheet's spacing), a
+ * 1 s settle, a preset change, 300 ms; the restore adds 300 ms between
+ * patches. There's no write ACK, so in the CLI these pauses are all the
+ * flow control there is. Kept as the developer fallback (?dev) and the
+ * timing test's reference; about 1.9 s per patch.
  */
-export const WRITE_TIMING = { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 };
+export const CLI_WRITE_TIMING = { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 };
 
 /**
- * Fast pacing (commit 540109f's, restored for the gate in DEV_JOURNAL.md
- * 2026-10-01): all 7 chunks at once, read the slot back until it holds the
- * new patch (each read up to `readBackTimeoutMs`, re-reads
- * `readBackRetryMs` apart, at least one re-read, up to `readBackLimitMs`),
- * then the preset change; no pauses, none between patches. Its only known
- * side effect is on the pedal-managed bytes (prst.js), which don't change
- * any setting. Chosen in the restore's developer controls (?dev) until the
- * full-pedal gate passes.
+ * Fast pacing (commit 540109f's): all 7 chunks at once, read the slot back
+ * until it holds the new patch (each read up to `readBackTimeoutMs`;
+ * on a mismatch, re-reads `readBackRetryMs` apart, at least one, up to
+ * `readBackLimitMs`), then the preset change; no pauses, none between
+ * patches. The read-back is the write ACK the pedal doesn't send. About
+ * 0.11 s per patch. Passed the full-pedal phase 2 gate on 2026-10-02 (511
+ * of 511 writes verified, both compares MATCH; DEV_JOURNAL.md). Its only
+ * known side effect is on the pedal-managed bytes (prst.js), which don't
+ * change any setting.
  */
 export const FAST_WRITE_TIMING = {
   chunkGapMs: 0, settleMs: 0, presetChangeMs: 0, betweenSlotsMs: 0,
   readBackTimeoutMs: 500, readBackRetryMs: 25, readBackLimitMs: 3000,
 };
+
+/** The restore's pacing: fast (CLI_WRITE_TIMING is the ?dev fallback). */
+export const WRITE_TIMING = FAST_WRITE_TIMING;
 
 /** Fast pacing reads back until it matches; the CLI's reads back once. */
 export const isFastTiming = (timing) => timing.readBackLimitMs !== undefined;

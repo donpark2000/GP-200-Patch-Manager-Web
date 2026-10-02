@@ -1379,3 +1379,26 @@ of identical templates).
 bytes appeared, so nothing new joins the ignore list, and the pause sweep
 (idea 2) isn't needed. The pedal is back to the 2026-09-30 backup
 exactly (64A-64D at factory defaults again).
+
+## 2026-10-02: Fast pacing made the default (confirming run next)
+
+Agreed with the developer: make the fast pacing the restore's default now
+and run the second, confirming round trip with it, so the run tests
+exactly what users get and there's no setting to forget.
+
+- `device.js`: `CLI_WRITE_TIMING` = the CLI's values (renamed from
+  `WRITE_TIMING`); `WRITE_TIMING` = `FAST_WRITE_TIMING`, also the
+  `GP200` default. Fast-pacing doc corrected: the extra re-read happens
+  only on a mismatch (a clean write reads once).
+- `?dev` restore pacing: "Fast (about 0.1 s per patch)" first and
+  selected; "The CLI's (about 1.9 s per patch; fallback)" second; the
+  confirmation names the CLI's pacing when chosen. Without `?dev`: fast.
+- Timing test: its defaults stay the CLI's values (`CLI_WRITE_TIMING`);
+  button renamed "Reset to the CLI's timing".
+- `DESIGN.md`: write method and pacing bullets updated.
+- Tests: 117, all passing; the default-pacing test fails if
+  `WRITE_TIMING` is set back to the CLI's values (checked). Built-in
+  browser: Fast selected by default, no console errors.
+
+**Confirming run:** the same round trip without `?dev` (the page as users
+get it), files saved to `2026-10-01_fast-gate\` and renamed `confirm-...`.
