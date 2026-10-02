@@ -1214,3 +1214,13 @@ button, footswitch and expression-pedal settings isn't good enough, the same
 as for effect settings. Recorded in `DESIGN.md` (reliability rules, "What
 counts as damage"). The pairs above answer whether the 2 -> 0 change at
 0x44e/0x456 breaks that rule.
+
+**Result (developer, Valeton desktop software):** for both pairs the
+original and the changed copy **do not differ** in any setting, including
+the CTRL, footswitch and expression-pedal settings. The developer has also
+checked in earlier testing that uploads preserve these settings. So the
+2 -> 0 change at 0x44e/0x456 that the fast pacing caused doesn't change
+anything the editor shows. Caveat: the editor shows settings, not
+necessarily every piece of state a patch stores; the fast restore's
+damage was only ever at these two offsets (S vs X: no other offset
+differed in 255 slots).
