@@ -71,10 +71,13 @@ Two layers, kept strictly apart:
 2. **UI** (`src/ui/`): two pages on the same core. `index.html` is the
    designed interface. `test.html` is the bare test page that proved the
    core on hardware, kept as a reference: a fault that also shows there
-   is in the core, one that doesn't is in the new UI. Unlinked, labelled
-   as a developer page. The proven state is tagged `test-page-proven`
-   (developer, 2026-10-02: keep the proven interface rather than replace
-   it; one repo, so the core is never copied).
+   is in the core, one that doesn't is in the new UI. Labelled as a
+   developer page and **not published** (developer, 2026-10-02): run it
+   on localhost, or publish it temporarily by running the CI workflow by
+   hand with "include test page" ticked; the next normal publish takes it
+   down. The proven state is tagged `test-page-proven` (developer,
+   2026-10-02: keep the proven interface rather than replace it; one
+   repo, so the core is never copied).
 
 A **debug log** is built in from the start (standards §1): an on-screen log
 panel plus "save log to file", including browser, OS, and MIDI port
@@ -149,7 +152,10 @@ to be designed.
   full desktop screen (checked by the developer in the mockup). One list,
   each entry labelled the way Valeton writes it, "12-A Oldschool Fuzz",
   flowing down 8 columns of 8 banks; a faint line between banks; default
-  names greyed. Read from the pedal on connect and after a restore.
+  names greyed. **Always shows what is on the pedal** (developer,
+  2026-10-02): read on connect, re-read after every restore or Template
+  run (also one that stopped early or had failures), and updated with
+  the names the Template's pre-write re-check reads.
 - **Slots are chosen as ranges**, not by clicking around the list
   (developer: patches live together in a bank or consecutive banks).
   Back up: From/To; Restore: a start slot. Clicking a patch fills in the

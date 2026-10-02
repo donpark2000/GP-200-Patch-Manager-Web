@@ -2001,3 +2001,24 @@ suite 128 pass, 0 fail):
   starting "it", the empty-name test failed. Restored: 11 pass.
 - `test.html` re-checked in the built-in browser after the core change:
   loads, no console errors.
+
+## 2026-10-02: Re-check agreed; list always matches the pedal; test page unpublished
+
+- **Re-check before a Template write: agreed** by the developer.
+- **The patch list always shows what is on the pedal** (developer):
+  re-read after every restore or Template run, including one that stopped
+  early or had failures, and updated with the names the pre-write
+  re-check reads. `DESIGN.md` "The patch list" updated.
+- **Test page kept, not published** (developer: no need to host it all
+  the time). CI now leaves `test.html` and `src/ui/testpage.*` out of the
+  site. To bring it back: run it on localhost (`npm run serve`, then
+  `http://localhost:8000/test.html`; needs the repo and Python), or, e.g.
+  for the laptop, run the CI workflow by hand on GitHub (Actions, CI,
+  "Run workflow" on `main`) with "Also publish the developer test page"
+  ticked. The next publish without the box ticked takes it down.
+  - Checked: the assemble step, run in a scratch copy of the repo, gives
+    `index.html` only when the box is unticked or absent (a normal publish
+    from a merge) and adds `test.html` plus its script and CSS when ticked.
+    The YAML itself is first checked by GitHub on the PR's CI run, and the
+    checkbox appears only once the workflow is on `main` (GitHub reads
+    `workflow_dispatch` inputs from the default branch).

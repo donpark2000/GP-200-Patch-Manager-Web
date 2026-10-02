@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      include_test_page:
+        description: "Also publish the developer test page (test.html) until the next publish"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,7 +26,9 @@ jobs:
         run: npm test
 
   # Publish the site to GitHub Pages, but only from main and only after the
-  # tests pass. Just the files the page needs are published.
+  # tests pass. Just the files the page needs are published. The developer
+  # test page (test.html) is left out unless a manual run asks for it; the
+  # next publish without the box ticked takes it down again.
   deploy:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -40,7 +47,13 @@ jobs:
       - name: Assemble the site
         run: |
           mkdir -p _site
-          cp -r index.html test.html src LICENSE _site/
+          cp -r index.html src LICENSE _site/
+          if [ "${{ inputs.include_test_page }}" = "true" ]; then
+            cp test.html _site/
+            echo "Publishing the developer test page too"
+          else
+            rm _site/src/ui/testpage.*
+          fi
           # Stamp the build so a saved log names the exact commit.
           stamp="${GITHUB_SHA::7} ($(date -u +%Y-%m-%d))"
           sed -i "s|export const VERSION = \".*\";|export const VERSION = \"${stamp}\";|" _site/src/version.js
