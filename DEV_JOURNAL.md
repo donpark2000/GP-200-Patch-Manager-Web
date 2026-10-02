@@ -1335,3 +1335,32 @@ a deliberate break (always "stable": 2 red; a later match never passing:
 Exports read each slot once, so a `compare-zips` difference could be read
 noise in the export: before inspecting one, re-export the slots involved
 and compare again.
+
+## 2026-10-02: Phase 2 gate with the fast pacing, step 2: MATCH
+
+Session folder `GP-200-testing\2026-10-01_fast-gate\` (commit 25a5121;
+Edge 155, localhost).
+
+- `before-gate_gp200_all_patches.zip` (11:53): the pedal before the gate.
+  vs the backup: 252 identical; 64A-64D hold the timing test's set Y.
+  (A first attempt at step 2 never started writing; a second ran with the
+  CLI's pacing by mistake and was stopped with "Stop after this patch",
+  leaving a partly shifted pedal. Neither run's log was kept.)
+- **Shifted restore, fast pacing** (`after-shift_gp200_web_2026-10-02T19-01-42.log`):
+  backup from 1B, 255 patches **in 29.2 s, 255 of 255 verified**, no
+  confirmation reads. 3 read back with a pedal-managed byte changed:
+  2A Hi Sweety 0x456 2->0, 4C Twiggy Blues 0x44e 2->0, 11B Classic 900
+  0x456 2->0 (the same three patches as in the first fast restore).
+- **`compare-zips --shift 1`** backup vs `after-shift_gp200_all_patches.zip`
+  (12:02): **256 slots identical, RESULT: MATCH**, no pedal-managed
+  differences either: the three bytes that read 0 right after writing
+  export as 2. The first fast restore's late 2 -> 0 change (44 slots)
+  didn't recur. (Some slots already held their shifted patch from the
+  stopped CLI-pacing run; step 3 rewrites every changed slot again.)
+- **Hidden page (T1), incidental:** the page was hidden 65.2-102.0 s; the
+  restore finished at 73.5 s. Writes while hidden: 92, mean 90 ms apart;
+  visible: 162, mean 129 ms. No slowdown, as expected with no timers;
+  only 8 s of hidden writing, so not a full T1 answer.
+
+Next: step 3, restore the backup from 1A with the fast pacing, export,
+compare unshifted.
