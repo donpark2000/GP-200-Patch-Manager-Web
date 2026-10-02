@@ -102,6 +102,12 @@ These are deliberately simpler than the CLI's. See the journal entry of
   which the verify can't see. Any future speed-up must be proven with a
   test that re-reads slots after the restore has moved on, using patches
   that carry nonzero values at 0x44e/0x456.
+- **What counts as damage** (developer, 2026-10-01): a restore must
+  preserve everything that affects how a patch plays, including the CTRL
+  button, footswitch and expression-pedal settings, not only the effect
+  settings. A byte the pedal changes is acceptable only if it's shown not
+  to change any of these; an unexplained change is treated as damage
+  until then.
 - These rules hold only if the browser's MIDI path behaves like the CLI's.
   The acceptance tests below exist to prove that.
 

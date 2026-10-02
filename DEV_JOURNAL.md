@@ -1208,3 +1208,9 @@ it matters. First question: what do 0x44e/0x456 control?
 
 Next: the developer loads each pair into the desktop software and
 compares every setting, including assignments (footswitch, EXP, CTRL).
+
+**Rule from the developer:** a restore that doesn't preserve the CTRL
+button, footswitch and expression-pedal settings isn't good enough, the same
+as for effect settings. Recorded in `DESIGN.md` (reliability rules, "What
+counts as damage"). The pairs above answer whether the 2 -> 0 change at
+0x44e/0x456 breaks that rule.
