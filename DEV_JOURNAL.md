@@ -1497,3 +1497,43 @@ discarded, and every restore relies on that. Changes: the README and page
 footer no longer recommend it as an editor (GP200 Studio only); one
 factual credit line each for the addressing; `DESIGN.md` records the
 rule. Code comments unchanged.
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- The app is live at https://donpark2000.github.io/GP-200-Patch-Manager-Web/
+  (version **d263698 (2026-10-02)**), published from `main` by CI.
+  `read-path` holds the same content plus later journal entries; work
+  continues on it, and each merge to `main` (a publish) needs the
+  developer's OK.
+- Backup: the web export matches the CLI's byte for byte (this computer,
+  via localhost).
+- Restore: fast pacing by default, about 28 s for 256 patches; 1,022 of
+  1,022 full-pedal writes verified, four compares MATCH. The CLI's pacing
+  is a `?dev` fallback.
+- Pedal-managed bytes 0x44e/0x456 change no setting; verify and
+  `compare-zips` report them without failing. A failing read-back gets 3
+  confirmation reads.
+- The pedal holds exactly `GP-200\Backups\2026-09-30_full-backup.zip`.
+- README and page footer updated (site link, no CLI-testing references,
+  RigSheet credited for the upload addressing but not recommended).
+
+**Next steps, in order:**
+1. **Hosted site, this computer** (session folder
+   `GP-200-testing\2026-10-02_hosted-site\`, already created, empty):
+   open the site in Edge, allow MIDI, check the version line, Connect,
+   Export all, Save log. Compare with the backup:
+   `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\compare-zips.js C:\Users\dpark\Documents\GP-200\Backups\2026-09-30_full-backup.zip gp200_all_patches.zip`.
+   Expected: 256 identical, MATCH. Optionally a fast round trip from the
+   hosted site too.
+2. **Laptop** (no Python, no repo; that's why the site is hosted): same
+   steps on the site; copy its export and log to this computer's session
+   folder (renamed `laptop_...`) and compare the same way. Then a fast
+   round trip there (shifted from 1B, back from 1A, export after each;
+   `--shift 1` for the first compare).
+3. T1: a deliberate hidden-tab restore.
+4. Later: the designed UI (work on a branch; publish deliberately).
+   Undecided: backport the fast pacing to the CLI.
+
+`CLAUDE.md` now has a "Starting a session" routine, so a new session can
+begin with just "start".

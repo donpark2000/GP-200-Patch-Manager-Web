@@ -1,7 +1,18 @@
 # Notes for Claude
 
-Read `DESIGN.md` (decisions) and `DEV_JOURNAL.md` (reasoning, findings,
-open questions) before starting work.
+## Starting a session
+
+Do this at the start of every session, before anything else, without
+being asked (the developer's first message may just be "start"):
+
+1. Load the `software-project-standards` skill.
+2. Read `DESIGN.md` (decisions). In `DEV_JOURNAL.md` (reasoning, findings),
+   read the "Open questions" section and the **latest "Status (start here
+   next session)" entry**; the journal is long, so read older entries only
+   when a task needs them.
+3. Check `git status` and that the branch matches GitHub (`git fetch`).
+4. Reply with a short summary: where things stand, the next step, and
+   anything needed from the developer. Then wait for the go-ahead.
 
 ## Working standards
 
