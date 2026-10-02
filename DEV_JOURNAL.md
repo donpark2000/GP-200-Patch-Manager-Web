@@ -1789,3 +1789,13 @@ it. Writing them down as they come up guards against assuming too early
 that something doesn't matter, and closing them at the end of testing was
 cheap. Not proposed for the standards skill.
 
+
+## 2026-10-02: iPhone: no Web MIDI (as expected)
+
+The developer opened the live site in Edge on their iPhone, with no pedal
+attached: the page showed the app's "This browser doesn't support Web
+MIDI" message (`navigator.requestMIDIAccess` missing). Every iOS browser
+runs on Apple's WebKit engine, which has no Web MIDI, so iPhone and iPad
+are unsupported whatever the browser. Android (Chrome has Web MIDI) stays
+untested: the developer's tablet has only micro-USB, and an adapter isn't
+worth buying just to find out.
