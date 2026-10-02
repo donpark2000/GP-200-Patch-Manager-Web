@@ -96,12 +96,18 @@ These are deliberately simpler than the CLI's. See the journal entry of
   read-back, and 300 ms between patches. So after a restore, **the pedal is
   left on the last slot written**. The CLI's "live" method and experimental
   save-commit are not ported.
-- **Faster pacing was tried and withdrawn** (journal, 2026-10-01). With no
-  pauses, every write verified in the timing test, but in a full restore
-  the pedal changed a byte in 44 slots *after* their read-back had matched,
-  which the verify can't see. Any future speed-up must be proven with a
-  test that re-reads slots after the restore has moved on, using patches
-  that carry nonzero values at 0x44e/0x456.
+- **Pedal-managed bytes: 0x44e and 0x456.** With fast pacing the pedal
+  changed these (a 2 became 0) in 44 slots after their read-back had
+  matched, and some patches read back differently there until selected.
+  Patches that differ only there show identical settings in Valeton's
+  editor, CTRL, footswitch and EXP included (journal, 2026-10-01). So the
+  verify and `compare-zips` don't fail on them, but report every change.
+  Any other byte that changes is still a failure.
+- **Fast pacing (goal: ship it).** Upload with no pauses, read back until
+  it matches (up to 3 s), then the preset change; none between patches:
+  about 0.2 s per patch instead of about 1.9 s. Available as a developer
+  setting on the restore (`?dev`) until the phase 2 gate below passes with
+  it; then it becomes the restore's pacing.
 - **What counts as damage** (developer, 2026-10-01): a restore must
   preserve everything that affects how a patch plays, including the CTRL
   button, footswitch and expression-pedal settings, not only the effect
@@ -186,6 +192,13 @@ that silently did nothing would still pass. So:
 3. Export and confirm the change actually landed.
 4. Restore A with the web app.
 5. Export all → must match A exactly.
+
+**Pass criteria for the fast pacing** (agreed 2026-10-01): steps 2-5 with
+the fast pacing, compared with `compare-zips` (`--shift 1` for step 3).
+MATCH means every byte matches except the ones the CLI already ignores and
+the pedal-managed bytes, which are listed but don't fail. Both compares
+MATCH and every write verified: the fast pacing ships. Anything else: only
+that difference gets investigated.
 
 Restoring A from 1B shifts every patch up one slot: 1A is left as it is,
 and the 64D file doesn't fit and isn't written (the preview says so). A

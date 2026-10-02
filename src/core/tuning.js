@@ -19,8 +19,10 @@
 //     slot, and the read sits after a verify, so it adds nothing between a
 //     preset change and the next upload, in either order.
 //   - "end": only the end of the run (each slot's last write).
-// Nothing here changes the shipped timing; the numbers are evidence for
-// deciding whether to.
+// The verify is the restore's, so pedal-managed bytes (prst.js) don't fail
+// it; they're recorded per write (`managedDiff`). The late check still
+// reports every byte. Nothing here changes the shipped timing; the numbers
+// are evidence for deciding whether to.
 
 import { plannedWriteMs, WRITE_TIMING } from "./device.js";
 import { buildPrstFromDump, DEAD_BYTE_FILE_OFFSETS, diffPrstContent, isPrst, prstFileName } from "./prst.js";
@@ -263,6 +265,7 @@ async function tuneOneWrite(device, {
   row.verified = v.ok;
   row.rechecked = v.recheckedAfterMismatch;
   row.reason = (v.reason ?? "") + (v.mismatches?.length ? `: ${formatDiffs(v.mismatches, OTHER_DIFF_MAX)}` : "");
+  row.managedDiff = formatDiffs(v.managed ?? []);
   row.roundtrip = v.roundtrip;
   row.totalMs = performance.now() - t0 - lateMs;
   row.hidden = wasHidden(t0);
@@ -321,6 +324,7 @@ function describeRow(r) {
           (r.otherDiffLast ? `, the last one at ${r.otherDiffLast}` : "") : "") +
         ` [${r.pollTrace}]`;
   }
+  if (r.managedDiff) text += `; pedal-managed byte(s) at the verify: ${r.managedDiff}`;
   return text + (r.hidden ? "; PAGE WAS HIDDEN" : "");
 }
 
@@ -381,7 +385,7 @@ const CSV_COLUMNS = [
   "n", "label", "set", "file", "patch", "mode", "chunkGapMs", "settleMs", "presetChangeMs", "plannedMs",
   "burstMs", "settleActualMs", "writeMs", "totalMs", "polls", "firstReply", "firstReplyMs", "newAtMs",
   "pollTrace", "verified", "rechecked", "hidden", "reason", "late", "lateWhen", "lateDiff",
-  "otherDiff", "otherDiffLast", "verifyBeforeSwitch", "lateMode",
+  "otherDiff", "otherDiffLast", "verifyBeforeSwitch", "lateMode", "managedDiff",
 ];
 
 /** One row per write, for pasting into a spreadsheet or the journal. */

@@ -23,6 +23,10 @@
 // window (the working hypothesis for why the timing test, whose verify read
 // comes right after the switch, didn't reproduce the fault on hardware).
 //
+// `storeAs: {off, value}`: every upload is stored with `value` at file
+// offset `off`, whatever was sent (how the pedal treats the pedal-managed
+// bytes in prst.js; on any other offset, a write that doesn't land intact).
+//
 // `unloadedReads: {off, value}` models what "Love Yourself" did on
 // 2026-10-01 (runs B and C): after an upload, reads of that slot show
 // `value` at file offset `off` until a preset change selects the slot;
@@ -36,8 +40,9 @@ const DUMP_SHIFT = 0x28;
 export class FakePedal {
   constructor({
     dumps = new Map(), defaultDump, faults = null, writeFaults = null, answerIdentity = true,
-    commitMs = 0, readsDuringCommit = "old", fragile = null, unloadedReads = null,
+    commitMs = 0, readsDuringCommit = "old", fragile = null, unloadedReads = null, storeAs = null,
   } = {}) {
+    this.storeAs = storeAs;
     this.unloadedReads = unloadedReads;
     this._unloaded = new Set(); // slots uploaded to and not selected since
     this.dumps = dumps;
@@ -133,6 +138,7 @@ export class FakePedal {
     dump.set(content.subarray(0, dump.length - (0x2e - DUMP_SHIFT)), 0x2e - DUMP_SHIFT);
     for (const off of [0x2e, 0x34, 0x90]) dump[off - DUMP_SHIFT] = slot;
     for (const off of [0x43, 0x9f]) dump[off - DUMP_SHIFT] = 0;
+    if (this.storeAs) dump[this.storeAs.off - DUMP_SHIFT] = this.storeAs.value;
     if (!this.commitMs) {
       this.dumps.set(slot, dump);
       return;

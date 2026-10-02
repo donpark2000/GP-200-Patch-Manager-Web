@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  checkDump, findGp200Ports, GP200, plannedWriteMs, ReadError, slowWriteWarning, WRITE_TIMING,
+  checkDump, FAST_WRITE_TIMING, findGp200Ports, GP200, isFastTiming, plannedWriteMs, ReadError, slowWriteWarning, WRITE_TIMING,
 } from "../src/core/device.js";
 import { Logger } from "../src/core/log.js";
 import { exportPrst } from "../src/core/prst.js";
@@ -178,3 +178,72 @@ test("sendUpload: a chunk gap of 0 sends all 7 chunks at once; any gap paces the
   await pending;
   assert.equal(uploads(paced.pedal), 7);
 });
+
+// ---- Fast pacing and pedal-managed bytes (DEV_JOURNAL.md 2026-10-01) -------
+
+const MANAGED = 0x456;
+const withManaged = (name, v = 2) => {
+  const d = dumpWithName(name);
+  d[MANAGED - 0x28] = v;
+  return exportPrst(d, skeletonBytes());
+};
+const FAST = { ...FAST_WRITE_TIMING, readBackTimeoutMs: 30, readBackLimitMs: 120 };
+
+test("fast pacing: the withdrawn restore's values, recognised as fast; the CLI's isn't", () => {
+  assert.deepEqual(FAST_WRITE_TIMING, {
+    chunkGapMs: 0, settleMs: 0, presetChangeMs: 0, betweenSlotsMs: 0, readBackTimeoutMs: 500, readBackRetryMs: 25, readBackLimitMs: 3000,
+  });
+  assert.equal(plannedWriteMs(FAST_WRITE_TIMING), 0);
+  assert.ok(isFastTiming(FAST_WRITE_TIMING) && !isFastTiming(WRITE_TIMING));
+});
+
+test("fast writeSlot: upload, read-back until it matches, then the preset change", async () => {
+  const { dev, pedal } = setup({}, { timing: FAST });
+  await dev.connect();
+  pedal.sent.length = 0;
+  const r = await dev.writeSlot(3, exportPrst(dumpWithName("Fast"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, true);
+  assert.equal(r.reads, 1);
+  assert.deepEqual(kinds(pedal), ["U", "U", "U", "U", "U", "U", "U", "R", "P"]);
+  assert.equal(pedal.activeSlot, 3);
+});
+
+test("fast writeSlot: a slow save is waited for, not reported as a failure", async () => {
+  const { dev, log } = setup({ commitMs: 40 }, { timing: FAST });
+  await dev.connect();
+  const r = await dev.writeSlot(3, exportPrst(dumpWithName("Slow Save"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, true);
+  assert.ok(r.reads > 1 && r.readBackMs >= 30, JSON.stringify({ reads: r.reads, ms: r.readBackMs }));
+  assert.ok(log.lines.some((l) => l.includes("matched on read-back")));
+});
+
+test("fast writeSlot: a write that never lands fails after the limit, and still selects the slot", async () => {
+  const { dev, pedal } = setup({}, { timing: FAST }); // no connect(): uploads discarded
+  const r = await dev.writeSlot(5, exportPrst(dumpWithName("Never"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, false);
+  assert.match(r.reason, /byte\(s\) differ from the file/);
+  assert.ok(r.readBackMs >= 120 && pedal.reads.get(5) >= 2);
+  assert.equal(pedal.activeSlot, 5);
+});
+
+for (const [name, timing] of [["the CLI's", NO_DELAY], ["fast", FAST]]) {
+  test(`${name} pacing: a pedal-managed byte the pedal changes passes the verify and is reported`, async () => {
+    const { dev } = setup({ storeAs: { off: MANAGED, value: 0 } }, { timing });
+    await dev.connect();
+    const r = await dev.writeSlot(3, withManaged("Managed"), skeletonBytes());
+    assert.equal(r.ok, true);
+    assert.equal(r.recheckedAfterMismatch, false);
+    assert.deepEqual(r.mismatches, []);
+    assert.deepEqual(r.managed, [{ off: MANAGED, expected: 2, actual: 0 }]);
+  });
+
+  test(`${name} pacing: any other byte the pedal changes still fails the verify`, async () => {
+    const { dev } = setup({ storeAs: { off: 0x44d, value: 0x55 } }, { timing });
+    await dev.connect();
+    const r = await dev.writeSlot(3, withManaged("Other"), skeletonBytes());
+    assert.equal(r.ok, false);
+    assert.equal(r.mismatches.length, 1);
+    assert.equal(r.mismatches[0].off, 0x44d, "the byte next to a managed one is not managed");
+    assert.deepEqual(r.managed, []);
+  });
+}

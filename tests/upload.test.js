@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GP200 } from "../src/core/device.js";
+import { FAST_WRITE_TIMING, GP200 } from "../src/core/device.js";
 import { readSlots } from "../src/core/export.js";
 import { Logger } from "../src/core/log.js";
 import { DEAD_BYTE_FILE_OFFSETS, diffPrstContent, exportPrst } from "../src/core/prst.js";
@@ -186,4 +186,38 @@ test("round trip on the fake pedal: export -> write elsewhere -> export matches"
     const diffs = diffPrstContent(before.entries[i].data, after.entries[i].data);
     assert.deepEqual(diffs, []);
   }
+});
+
+// ---- Fast pacing in a restore (DEV_JOURNAL.md 2026-10-01) -----------------
+
+test("fast restore: no pause between patches, the pacing logged, managed-byte changes reported, not failed", async () => {
+  const { pedal, log, dev } = setup({ storeAs: { off: 0x456, value: 0 } });
+  dev.timing = { ...FAST_WRITE_TIMING, readBackTimeoutMs: 30, readBackLimitMs: 120 };
+  await dev.connect();
+  const withTwo = (name) => {
+    const d = dumpWithName(name);
+    d[0x456 - 0x28] = 2;
+    return exportPrst(d, skeletonBytes());
+  };
+  const files = [["1_a.prst", withTwo("Has Two")], ["2_b.prst", prstNamed("Plain")], ["3_c.prst", withTwo("Also Two")]];
+  const plan = planUpload(files.map(([name, data]) => ({ name, data })), 252);
+  const t0 = performance.now();
+  const { results, failed } = await writeSlots(dev, plan.items, { skeleton: skeletonBytes(), log });
+  assert.ok(performance.now() - t0 < 250, "betweenSlotsMs comes from the fast pacing (0), not the CLI's 300");
+  assert.equal(failed.length, 0);
+  assert.deepEqual(results.map((r) => r.managed.length), [1, 0, 1]);
+  assert.equal(pedal.activeSlot, 254);
+  assert.ok(log.lines.some((l) => l.includes("Restore pacing: fast (chunk gap 0 ms, settle 0 ms, after preset change 0 ms, between patches 0 ms; read back until it matches")));
+  assert.ok(log.lines.some((l) => l.includes('64A: verified, now reads "Has Two"; pedal-managed byte(s) differ (not a setting): 0x456 2->0')));
+  assert.ok(log.lines.some((l) => l.includes("2 read back with pedal-managed byte(s) changed, not a setting (64A, 64C)")));
+});
+
+test("the CLI's pacing is still the default: 300 ms between patches, logged", async () => {
+  const { log, dev } = setup();
+  await dev.connect();
+  const plan = planUpload([{ name: "1.prst", data: prstNamed("One") }, { name: "2.prst", data: prstNamed("Two") }], 252);
+  const t0 = performance.now();
+  await writeSlots(dev, plan.items, { skeleton: skeletonBytes(), log });
+  assert.ok(performance.now() - t0 >= 290);
+  assert.ok(log.lines.some((l) => l.includes("Restore pacing: the CLI's (") && l.includes("between patches 300 ms)")));
 });

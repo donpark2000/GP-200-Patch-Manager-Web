@@ -785,6 +785,15 @@ item 2 as "Check the end state" in section 3, item 3 as section 6.*
    suggests starting a fresh one. Before switching, it writes a short
    status entry in the journal (what's known, what's left, next steps) and
    commits, so the new session starts from the repo, not from memory.
+4. **Before chasing an unexpected difference, check whether it matters.**
+   When a test shows something changed that shouldn't have, first find out
+   whether the change affects anything the user can see, hear or set
+   (e.g. load the before and after into the official editor), *then*
+   decide whether to investigate it. Write down the goal and the pass/fail
+   criteria before each round of tests, so it's clear when a phase is
+   done. Evidence: here, seven timing-test runs and several tool changes
+   went into reproducing a byte change that, once checked in the editor,
+   changed no setting at all.
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -1224,3 +1233,57 @@ anything the editor shows. Caveat: the editor shows settings, not
 necessarily every piece of state a patch stores; the fast restore's
 damage was only ever at these two offsets (S vs X: no other offset
 differed in 255 slots).
+
+## 2026-10-01: Fast restore: goal, pass criteria, and the build
+
+Developer's direction: pursue the faster restore; differences that don't
+affect a setting don't matter, but any unexpected change gets attention.
+The session had drifted into reproducing a byte change before checking
+whether it mattered (proposed for the standards skill, item 4 above).
+
+**Goal:** ship the fast pacing (about 0.2 s per patch, about 1 min for 256).
+**Pass criteria:** `DESIGN.md`, "Phase 2 gate": the full-pedal round trip
+with the fast pacing, both compares MATCH (pedal-managed bytes listed but
+not failing), every write verified. Then it ships; otherwise only the
+difference found gets investigated.
+
+**Built** (restore still defaults to the CLI's pacing until the gate passes):
+- `prst.js`: `PEDAL_MANAGED_FILE_OFFSETS` = 0x44e, 0x456; `splitManaged`;
+  `describeOffset` names them.
+- `device.js`: `FAST_WRITE_TIMING` (commit 540109f's values plus
+  `betweenSlotsMs: 0`); `writeSlot` with fast pacing: upload ->
+  `verifyUntilMatch` (540109f's read-until-match) -> preset change. Both
+  verifies report pedal-managed differences in `managed` and don't fail
+  on them.
+- `upload.js` (`writeSlots`): logs the pacing at the start; the pause
+  between patches comes from the pacing; a verified slot with managed
+  changes logs them; the summary counts them.
+- `?dev` restore control "Pacing (developer)": the CLI's (default) or
+  fast; the confirmation names fast pacing.
+- `compare-zips`: `--shift N`; pedal-managed bytes listed separately and
+  not failing; checksum checked for validity instead of compared;
+  slot mirrors ignored in shifted slots; the top N slots of A expected
+  missing; counts slots and bytes compared.
+- Timing test: uses the restore's verify, so managed bytes no longer fail
+  it; recorded per write (`managedDiff` column). Its late check still
+  reports every byte.
+- Fake pedal: `storeAs: {off, value}`.
+
+**Tests: 112, all passing (three runs).** New: fast pacing values; fast
+order U x7, R, P; a slow save waited for; a write that never lands fails
+after the limit and still selects; in both pacings a managed byte the pedal
+changes passes and is reported while the byte next to it fails; fast
+restore has no pause between patches, logs the pacing and the managed
+changes; the CLI's pacing still pauses 300 ms; compare: managed-only
+match, real difference plus managed, invalid checksum, shift with mirrors
+and the top slot, a swapped pair caught, mirrors counted unshifted.
+**Each was shown to fail** on a deliberate break: managed bytes not split
+off (4 red), mirrors not ignored (1), checksum validity unchecked (1),
+fast preset change before the read-back (1), between-patches pause not
+from the pacing (1). Real data: backup vs itself MATCH (256 slots); backup
+vs itself `--shift 1` DIFFERENT, 102 identical (the template runs).
+Built-in browser: the pacing choice hidden without `?dev`, shown with it,
+default the CLI's; no console errors.
+
+**Gate run (next, hardware):** session folder
+`GP-200-testing6-10-01_fast-gate\`.

@@ -31,6 +31,7 @@ import {
   diffPrstContent,
   MIN_DUMP_LEN,
   prstFileName,
+  splitManaged,
 } from "./prst.js";
 import { slotToLabel } from "./slots.js";
 
@@ -52,6 +53,24 @@ export const READ_ATTEMPTS = 3;
  * nonzero values there. Tests pass zeros.
  */
 export const WRITE_TIMING = { chunkGapMs: 40, settleMs: 1000, presetChangeMs: 300 };
+
+/**
+ * Fast pacing (commit 540109f's, restored for the gate in DEV_JOURNAL.md
+ * 2026-10-01): all 7 chunks at once, read the slot back until it holds the
+ * new patch (each read up to `readBackTimeoutMs`, re-reads
+ * `readBackRetryMs` apart, at least one re-read, up to `readBackLimitMs`),
+ * then the preset change; no pauses, none between patches. Its only known
+ * side effect is on the pedal-managed bytes (prst.js), which don't change
+ * any setting. Chosen in the restore's developer controls (?dev) until the
+ * full-pedal gate passes.
+ */
+export const FAST_WRITE_TIMING = {
+  chunkGapMs: 0, settleMs: 0, presetChangeMs: 0, betweenSlotsMs: 0,
+  readBackTimeoutMs: 500, readBackRetryMs: 25, readBackLimitMs: 3000,
+};
+
+/** Fast pacing reads back until it matches; the CLI's reads back once. */
+export const isFastTiming = (timing) => timing.readBackLimitMs !== undefined;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -177,19 +196,83 @@ export class GP200 {
   }
 
   /**
-   * Restore one .prst file to `slot` the CLI's way (write_slot, without its
-   * experimental save-commit): flash upload, settle, preset change (which
-   * leaves the pedal on `slot`), then the read-back compare.
+   * Restore one .prst file to `slot` (the CLI's write_slot, without its
+   * experimental save-commit). Either pacing leaves the pedal on `slot`.
+   * The CLI's: flash upload, settle, preset change, then the read-back
+   * compare. Fast (FAST_WRITE_TIMING): upload, read back until it matches,
+   * then the preset change.
    * Only called from the restore feature, after the user confirms.
-   * @returns the verifyWrite result, plus `uploadMs` and `totalMs`
+   * @returns the verify result, plus `uploadMs` and `totalMs`
    */
   async writeSlot(slot, fileBytes, skeleton) {
     const t0 = performance.now();
     const uploadMs = await this.sendUpload(slot, fileBytes);
     if (this.timing.settleMs > 0) await sleep(this.timing.settleMs);
-    await this.selectSlot(slot);
-    const v = await this.verifyWrite(slot, fileBytes, skeleton);
+    let v;
+    if (isFastTiming(this.timing)) {
+      v = await this.verifyUntilMatch(slot, fileBytes, skeleton);
+      await this.selectSlot(slot);
+    } else {
+      await this.selectSlot(slot);
+      v = await this.verifyWrite(slot, fileBytes, skeleton);
+    }
     return { ...v, uploadMs, totalMs: performance.now() - t0 };
+  }
+
+  /**
+   * Compare a read-back with the file: mismatches outside the device-owned,
+   * dead and pedal-managed bytes, plus the pedal-managed ones separately.
+   */
+  _compare(fileBytes, decoded, skeleton) {
+    const roundtrip = buildPrstFromDump(decoded, skeleton);
+    const { managed, other } = splitManaged(diffPrstContent(fileBytes, roundtrip, DEAD_BYTE_FILE_OFFSETS));
+    return { mismatches: other, managed, deviceName: prstFileName(roundtrip), roundtrip };
+  }
+
+  /**
+   * Fast pacing's verify: read `slot` until it matches the file (see
+   * _compare), so a slow save or read noise can't pose as a failed write.
+   * At least two reads on a mismatch, then until `readBackLimitMs`. A write
+   * that never lands still fails, with the last mismatches.
+   */
+  async verifyUntilMatch(slot, fileBytes, skeleton) {
+    const label = slotToLabel(slot);
+    const { readBackTimeoutMs, readBackRetryMs, readBackLimitMs } = { ...FAST_WRITE_TIMING, ...this.timing };
+    const started = performance.now();
+    const elapsed = () => performance.now() - started;
+    let recheckedAfterMismatch = false;
+    let last = null;
+    let reason = "";
+    let reads = 0;
+    while (reads < 2 || elapsed() < readBackLimitMs) {
+      if (reads > 0 && readBackRetryMs > 0) await sleep(readBackRetryMs);
+      reads++;
+      const r = await this.readOnce(slot, readBackTimeoutMs);
+      if (!r.ok) {
+        reason = r.reason;
+        this.log.debug(`${label}: read-back ${reads} ${reason}`);
+        continue;
+      }
+      last = this._compare(fileBytes, r.decoded, skeleton);
+      if (last.mismatches.length === 0) {
+        const readBackMs = elapsed();
+        if (reads > 1) {
+          this.log.info(`${label}: matched on read-back ${reads}, after ${readBackMs.toFixed(0)} ms` +
+            (recheckedAfterMismatch ? " (earlier reads differed: read noise or a slow save, not a failed write)" : ""));
+        }
+        return { ok: true, ...last, recheckedAfterMismatch, reads, readBackMs };
+      }
+      reason = `${last.mismatches.length} byte(s) differ from the file`;
+      if (!recheckedAfterMismatch) {
+        this.log.info(`${label}: read-back differs in ${last.mismatches.length} byte(s); re-reading for up to ` +
+          `${(readBackLimitMs / 1000).toFixed(0)} s to rule out read noise or a slow save`);
+        recheckedAfterMismatch = true;
+      }
+    }
+    return {
+      ok: false, mismatches: last?.mismatches ?? [], managed: last?.managed ?? [], deviceName: last?.deviceName ?? null,
+      roundtrip: last?.roundtrip ?? null, reason, recheckedAfterMismatch, reads, readBackMs: elapsed(),
+    };
   }
 
   /** The 7 upload chunks with `chunkGapMs` after each. Returns elapsed ms.
@@ -212,11 +295,13 @@ export class GP200 {
 
   /**
    * Read `slot` back and compare it with the file that was written, ignoring
-   * the device-owned bytes and the dead bytes (the CLI's verify_write_full).
+   * the device-owned bytes and the dead bytes (the CLI's verify_write_full)
+   * and reporting the pedal-managed bytes separately (see _compare).
    * One read, as DESIGN.md says; but a mismatch gets one confirming re-read
    * before it's called a write failure, so read noise can't masquerade as a
    * failed write. Never rewrites anything itself.
    * @returns {Promise<{ok: boolean, mismatches: {off: number, expected: number, actual: number}[],
+   *   managed: {off: number, expected: number, actual: number}[],
    *   deviceName: string|null, roundtrip: Uint8Array|null, reason?: string, recheckedAfterMismatch: boolean}>}
    */
   async verifyWrite(slot, fileBytes, skeleton) {
@@ -229,11 +314,10 @@ export class GP200 {
         ({ decoded } = await this.readDump(slot));
       } catch (e) {
         if (!(e instanceof ReadError)) throw e;
-        return { ok: false, mismatches: [], deviceName: null, roundtrip: null, reason: e.reason, recheckedAfterMismatch };
+        return { ok: false, mismatches: [], managed: [], deviceName: null, roundtrip: null, reason: e.reason, recheckedAfterMismatch };
       }
-      const roundtrip = buildPrstFromDump(decoded, skeleton);
-      const mismatches = diffPrstContent(fileBytes, roundtrip, DEAD_BYTE_FILE_OFFSETS);
-      last = { mismatches, deviceName: prstFileName(roundtrip), roundtrip };
+      last = this._compare(fileBytes, decoded, skeleton);
+      const { mismatches } = last;
       if (mismatches.length === 0) {
         if (recheckedAfterMismatch) {
           this.log.warn(`${label}: the first read-back mismatched but the re-read matched -- read noise, not a failed write`);

@@ -2,7 +2,7 @@
 // a range, restore (test build), and a log that can be saved. Replaced by
 // the designed UI later; all protocol logic lives in src/core/.
 
-import { findGp200Ports, GP200 } from "../core/device.js";
+import { FAST_WRITE_TIMING, findGp200Ports, GP200, WRITE_TIMING } from "../core/device.js";
 import { exportWarnings, packageExport, readSlots } from "../core/export.js";
 import { Logger } from "../core/log.js";
 import { prstFileName } from "../core/prst.js";
@@ -24,6 +24,7 @@ const ui = {
   restoreStart: $("restore-start"), restoreFiles: $("restore-files"), restorePlan: $("restore-plan"),
   restoreWarnings: $("restore-warnings"), restoreWrite: $("restore-write"), restoreStop: $("restore-stop"),
   restoreStatus: $("restore-status"), restoreFailed: $("restore-failed"),
+  restorePacingRow: $("restore-pacing-row"), restorePacing: $("restore-pacing"),
   hiddenBanner: $("hidden-banner"),
   tuning: $("dev-tuning"), tuneX: $("tune-x"), tuneY: $("tune-y"), tuneMode: $("tune-mode"), tuneCycles: $("tune-cycles"),
   tuneChunk: $("tune-chunk"), tuneSettle: $("tune-settle"), tunePreset: $("tune-preset"), tuneBetween: $("tune-between"),
@@ -335,8 +336,10 @@ async function onRestore() {
   if (!plan?.items.length || !device) return;
   const n = plan.items.length;
   const range = `${plan.items[0].label}-${plan.items.at(-1).label}`;
+  const fast = DEV && ui.restorePacing.value === "fast";
   if (!confirm(`Write ${n} patch(es) to ${range} on the pedal?\n\n` +
-    "This replaces what's in those slots now. Make sure you have a backup.")) {
+    "This replaces what's in those slots now. Make sure you have a backup." +
+    (fast ? "\n\nPacing: FAST (developer setting, under test)." : ""))) {
     log.info("Restore cancelled at the confirmation prompt; nothing written");
     return;
   }
@@ -346,6 +349,7 @@ async function onRestore() {
   setBusy("restore");
   const results = new Map();
   log.info(`Restoring ${n} patch(es) to ${range}`);
+  device.timing = fast ? FAST_WRITE_TIMING : WRITE_TIMING;
   try {
     const out = await writeSlots(device, plan.items, {
       skeleton: skeletonBytes(),
@@ -378,6 +382,7 @@ async function onRestore() {
 
 function setUpTuning() {
   ui.tuning.hidden = false;
+  ui.restorePacingRow.hidden = false;
   resetTuneInputs();
   log.info("Developer tools shown (?dev in the address)");
   ui.tuneX.addEventListener("change", checkTuneInputs);

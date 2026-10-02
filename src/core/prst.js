@@ -36,6 +36,21 @@ export const EXPORT_ZEROED_SLOT_ECHO_OFFSET = 0x2e;
 export const STUDIO_ADDITIONAL_ZEROED_OFFSETS = [0x3e, 0x40, ...tail([5, 10, 11])];
 export const DEAD_BYTE_FILE_OFFSETS = [0x43, 0x9f];
 
+// Bytes the pedal itself changes after a write: the `v` byte of the first
+// two of the three records at 0x448 (`10 00 04 00 | n p v 00`). With fast
+// pacing a 2 became 0 here in 44 slots of a full restore, and some patches
+// read back with another value until selected. Patches differing only here
+// show identical settings in Valeton's editor, including CTRL, footswitch
+// and EXP (DEV_JOURNAL.md, 2026-10-01). Verify and compare don't fail on
+// them, but report every change.
+export const PEDAL_MANAGED_FILE_OFFSETS = [0x44e, 0x456];
+
+/** Split mismatches into pedal-managed ones and the rest. */
+export function splitManaged(mismatches) {
+  const managed = mismatches.filter((m) => PEDAL_MANAGED_FILE_OFFSETS.includes(m.off));
+  return { managed, other: mismatches.filter((m) => !PEDAL_MANAGED_FILE_OFFSETS.includes(m.off)) };
+}
+
 export function prstChecksum(data) {
   let sum = 0;
   for (let i = 0; i < CHECKSUM_OFF; i++) sum += data[i];
@@ -111,6 +126,7 @@ export function describeOffset(off) {
     else if (rel >= 12) what = `param ${Math.floor((rel - 12) / 4)}`;
     return `effect block ${block} ${what}`;
   }
+  if (PEDAL_MANAGED_FILE_OFFSETS.includes(off)) return "pedal-managed byte (not a setting)";
   if (r(1120, 1120 + 96)) return `tail block entry ${Math.floor((off - 1120) / 12)} +${(off - 1120) % 12}`;
   if (r(0x4c6, 0x4c8)) return "checksum";
   return "other";

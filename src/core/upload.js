@@ -4,7 +4,7 @@
 // starting slot). Nothing here runs without the user confirming the plan.
 
 import { findIrNamDependencies, isPrst, prstFileName, describeOffset, CONTENT_FILE_START } from "./prst.js";
-import { plannedWriteMs, slowWriteWarning } from "./device.js";
+import { isFastTiming, plannedWriteMs, slowWriteWarning } from "./device.js";
 import { labelToSlot, slotToLabel, TOTAL_SLOTS } from "./slots.js";
 import { readZip } from "./unzip.js";
 
@@ -112,18 +112,25 @@ export function planWarnings(plan) {
 }
 
 /**
- * Write and verify each planned item, in order (device.writeSlot: upload,
- * settle, preset change, read-back compare), with the CLI's 300 ms between
- * patches. Stops between patches (never mid-patch) if cancelled.
+ * Write and verify each planned item, in order (device.writeSlot), pausing
+ * between patches as the device's pacing says (the CLI's: 300 ms; fast: 0).
+ * Pedal-managed byte changes (prst.js) don't fail a write but are logged
+ * per slot and counted. Stops between patches (never mid-patch) if
+ * cancelled.
  * @param {import("./device.js").GP200} device
  * @param {object} opts
  * @param {(sinceMs: number) => boolean} [opts.wasHidden] true if the page was
  *   hidden at any point since performance.now() was `sinceMs` (UI supplies it)
  */
 export async function writeSlots(device, items, {
-  skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = 300, wasHidden = () => false,
+  skeleton, log, onProgress = () => {}, isCancelled = () => false, betweenSlotsMs = device.timing.betweenSlotsMs ?? 300,
+  wasHidden = () => false,
 }) {
   const results = [];
+  const t = device.timing;
+  log.info(`Restore pacing: ${isFastTiming(t) ? "fast" : "the CLI's"} (chunk gap ${t.chunkGapMs} ms, settle ${t.settleMs} ms, ` +
+    `after preset change ${t.presetChangeMs} ms, between patches ${betweenSlotsMs} ms` +
+    (isFastTiming(t) ? `; read back until it matches, up to ${t.readBackLimitMs} ms, before the preset change)` : ")"));
   let cancelled = false;
   const started = performance.now();
   for (let i = 0; i < items.length; i++) {
@@ -139,8 +146,9 @@ export async function writeSlots(device, items, {
     const slow = slowWriteWarning(it.label, { totalMs: v.totalMs, plannedMs: plannedWriteMs(device.timing) }, wasHidden(writeStarted));
     if (slow) log.warn(slow);
     else log.debug(`${it.label}: written and read back in ${v.totalMs.toFixed(0)} ms`);
+    const managed = v.managed?.length ? `; pedal-managed byte(s) differ (not a setting): ${formatManaged(v.managed)}` : "";
     if (v.ok) {
-      log.info(`${it.label}: verified, now reads "${v.deviceName}"`);
+      log.info(`${it.label}: verified, now reads "${v.deviceName}"${managed}`);
     } else {
       log.error(`${it.label}: WRITE NOT VERIFIED (${v.reason})`);
       for (const m of v.mismatches.slice(0, 12)) {
@@ -148,6 +156,7 @@ export async function writeSlots(device, items, {
           `expected 0x${hex(m.expected)}, pedal has 0x${hex(m.actual)}`);
       }
       if (v.mismatches.length > 12) log.error(`  ...and ${v.mismatches.length - 12} more`);
+      if (managed) log.info(`${it.label}${managed}`);
     }
     results.push({ ...it, ...v });
     onProgress({ done: i + 1, total: items.length, label: it.label, ok: v.ok });
@@ -155,12 +164,17 @@ export async function writeSlots(device, items, {
   }
   const failed = results.filter((r) => !r.ok);
   const reread = results.filter((r) => r.ok && r.recheckedAfterMismatch);
+  const managedRows = results.filter((r) => r.managed?.length);
   const secs = ((performance.now() - started) / 1000).toFixed(1);
   log.info(`Wrote ${results.length} of ${items.length} patch(es) in ${secs} s: ` +
     `${results.length - failed.length} verified, ${failed.length} not verified` +
     (failed.length ? ` (${failed.map((r) => r.label).join(", ")})` : "") +
-    (reread.length ? `; ${reread.length} verified only after a confirming re-read (${reread.map((r) => r.label).join(", ")})` : ""));
+    (reread.length ? `; ${reread.length} verified only after a confirming re-read (${reread.map((r) => r.label).join(", ")})` : "") +
+    (managedRows.length ? `; ${managedRows.length} read back with pedal-managed byte(s) changed, not a setting ` +
+      `(${managedRows.map((r) => r.label).join(", ")})` : ""));
   return { results, failed, cancelled };
 }
+
+const formatManaged = (ms) => ms.map((m) => `0x${m.off.toString(16)} ${m.expected}->${m.actual}`).join(", ");
 
 const hex = (b) => b.toString(16).padStart(2, "0");

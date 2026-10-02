@@ -114,7 +114,7 @@ test("summary and CSV: medians, first-reply counts, quoting", () => {
   assert.deepEqual(s.firstReply, { old: 1, none: 1 });
   const csv = tuningCsv(rows).trim().split("\n");
   assert.equal(csv.length, 3);
-  assert.ok(csv[0].endsWith(",reason,late,lateWhen,lateDiff,otherDiff,otherDiffLast,verifyBeforeSwitch,lateMode"));
+  assert.ok(csv[0].endsWith(",reason,late,lateWhen,lateDiff,otherDiff,otherDiffLast,verifyBeforeSwitch,lateMode,managedDiff"));
   assert.ok(csv[2].includes(`,"a ""b"", c",`));
   assert.equal(summarizeTuning([]).writeMs, null);
 });
@@ -179,7 +179,7 @@ test("poll mode: \"other\" replies record where they differed from the new patch
   assert.ok(rows.every((r) => r.otherDiff === "0x456:2->0" && r.otherDiffLast === ""), JSON.stringify(rows.map((r) => r.otherDiff)));
   assert.equal(summary.neverNew, 2);
   assert.ok(log.lines.some((l) => l.includes('"other" replies differed from the new patch at 0x456:2->0 [')));
-  assert.ok(tuningCsv(rows).split("\n")[1].endsWith(",0x456:2->0,,false,overwrite"));
+  assert.ok(tuningCsv(rows).split("\n")[1].endsWith(",0x456:2->0,,false,overwrite,"));
 });
 
 test("poll mode: no \"other\" replies, no otherDiff; long diffs are capped", async () => {
@@ -210,7 +210,7 @@ test("verify before the switch: read-back, then preset change, then the next upl
   for (const i of switches.slice(0, 3)) assert.ok(isUpload(sent[i + 1]), `message after switch ${i} is an upload`);
   for (const i of switches.slice(0, 4)) assert.ok(isRead(sent[i - 1]), `message before switch ${i} is the verify read`);
   assert.ok(log.lines.some((l) => l.includes("verify BEFORE the preset change")));
-  assert.ok(tuningCsv(rows).split("\n")[0].endsWith(",verifyBeforeSwitch,lateMode"));
+  assert.ok(tuningCsv(rows).split("\n")[0].endsWith(",verifyBeforeSwitch,lateMode,managedDiff"));
 });
 
 test("default order: a verify read always sits between the switch and the next upload", async () => {
@@ -236,11 +236,18 @@ test("verify before the switch reproduces a fault that a read after the switch w
   assert.ok(after.summary.lateChanged.length > 0 && after.summary.lateChangedAfterVerify === after.summary.lateChanged.length);
 });
 
-test("verify before the switch: a slot that reads differently until selected fails its verify, with the offset", async () => {
+test("verify before the switch: a slot that reads a pedal-managed byte differently until selected passes, and it's recorded", async () => {
   const { log, dev } = await setup({ unloadedReads: { off: FRAGILE, value: 1 } });
   const { rows } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 1, verifyBeforeSwitch: true, late: "end", lateSettleMs: 0 });
-  assert.ok(rows.every((r) => !r.verified && r.rechecked && r.reason === "1 byte(s) differ from the file: 0x456:2->1"), JSON.stringify(rows.map((r) => r.reason)));
+  assert.ok(rows.every((r) => r.verified && !r.rechecked && r.managedDiff === "0x456:2->1"), JSON.stringify(rows.map((r) => r.managedDiff)));
+  assert.ok(log.lines.some((l) => l.includes("pedal-managed byte(s) at the verify: 0x456:2->1")));
   assert.ok(rows.every((r) => r.late === "ok"), "after the switch the slot reads as written");
+});
+
+test("verify before the switch: any other byte read differently still fails the verify, with the offset", async () => {
+  const { log, dev } = await setup({ unloadedReads: { off: 0x100, value: 0x7f } });
+  const { rows } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 1, verifyBeforeSwitch: true, late: "end", lateSettleMs: 0 });
+  assert.ok(rows.every((r) => !r.verified && r.rechecked && /^1 byte\(s\) differ from the file: 0x100:\d+->127$/.test(r.reason)), JSON.stringify(rows.map((r) => r.reason)));
 });
 
 test("verify before the switch with the late check before each overwrite on: warns", async () => {
