@@ -76,6 +76,22 @@ export async function readSlots(device, slots, { skeleton, log, onProgress = () 
   return { entries, skipped, irNam, cancelled, elapsedMs };
 }
 
+/**
+ * The patch list the designed UI shows: every slot's name, read on connect
+ * and after any write. The same read as an export (about 0.3 s for all
+ * 256), keeping only the names.
+ * @returns {Promise<{names: (string|null)[], skipped: string[], cancelled: boolean}>}
+ *   names[slot]; null where the slot couldn't be read
+ */
+export async function readPatchList(device, { skeleton, log, onProgress, isCancelled }) {
+  log.info("Reading the patch list (all 256 slots)");
+  const result = await readSlots(device, Array.from({ length: TOTAL_SLOTS }, (_, i) => i),
+    { skeleton, log, onProgress, isCancelled });
+  const names = new Array(TOTAL_SLOTS).fill(null);
+  for (const e of result.entries) names[e.slot] = e.name;
+  return { names, skipped: result.skipped, cancelled: result.cancelled };
+}
+
 /** File name for a multi-slot export, as the CLI names it. */
 export function zipFileName(slots) {
   const isAll = slots.length === TOTAL_SLOTS && slots.every((s, i) => s === i);

@@ -10,6 +10,13 @@ export function slotToLabel(slot) {
   return `${Math.floor(slot / 4) + 1}${"ABCD"[slot % 4]}`;
 }
 
+/** "12-A": how Valeton writes a slot, used for display (DESIGN.md,
+ *  "Designed UI"). File names and the log keep the CLI's "12A". */
+export function slotToDisplayLabel(slot) {
+  const label = slotToLabel(slot);
+  return `${label.slice(0, -1)}-${label.slice(-1)}`;
+}
+
 /** Accepts "34B", "34-B", " 34b ". */
 export function labelToSlot(label) {
   const s = String(label).trim().toUpperCase().replace(/-/g, "");

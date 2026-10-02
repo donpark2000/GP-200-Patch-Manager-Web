@@ -1965,3 +1965,39 @@ it would stop telling us anything about the new site.
   console errors.
 - `DESIGN.md` "Architecture" and the README updated; the stale "64 × 4
   slot grid" in Phase 1 now points to the patch list.
+
+## 2026-10-02: Build step 1: core for the designed UI
+
+Added to `src/core/`, all Node-tested (`tests/template.test.js`, 11 tests;
+suite 128 pass, 0 fail):
+
+- **`slotToDisplayLabel`** (`slots.js`): "12-A" for display. All 256
+  labels read back to their slot through `labelToSlot`, in either case.
+  File names and the log keep the CLI's "12A".
+- **`readPatchList`** (`export.js`): all 256 names via the export's read
+  (`readSlots`), `null` for a slot that couldn't be read.
+- **`template.js`**: `planTemplate` (empty-only or every slot; counts,
+  kept list, unread slots), `templateSummary`, `templateWarnings` (nothing
+  to write, unread slots, User-IR/NAM), and `recheckTemplate`. The write
+  is the restore's `writeSlots`, unchanged: same verify, same fast pacing.
+  - Checked against the CLI's `cmd_apply_template`: it writes the `.prst`
+    bytes as they are to every slot, after reading each slot's name and
+    asking y/N (`confirm_overwrite`). Same bytes here (tested: the plan
+    carries the picked file's data unchanged).
+  - **Unread slots** (name `null`): kept in the default mode, since they
+    aren't known to be empty; written in "every slot", as the CLI's
+    `--force` would.
+  - **Re-check before writing (Claude's addition, for the developer to
+    confirm).** The CLI reads each name right before writing it; the web
+    plan comes from names read on connect, so a patch saved on the pedal
+    since could be overwritten as "empty". Reading before each upload
+    would change the fast write sequence that passed the gates, so
+    instead the whole range is re-read once before the first write. Any
+    change (planned name differs, kept slot became empty or readable,
+    slot now unreadable) means nothing is written. Recorded in
+    `DESIGN.md`.
+- **Checks proven to fail** (standards §3): with the re-check's compare
+  disabled, 3 re-check tests failed; with "empty" loosened to any name
+  starting "it", the empty-name test failed. Restored: 11 pass.
+- `test.html` re-checked in the built-in browser after the core change:
+  loads, no console errors.

@@ -165,6 +165,13 @@ to be designed.
   the range" overwrites them too (the CLI's behaviour). The summary counts
   empty slots and the user's patches, and names the kept ones.
   - **Empty** means the patch name "It's GP-200", nothing else.
+  - **Re-checked before writing.** The plan comes from the patch list
+    read on connect; just before writing, the range is read again (a
+    fraction of a second). If any slot changed (a patch saved on the
+    pedal meanwhile, a slot that can't be read), nothing is written and
+    the plan is shown again. The CLI instead reads each name right before
+    its write; that would add a read to the proven fast write sequence,
+    so the check happens once, before the first write.
   - No other name is treated as a template: a patch name doesn't say
     whether it was made as a patch or loaded as a template, and different
     ranges may hold different templates (developer).
