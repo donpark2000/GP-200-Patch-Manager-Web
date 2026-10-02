@@ -1722,6 +1722,9 @@ back.
 **For the designed UI:** the banner's advice "Keep this tab in front until
 writing finishes" is stronger than the evidence now supports; soften it.
 
+**Purged** `GP-200-testing\2026-10-02_hidden-tab\` (4 files) to the
+Recycle Bin, with the developer's OK; the backup is untouched.
+
 ## 2026-10-02: Status (start here next session)
 
 **Known:**
