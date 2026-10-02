@@ -8,17 +8,18 @@ patches** over USB-MIDI. It's the web companion to the command-line
 
 **Status: test build.** Backup and restore are verified on real hardware:
 full-pedal round trips kept every patch exactly, and a full restore of all
-256 slots takes about 30 seconds. It writes to the pedal only after you confirm. So far
-tested on one computer; a second is next.
+256 slots takes about 30 seconds. It writes to the pedal only after you
+confirm. So far tested on one computer; a second is next.
 
 - Runs in **Chrome or Edge** on Windows, macOS, or Linux. Safari isn't
   supported, because it has no Web MIDI.
 - Nothing to install. Connect the GP-200 by USB, open the page, and allow
   MIDI access when the browser asks.
 - **Back up** exports one slot as a `.prst` or several as a `.zip`, each
-  file named after its slot and patch (e.g. `34A_Clean.prst`). **Restore** writes `.prst` files or a `.zip` to
-  consecutive slots from a starting slot, shows what will be replaced, and
-  checks every patch by reading it back.
+  file named after its slot and patch (e.g. `34A_Clean.prst`).
+  **Restore** writes `.prst` files or a `.zip` to consecutive slots from a
+  starting slot, shows what will be replaced, and checks every patch by
+  reading it back.
 
 This isn't a patch editor. If you want to create or edit patches, look at
 [GP200 Studio](https://github.com/kabir0st/gp200-studio) (a full editor) or
