@@ -1364,3 +1364,18 @@ Edge 155, localhost).
 
 Next: step 3, restore the backup from 1A with the fast pacing, export,
 compare unshifted.
+
+**Step 3, restore back, fast pacing**
+(`after-restore_gp200_web_2026-10-02T19-06-10.log`): backup from 1A, 256
+patches **in 28.5 s, 256 of 256 verified**, no confirmation reads, page
+visible. The same 3 patches read back with a managed byte at 0 (1D, 4B,
+11A). **`compare-zips`** backup vs `after-restore_gp200_all_patches.zip`
+(12:06): **256 identical, RESULT: MATCH**, no managed differences. Step 3
+changed 154 slots (after-shift vs after-restore: 102 identical, the runs
+of identical templates).
+
+**Gate result: PASS** by the criteria in `DESIGN.md` (both compares MATCH,
+511 of 511 fast writes verified). No difference outside the pedal-managed
+bytes appeared, so nothing new joins the ignore list, and the pause sweep
+(idea 2) isn't needed. The pedal is back to the 2026-09-30 backup
+exactly (64A-64D at factory defaults again).
