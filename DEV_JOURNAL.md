@@ -1873,3 +1873,11 @@ Mockup v4's example (the developer's real names, 44-A to 51-D, template
 named "Template"): 32 slots, writes 25 (9 empty, 16 old "Template"),
 keeps 7 (two "Test IR and NAM", Hard Rock, Lead, Special, Mandolin,
 JImi); counts checked against the backup's names.
+
+**Revised the same day (mockup v5): empty slots only by default.** The
+developer: "Template" was only the name of their `.prst` file; different
+ranges can hold different templates with different names, and nothing
+tells a template from a patch made by hand. So matching old copies by
+name is dropped. Default: write only "It's GP-200" slots, keep every
+other patch; "Every slot in the range" is the override. In the example
+range (44-A to 51-D) that now writes 9 and keeps 23.
