@@ -6,18 +6,17 @@ patches** over USB-MIDI. It's the web companion to the command-line
 
 **Open the app: <https://donpark2000.github.io/GP-200-Patch-Manager-Web/>**
 
-**Status: test build.** Backup is verified against real hardware: it
-matches the CLI byte for byte. Restore is verified too: full-pedal round
-trips kept every patch exactly, and a full restore of all 256 slots takes
-about 30 seconds. It writes to the pedal only after you confirm. So far
+**Status: test build.** Backup and restore are verified on real hardware:
+full-pedal round trips kept every patch exactly, and a full restore of all
+256 slots takes about 30 seconds. It writes to the pedal only after you confirm. So far
 tested on one computer; a second is next.
 
 - Runs in **Chrome or Edge** on Windows, macOS, or Linux. Safari isn't
   supported, because it has no Web MIDI.
 - Nothing to install. Connect the GP-200 by USB, open the page, and allow
   MIDI access when the browser asks.
-- **Back up** exports one slot as a `.prst` or several as a `.zip`, named
-  as the CLI names them. **Restore** writes `.prst` files or a `.zip` to
+- **Back up** exports one slot as a `.prst` or several as a `.zip`, each
+  file named after its slot and patch (e.g. `34A_Clean.prst`). **Restore** writes `.prst` files or a `.zip` to
   consecutive slots from a starting slot, shows what will be replaced, and
   checks every patch by reading it back.
 
@@ -69,12 +68,11 @@ python -m http.server 8000
 
 then open <http://localhost:8000> in Chrome or Edge.
 
-Compare two exports slot by slot, e.g. a CLI export with a web export,
-or a backup with an export after a restore (`--shift 1` after restoring
-from slot 1B):
+Compare two exports slot by slot, e.g. a backup with an export made after
+a restore (add `--shift 1` after restoring from slot 1B):
 
 ```
-node tools/compare-zips.js gp200_all_patches.zip web/gp200_all_patches.zip
+node tools/compare-zips.js backup.zip gp200_all_patches.zip
 ```
 
 Publishing: CI runs the tests on every pull request, and publishes the site

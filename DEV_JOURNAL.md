@@ -1475,3 +1475,15 @@ second-computer test instead of after it.
 Next: export all from the hosted site on this computer and compare with
 the backup (session folder `2026-10-02_hosted-site\`), then the same on
 the laptop (copy its export here to compare; no Python needed there).
+
+**README:** the developer reviewed PR #2's README; the CLI-comparison
+testing is behind us, so the README no longer mentions it (status, file
+naming and the compare example reworded). Kept: "web companion to the
+command-line GP-200 Patch Manager", the credits chain (required by the
+credit rules), and the pointer to the protocol docs in the CLI repo.
+
+**Idea (developer, undecided): backport the speed-up to the CLI.** Once
+the web app is complete, the CLI's remaining use is scripted automation.
+What a backport would take: the fast pacing (upload, read back until it
+matches, preset change), the pedal-managed bytes 0x44e/0x456 in its
+verify, and the confirmation reads. Not planned yet.
