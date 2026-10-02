@@ -1487,3 +1487,13 @@ the web app is complete, the CLI's remaining use is scripted automation.
 What a backport would take: the fast pacing (upload, read back until it
 matches, preset change), the pedal-managed bytes 0x44e/0x456 in its
 verify, and the confirmation reads. Not planned yet.
+
+**RigSheet: credit, don't endorse** (developer, 2026-10-02). The developer
+finds RigSheet's UI too hard to follow to recommend it. It still gets
+credit where it earned it: the upload addressing (target slot inside the
+upload's inner header, outer chunk byte a fixed 0x09) was found by
+cross-checking against it, after GP200-Studio-style writes were silently
+discarded, and every restore relies on that. Changes: the README and page
+footer no longer recommend it as an editor (GP200 Studio only); one
+factual credit line each for the addressing; `DESIGN.md` records the
+rule. Code comments unchanged.

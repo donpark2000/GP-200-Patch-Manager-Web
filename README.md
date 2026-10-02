@@ -22,9 +22,8 @@ confirm. So far tested on one computer; a second is next.
   reading it back.
 
 This isn't a patch editor. If you want to create or edit patches, look at
-[GP200 Studio](https://github.com/kabir0st/gp200-studio) (a full editor) or
-[RigSheet](https://github.com/ricardo-mv/rigsheet); this tool covers the
-narrower job of backing up and restoring whole banks.
+[GP200 Studio](https://github.com/kabir0st/gp200-studio), a full editor;
+this tool covers the narrower job of backing up and restoring whole banks.
 
 ## Credits
 
@@ -37,11 +36,11 @@ command-line
 [GP-200 Patch Manager](https://github.com/donpark2000/GP-200-Patch-Manager),
 which ported them and then verified and extended them against real hardware.
 
-[RigSheet](https://github.com/ricardo-mv/rigsheet) served as a second,
-independent reverse-engineering of the protocol. It was used only as a
-read-only cross-check of facts (for example, the SnapTone/NAM model-code
-ranges and the upload addressing); none of RigSheet's code or text is
-copied here.
+The upload addressing (where the target slot goes in a flash upload) was
+found by cross-checking against
+[RigSheet](https://github.com/ricardo-mv/rigsheet)'s independent
+reverse-engineering. Only that fact is used; none of RigSheet's code or
+text is copied here.
 
 ## For contributors
 
