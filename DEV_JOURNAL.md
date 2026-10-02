@@ -1286,4 +1286,4 @@ Built-in browser: the pacing choice hidden without `?dev`, shown with it,
 default the CLI's; no console errors.
 
 **Gate run (next, hardware):** session folder
-`GP-200-testing6-10-01_fast-gate\`.
+`GP-200-testing\2026-10-01_fast-gate\`.
