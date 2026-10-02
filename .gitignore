@@ -4,11 +4,16 @@ node_modules/
 # Exports and logs produced while testing against real hardware, at the
 # repo root only -- test fixtures and templates in subfolders stay tracked
 /*.prst
+/*.prst.*
 /*.zip
 /gp200_*.log
+/gp200_*.csv
 
 # Editors / OS cruft
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Claude Code per-user settings
+.claude/settings.local.json

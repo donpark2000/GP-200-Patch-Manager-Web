@@ -1,0 +1,5 @@
+# Keep text files LF everywhere; never touch binary fixtures.
+* text=auto eol=lf
+*.prst binary
+*.bin binary
+*.zip binary

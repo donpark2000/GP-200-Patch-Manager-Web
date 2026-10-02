@@ -34,9 +34,26 @@ not a patch editor.
   JavaScript port. This repo doesn't copy them; it links to them and records
   only what's new or different in the browser.
 - File names match the CLI's so outputs can be compared one-to-one:
-  - one slot: `<slot>_<name>.prst` (e.g. `34-A_Clean.prst`)
-  - all slots: `gp200_all_patches.zip`
-  - a range: `gp200_<start>_to_<end>.zip`
+  - one slot: `<slot>_<name>.prst` (e.g. `34A_Clean.prst`)
+  - all slots: `gp200_all_patches.zip`, whose entries use the same names
+  - a range: `gp200_<start>_to_<end>.zip` (e.g. `gp200_34A_to_36D.zip`)
+
+## Credit and licensing
+
+Protocol knowledge that came from other projects is credited wherever it's
+used: in the README, in the source file that implements it, and in the
+page's footer, since that's what users actually see. The CLI's rules carry
+over unchanged:
+
+- **GP200 Studio** (GPL-3.0): the SysEx message formats and `.prst`
+  layout were ported from it (via the CLI). Credit by name, with a link.
+  This project is GPL-3.0 too.
+- **RigSheet** (all rights reserved): read-only cross-check only.
+  Independently confirmed *facts* may be used and credited; RigSheet's code
+  and text are never copied.
+
+When the write path is ported (phase 2), its RigSheet-derived addressing
+finding gets the same credit in the write code.
 
 ## Architecture
 
@@ -61,13 +78,47 @@ These are deliberately simpler than the CLI's. See the journal entry of
   1. Normalize the known-changing bytes to fixed values: the dead bytes
      `0x43` and `0x9F`, `0x2E`, and the tail block, exactly as the CLI's
      `normalize_export_dynamic_fields` does.
-  2. Run cheap sanity checks: SysEx framing, expected length, and a name
-     that decodes.
-  3. Re-read that slot only if a check fails. No "read until two reads
+  2. Run cheap sanity checks: all 7 chunks arrived, every payload byte is a
+     valid nibble (≤ 0x0F), payloads have even length, and the dump is long
+     enough to cover the name and all 11 effect blocks.
+  3. Re-read that slot only if a read times out or fails a check, up to 3
+     attempts in all; then skip it with an error. No "read until two reads
      agree" loop.
 - **Writes (phase 2): write, then one read-back compare**, ignoring the
-  known-changing bytes. Report a clear pass/fail. No silent retry loops;
+  device-owned bytes and the dead bytes, exactly as the CLI's
+  `verify_write_full` does. If the read-back still mismatches (after one
+  re-read; the fast pacing reads until it matches), read it **3 more
+  times** before calling it a failure: a later full match passes the
+  write, and otherwise the log says whether the difference was the same
+  in every read (stored in the pedal) or changed between reads (read
+  noise). So read noise can't pose as a failed write.
+  Report a clear pass/fail. No automatic rewrites (the CLI tries up to 10);
   the user decides whether to retry.
+- **Write method: flash upload only**, ported byte-for-byte from the CLI
+  (golden-tested), with the fast pacing below. After a restore, **the
+  pedal is left on the last slot written**. The CLI's "live" method and
+  experimental save-commit are not ported. The CLI's pacing (40 ms between
+  the 7 chunks, a 1 s settle, a preset change, 300 ms, the read-back,
+  300 ms between patches) stays available as a developer fallback (`?dev`).
+- **Pedal-managed bytes: 0x44e and 0x456.** With fast pacing the pedal
+  changed these (a 2 became 0) in 44 slots after their read-back had
+  matched, and some patches read back differently there until selected.
+  Patches that differ only there show identical settings in Valeton's
+  editor, CTRL, footswitch and EXP included (journal, 2026-10-01). So the
+  verify and `compare-zips` don't fail on them, but report every change.
+  Any other byte that changes is still a failure.
+- **Fast pacing: the restore's pacing.** Upload with no pauses, read back
+  until it matches (up to 3 s), then the preset change; none between
+  patches: about 0.11 s per patch instead of about 1.9 s (a full restore
+  in about 30 s instead of 8 min). Passed the phase 2 gate and a
+  confirming round trip on 2026-10-02 (1,022 writes verified, four
+  compares MATCH).
+- **What counts as damage** (developer, 2026-10-01): a restore must
+  preserve everything that affects how a patch plays, including the CTRL
+  button, footswitch and expression-pedal settings, not only the effect
+  settings. A byte the pedal changes is acceptable only if it's shown not
+  to change any of these; an unexplained change is treated as damage
+  until then.
 - These rules hold only if the browser's MIDI path behaves like the CLI's.
   The acceptance tests below exist to prove that.
 
@@ -83,6 +134,9 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - **Export:** disabled until something is selected. One slot downloads a
   `.prst`; several download a `.zip`.
 - Progress while reading, since reading all 256 slots takes a while.
+- *Status: core and bare test page built; export-all matched the CLI's
+  byte-for-byte on real hardware on the developer's first computer (see the
+  journal). Second computer still to do.*
 
 ### Phase 2: restore
 
@@ -92,6 +146,15 @@ These are deliberately simpler than the CLI's. See the journal entry of
   name*)" table and ask for confirmation. The browser doesn't guarantee the
   order of picked files, so the preview is where the user confirms what
   lands where.
+- **Order and placement follow the CLI:** by leading slot label if every
+  file name has one, otherwise alphabetical; consecutive slots from the
+  start slot; an invalid file keeps its slot position (that slot is left
+  unchanged); nothing past 64D. Plain `.prst` files get the same ordering
+  rule as a zip, because the browser's file order isn't reliable.
+- *Status: built in the bare test page (section 3, "Restore") and
+  confirmed on real hardware on the developer's first computer: scratch-slot
+  writes with changed content, then a full 256-slot round robin (see the
+  journal). Second computer still to do.*
 - Show the **User-IR / NAM (SnapTone) warning** in the preview (CLI README,
   "Known limitations"; `PROTOCOL_NOTES.md` Finding 11).
 - Write method (flash vs. live) is chosen by the app, not the user, based
@@ -134,6 +197,28 @@ that silently did nothing would still pass. So:
 3. Export and confirm the change actually landed.
 4. Restore A with the web app.
 5. Export all → must match A exactly.
+
+**Pass criteria for the fast pacing** (agreed 2026-10-01): steps 2-5 with
+the fast pacing, compared with `compare-zips` (`--shift 1` for step 3).
+MATCH means every byte matches except the ones the CLI already ignores and
+the pedal-managed bytes, which are listed but don't fail. Both compares
+MATCH and every write verified: the fast pacing ships. Anything else: only
+that difference gets investigated.
+
+Restoring A from 1B shifts every patch up one slot: 1A is left as it is,
+and the 64D file doesn't fit and isn't written (the preview says so). A
+shifted write only proves something where neighbouring patches differ;
+runs of identical patches (blank templates, factory defaults) can't show
+whether their writes landed. Step 3 therefore compares each slot with A's
+patch from the slot below, and counts how many slots really changed.
+
+## Parity with the CLI
+
+`tools/make_golden.py` runs the CLI's own Python functions on a set of
+test dumps and saves the results as fixtures. `tests/golden.test.js`
+requires the JavaScript port to reproduce them byte-for-byte: `.prst`
+contents, file names, displayed names, and User-IR/NAM detection. Re-run the
+generator whenever the CLI's export logic changes.
 
 ## Process
 

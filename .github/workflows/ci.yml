@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the regression suite
+        run: npm test
+
+  # Publish the site to GitHub Pages, but only from main and only after the
+  # tests pass. Just the files the page needs are published.
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp -r index.html src LICENSE _site/
+          # Stamp the build so a saved log names the exact commit.
+          stamp="${GITHUB_SHA::7} ($(date -u +%Y-%m-%d))"
+          sed -i "s|export const VERSION = \".*\";|export const VERSION = \"${stamp}\";|" _site/src/version.js
+          grep -q "${GITHUB_SHA::7}" _site/src/version.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
