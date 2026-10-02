@@ -1799,3 +1799,28 @@ runs on Apple's WebKit engine, which has no Web MIDI, so iPhone and iPad
 are unsupported whatever the browser. Android (Chrome has Web MIDI) stays
 untested: the developer's tablet has only micro-USB, and an adapter isn't
 worth buying just to find out.
+
+## 2026-10-02: Designed UI: first decisions (discussion, no layout yet)
+
+The developer's thinking had moved on from the kickoff notes; this is what
+was agreed before any layout work. Recorded in `DESIGN.md`, "Designed UI".
+
+- **Header and footer.** The developer asked for both: the name in the
+  header; copyright, the GitHub link and GP200 Studio in the footer.
+- **Screens, not separate pages.** The test page made the developer
+  scroll up and down a lot; they suggested pages linked from the header.
+  Separate HTML pages would drop the MIDI connection, the selection, picked
+  files and any running restore on every click, so the app stays one page
+  whose header links switch screens (each with its own address, so Back
+  and bookmarks work). Agreed once that difference was explained.
+- **Devices.** Desktop/laptop Chrome and Edge. iPhone confirmed
+  unsupported (entry above); Android untested, not worth an adapter.
+- **Logs hidden** from users; still recorded, with "Save log" in Help for
+  support. The on-screen panel stays for `?dev`.
+- **Progress** for anything that takes time, so the user can see it hasn't
+  hung (the developer's point); a backup is under a second, a restore
+  about 30 s.
+- **Help** inside the app.
+
+The developer also fixed the git author name typo ("Donld" -> "Donald",
+global config); earlier commits keep the old spelling.

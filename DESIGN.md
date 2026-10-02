@@ -128,6 +128,35 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - These rules hold only if the browser's MIDI path behaves like the CLI's.
   The acceptance tests below exist to prove that.
 
+## Designed UI
+
+Agreed 2026-10-02 (journal, "Designed UI: first decisions"); layout still
+to be designed.
+
+- **One page, several screens.** Header links switch screens without
+  reloading, so the pedal connection, the selection, picked files and a
+  running restore survive (a Help screen can be read mid-restore). Each
+  screen has its own address, so Back and bookmarks work. Screens to
+  start: **Patches** (slot grid with backup and restore; the restore
+  preview shown on the grid) and **Help**.
+- **Header:** "GP-200 Patch Manager", the screen links, and whether the
+  pedal is connected.
+- **Footer:** "© Donald Parker", GPL-3.0, link to the GitHub project,
+  GP200 Studio as the place to build and edit patches, the credits
+  required above (GP200 Studio, RigSheet), the app version, and a "not
+  affiliated with Valeton" line.
+- **Devices:** designed for desktop/laptop; usable on a narrow window,
+  not built for phones. Browsers that can't reach the pedal get a clear
+  message.
+- **Logs hidden.** Always recorded; "Save log" in Help so a user can send
+  it for support. The on-screen log panel only with `?dev`.
+- **Progress** for anything that takes time: a restore shows a progress
+  bar, the slot and patch being written, and the elapsed time; a backup
+  (under a second) gets a short status line.
+- **Help screen:** quick start, what a restore overwrites, the
+  User-IR/NAM limitation, supported browsers, troubleshooting (permission
+  prompt, pedal not found); links to the README.
+
 ## Phases
 
 ### Phase 1: read-only backup
