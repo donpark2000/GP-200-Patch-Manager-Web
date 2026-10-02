@@ -154,8 +154,12 @@ to be designed.
   bar, the slot and patch being written, and the elapsed time; a backup
   (under a second) gets a short status line.
 - **Help screen:** quick start, what a restore overwrites, the
-  User-IR/NAM limitation, supported browsers, troubleshooting (permission
-  prompt, pedal not found); links to the README.
+  User-IR/NAM limitation, browser compatibility, troubleshooting
+  (permission prompt, pedal not found); links to the README.
+  Browser compatibility (developer, 2026-10-02) names examples that work
+  (Chrome, Edge on a computer) and that don't (Firefox, Safari, any
+  browser on iPhone/iPad), and says how to tell: the app checks on
+  opening and says plainly if this browser can't reach the pedal.
 
 ## Phases
 
