@@ -1141,3 +1141,31 @@ Yourself's 10 writes fail their verify with `0x456:2->1` (the known quirk,
 not the fault), and the late check re-reads **40 of 40**. The fault shows as
 late-check CHANGED rows whose verify passed. If there are none, the 4-slot
 test can't reproduce it, and the next test needs more slots in a row.
+
+## 2026-10-01: Run B5 (two writes later): fault not reproduced
+
+`gp200_timing_poll_settle0_vfirst_late2_2026-10-02T00-59-22.csv`,
+`gp200_web_2026-10-02T00-59-34.log` (commit 9c6d098). Poll mode, all four
+pauses 0, verify before the preset change, late check two writes later, 10
+writes per slot (40), page visible throughout.
+
+- 35 of 40 verified. The 5 failures are Love Yourself (64D), each
+  `0x456:2->1` after a confirming re-read (2,809-2,928 polls each, every
+  one "other" at 0x456 only): the known quirk.
+- **Late check: 40 of 40 re-read** (38 two writes later, #39 and #40 at
+  the end of the run), **none changed.** That includes all 5 Rock Soul
+  writes, the patch the fast restore damaged at 2C and 34B, and Love
+  Yourself, which read 2 once selected.
+- The other 35 writes matched on the first poll, 73-146 ms after the burst
+  (median 128); burst 0 ms; write median 128 ms, with verify 131 ms.
+
+**Conclusion:** with the fast restore's order and pauses, and every write
+re-read about 0.3 s later, 4 scratch slots written in rotation don't show
+the fault. Seven runs (A, B, C, B2-B5; 152 writes) haven't produced it.
+What the timing test still doesn't copy from the failing restore:
+1. **Distinct slots in sequence.** The restore walked through 255
+   different slots once each; the test cycles 4, so each upload goes to a
+   slot it selected about 0.5 s earlier.
+2. **Time.** The damage was found by an export minutes after the restore;
+   the test re-reads 0.3-1 s after the write.
+3. Scale and order of patches: 255 writes of real patches, shifted by one.
