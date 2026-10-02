@@ -1451,3 +1451,5 @@ pacing ships** (T2 resolved). The pedal is back to the 2026-09-30 backup.
 results recorded here and are due for purging (with the developer's OK).
 The standards-skill proposal (item 4, "check whether a difference
 matters") is in "Proposed additions" for the developer to add.
+
+**Purged to the Recycle Bin on 2026-10-02** (developer's OK): `2026-10-01_timing-late-check\` (10 files), `2026-10-01_changed-patch\` (4) and `2026-10-01_fast-gate\` (10). Their results are recorded above; those numbers are now the record. `GP-200\Backups\2026-09-30_full-backup.zip` is untouched.
