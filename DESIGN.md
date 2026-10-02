@@ -137,7 +137,7 @@ to be designed.
   reloading, so the pedal connection, the selection, picked files and a
   running restore survive (a Help screen can be read mid-restore). Each
   screen has its own address, so Back and bookmarks work. Screens:
-  **Back up**, **Restore**, **Help**: one operation per screen, so the
+  **Back up**, **Restore**, **Template**, **Help**: one operation per screen, so the
   list's highlight always means one thing (two control sets above one
   list were ambiguous, developer 2026-10-02).
 - **The patch list:** all 256 patches on one screen, no scrolling on a
@@ -153,6 +153,19 @@ to be designed.
 - **The list shows the range before anything runs:** blue for "will be
   saved"; orange for "will be overwritten", with a switch to show the
   list as it is now or after the restore (that is the restore preview).
+- **Template screen** (the CLI's `apply-template`, developer
+  2026-10-02): one `.prst` into a From/To range, one confirmation for the
+  range, then the restore's write, verify and progress. By default it
+  writes only **empty slots** and **old copies of the template**; any
+  other patch is kept. "Every slot in the range" overwrites them too (the
+  CLI's behaviour). Summary counts empty / old copies / own patches and
+  names the kept ones.
+  - **Empty** means the patch name "It's GP-200", nothing else
+    (developer). "Template" or any other name is the user's patch.
+  - **An old copy** is a slot whose patch name equals the template's:
+    the developer wants old templates replaced, since several patches
+    with the same name and different settings would confuse. A renamed
+    template can't be matched; "Every slot" covers that.
 - **Controls never appear or disappear.** A button stays visible, greyed
   out with the reason next to it, until its inputs are valid. The
   progress line is always there ("Ready." when idle).
@@ -220,7 +233,8 @@ to be designed.
 
 ### Later
 
-- Load one template into many slots (the CLI's `apply-template`).
+- Load one template into many slots: now planned as the Template screen
+  ("Designed UI").
 - Anything else users ask for.
 
 ### Out of scope

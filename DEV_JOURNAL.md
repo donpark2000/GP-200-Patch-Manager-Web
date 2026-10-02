@@ -1851,3 +1851,25 @@ with example files, orange overwrite range, a "Pedal now / After
 restore" switch, counts of real vs default patches replaced, a 64-D
 overflow warning, a confirm dialog and a simulated progress bar; a Help
 draft with browser compatibility. `DESIGN.md`, "Designed UI", updated.
+
+## 2026-10-02: Designed UI: Template screen (mockup v4)
+
+The developer still values the CLI's `apply-template` and asked for it as
+its own screen. Checked against the CLI (`cmd_apply_template`,
+`confirm_overwrite` in `gp200.py`): one `.prst` into every slot of a
+From/To range, write-and-verify per slot, and a per-slot "overwrite? [y/N]"
+showing the current name unless `--force`.
+
+Web version agreed (details in `DESIGN.md`): one confirmation for the
+range instead of per-slot prompts; by default it writes only empty slots
+and old copies of the template, which is the web form of answering "N" at
+your own patches. Developer's rules: only "It's GP-200" counts as empty
+(the mockup had also greyed "Template"; Claude had assumed it was a
+default, but the developer's 45 "Template" slots are their own); slots
+holding an old template must be overwritten too, so an old copy is
+recognised by the same patch name.
+
+Mockup v4's example (the developer's real names, 44-A to 51-D, template
+named "Template"): 32 slots, writes 25 (9 empty, 16 old "Template"),
+keeps 7 (two "Test IR and NAM", Hard Rock, Lead, Special, Mandolin,
+JImi); counts checked against the backup's names.
