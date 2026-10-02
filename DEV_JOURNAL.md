@@ -1888,3 +1888,49 @@ name Template, with a fixed intro line, a "Choose a .prst file..." button
 and a "Write to range" action; Help now has three use cases (see
 `DESIGN.md`). The developer confirmed the Template screen otherwise
 matches what they want.
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- Live site unchanged: https://donpark2000.github.io/GP-200-Patch-Manager-Web/
+  (version `d263698`). `read-path` is ahead of `main` by docs and test
+  helpers only (fake pedal now uses the real read layout); no publish
+  needed.
+- Open questions: none (Q3-Q6 closed this session).
+- **The designed UI is agreed**: `DESIGN.md`, "Designed UI", is the spec.
+  Reference mockup (private artifact, the developer can open it):
+  https://claude.ai/artifact/6ygYs7meux9jHsqBFgfFtv (version 6). It is a
+  throwaway; build the real UI on the existing core, not from the
+  mockup's code.
+  - Header: Back up / Restore / Template / Help, connection status.
+    Footer: (c) Donald Parker, GPL-3.0, GitHub, GP200 Studio, credits,
+    version, not affiliated with Valeton.
+  - One page, screens switched by `#backup`/`#restore`/`#template`/
+    `#help`; connection, inputs and a running job survive switching.
+  - The patch list: "12-A Name", 8 columns of 8 banks, faint bank lines,
+    "It's GP-200" greyed; read on connect and after any write.
+  - Ranges only; clicking a patch fills the boxes. Blue = will be saved,
+    orange = will be overwritten; "Pedal now / After" switch.
+  - Buttons always visible, greyed with the reason until ready; the
+    progress line always present ("Ready." when idle).
+  - Template: any `.prst` into a range, empty slots ("It's GP-200")
+    only by default, "Every slot in the range" as override.
+  - Logs hidden; Save log in Help; log panel and timing test with `?dev`.
+  - iPhone/iPad unsupported (confirmed); Android untested.
+
+**Build plan, in order (on a new branch, e.g. `designed-ui`):**
+1. Core, Node-tested first: "12-A" display labels (input already accepts
+   both forms); the template plan (which slots get written in each mode,
+   counts, kept list) and the template write, reusing the restore's
+   write-and-verify and fast pacing; a full name read on connect (reuse
+   the export read).
+2. UI: replace the bare test page's layout with the screens, list,
+   controls, progress line, confirm dialogs and Help; keep every debug
+   log line. Keep the UI thin: anything testable goes in `src/core/`.
+3. Check in the built-in browser (layout, both themes, narrow window),
+   then the developer's hardware checks: backup compare MATCH, a restore
+   round trip, a Template run on scratch slots 64-A to 64-D with
+   confirmation (writes outside the restore feature need the
+   developer's OK; Template is a restore-type write, so confirm the
+   test plan first).
+4. Publish by merging to `main` only with the developer's OK.
