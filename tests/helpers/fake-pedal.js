@@ -35,6 +35,10 @@
 import { HEADER, nibbleDecode, nibbleEncode } from "../../src/core/sysex.js";
 
 const CHUNK_RAW = 183; // same stride the write path uses (gp200.py build_upload_chunks)
+// Read replies as the real pedal sends them (hardware logs, journal
+// 2026-10-02 "Hosted site, this computer"): 185-byte chunks at offsets
+// 0, 185, ... 1110; a 1176-byte dump ends in a 66-byte chunk.
+const READ_CHUNK_RAW = 185;
 const DUMP_SHIFT = 0x28;
 
 export class FakePedal {
@@ -170,8 +174,8 @@ export class FakePedal {
   /** Split a dump into cmd=0x12 sub=0x18 reply chunks. */
   static dumpChunks(dump) {
     const chunks = [];
-    for (let off = 0; off < dump.length; off += CHUNK_RAW) {
-      const nib = nibbleEncode(dump.subarray(off, off + CHUNK_RAW));
+    for (let off = 0; off < dump.length; off += READ_CHUNK_RAW) {
+      const nib = nibbleEncode(dump.subarray(off, off + READ_CHUNK_RAW));
       chunks.push(Uint8Array.from([...HEADER, 0x12, 0x18, 0x09, off & 0x7f, (off >> 7) & 0x7f, ...nib, 0xf7]));
     }
     return chunks;

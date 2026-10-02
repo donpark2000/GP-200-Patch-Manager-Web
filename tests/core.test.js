@@ -80,6 +80,9 @@ test("assembleChunks reorders out-of-order chunks", () => {
   const dump = baseDump();
   const chunks = FakePedal.dumpChunks(dump);
   assert.equal(chunks.length, 7);
+  // The real pedal's layout (journal 2026-10-02): offsets 0..1110, 66-byte last chunk.
+  assert.deepEqual(chunks.map(chunkOffset), [0, 185, 370, 555, 740, 925, 1110]);
+  assert.equal(dump.length, 1176);
   assert.deepEqual(assembleChunks([...chunks].reverse()), dump);
 });
 

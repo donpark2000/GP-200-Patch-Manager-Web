@@ -12,25 +12,47 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q3. Does Web MIDI SysEx work from a local `file://` page** in Chrome
-  and Edge? This decides whether a downloadable single-file version is
-  possible.
-- **Q4. Does the browser deliver each SysEx message whole?** Web MIDI
-  should, but a split or merged message would need reassembly in the core.
-  *The app logs a warning for any SysEx without a closing F7.*
-- **Q5. What do real read replies look like?** The CLI never recorded the
-  exact chunk layout (offset units, payload sizes) or the decoded dump
-  length. The fake pedal in the tests *assumes* the write path's layout:
-  183-byte strides, offsets in decoded bytes, a 1182-byte dump. Only
-  chunk order depends on the offsets, so a wrong assumption wouldn't break
-  exports, but the fake should match reality. *The app logs the real
-  layout on the first read of every export ("First read ...").*
-- **Q6. Is the connect handshake needed for read-only use?** The CLI always
-  sends the identity query and "enter editor mode"; reads work without
-  them (PROTOCOL.md §2). The web app does the same, for parity with the
-  tested CLI. Open: does editor mode have any visible effect on the pedal?
+None. (Q3-Q6 closed 2026-10-02, see "Resolved".)
 
 ## Resolved
+
+- **Q3-Q6.** *Closed 2026-10-02 with the developer (entry "Open questions
+  Q3-Q6 closed").* Claude had raised them while setting up and porting;
+  none was ever a decision for the developer. Outcomes:
+  - **Q3 (`file://` page): parked** until a downloadable version is
+    wanted. The hosted site is the product; trying it is a 5-minute test.
+  - **Q4 (SysEx delivered whole): resolved by the evidence.** Every full
+    export on both computers had 0 re-reads and matched byte for byte; a
+    split or merged message would have failed the sanity checks and forced
+    a re-read. The F7 warning stays in the log as a tripwire.
+  - **Q5 (real read layout): resolved.** The hardware logs show 7 chunks
+    at offsets 0, 185, ... 1110 (370 nibbles each, 132 in the last), 1176
+    decoded bytes (entry "Hosted site, this computer"). The fake pedal had
+    assumed 183-byte chunks and 1182 bytes; it now uses the real layout,
+    and a test pins it.
+  - **Q6 (handshake for reads): settled, keep CLI parity.** The app keeps
+    sending the identity query and "enter editor mode", as the tested CLI
+    does. Whether editor mode visibly changes the pedal isn't pursued.
+
+  The original questions, for the record:
+
+  - **Q3. Does Web MIDI SysEx work from a local `file://` page** in Chrome
+    and Edge? This decides whether a downloadable single-file version is
+    possible.
+  - **Q4. Does the browser deliver each SysEx message whole?** Web MIDI
+    should, but a split or merged message would need reassembly in the core.
+    *The app logs a warning for any SysEx without a closing F7.*
+  - **Q5. What do real read replies look like?** The CLI never recorded the
+    exact chunk layout (offset units, payload sizes) or the decoded dump
+    length. The fake pedal in the tests *assumes* the write path's layout:
+    183-byte strides, offsets in decoded bytes, a 1182-byte dump. Only
+    chunk order depends on the offsets, so a wrong assumption wouldn't break
+    exports, but the fake should match reality. *The app logs the real
+    layout on the first read of every export ("First read ...").*
+  - **Q6. Is the connect handshake needed for read-only use?** The CLI always
+    sends the identity query and "enter editor mode"; reads work without
+    them (PROTOCOL.md §2). The web app does the same, for parity with the
+    tested CLI. Open: does editor mode have any visible effect on the pedal?
 
 - **T1. Background-tab timer throttling.** *Resolved 2026-10-02: a hidden
   tab doesn't slow the fast restore.* Two full restores on this computer
@@ -1747,3 +1769,22 @@ Recycle Bin, with the developer's OK; the backup is untouched.
    so no cancel button is needed for it; soften the hidden-tab banner.
 2. Optional: a hidden-tab restore on the laptop on battery.
 3. Undecided: backport the fast pacing to the CLI.
+
+## 2026-10-02: Open questions Q3-Q6 closed
+
+The developer didn't recognise Q3-Q6: Claude had added them (Q3/Q4 in the
+first commit, Q5/Q6 with the read-path port) and never brought them up.
+After a plain explanation of each, with the risk of dropping it, the
+developer agreed to close all four as proposed (details under "Resolved").
+The only code change: the fake pedal's read replies now use the real
+layout (185-byte chunks, 1176-byte dump, `tests/helpers/fake-pedal.js`,
+`baseDump()` in `tests/helpers/fixtures.js`). Uploads keep the CLI's
+183-byte chunks. The test "assembleChunks reorders out-of-order chunks"
+now checks the offsets and length; it was run with the old 183 stride
+put back and failed, then passed again with 185. Full suite: 117 of 117
+pass.
+
+Lesson for the journal itself: an open question Claude raises should say
+whose question it is and what would close it, and be brought to the
+developer when it's added, not left to surface weeks later.
+

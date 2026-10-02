@@ -28,7 +28,7 @@ not a patch editor.
 - **Plain JavaScript (ES modules), no build step.** What's in the repo is
   what's served. Unit tests run under Node without a bundler.
 - **A downloadable single-file build is a maybe.** It depends on whether
-  Web MIDI SysEx works from a `file://` page (open question in the journal).
+  Web MIDI SysEx works from a `file://` page; untested, parked (journal, Q3).
 
 ## Relationship to the CLI
 
