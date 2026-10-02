@@ -1169,3 +1169,14 @@ What the timing test still doesn't copy from the failing restore:
 2. **Time.** The damage was found by an export minutes after the restore;
    the test re-reads 0.3-1 s after the write.
 3. Scale and order of patches: 255 writes of real patches, shifted by one.
+
+**Re-export minutes later: unchanged.** The developer exported 64A-64D
+about 3 minutes after B5 ended (17:59 -> 18:02); it was saved as
+`gp200_64A_to_64D.zip`, replacing the 16:00 baseline of that name (which
+held the four factory defaults; its content is recorded above). Compared
+by position with `tuning-set-Y.zip` (scratchpad script, every byte
+including the dead bytes): **all 4 identical**, with the 2s at 0x44e
+(Twiggy Blues, Scotland Kiss) and 0x456 (Classic 900, Love Yourself)
+intact. The same export against `tuning-set-X.zip` differs in 69-97 bytes
+per slot (the check can fail). So difference 2 (time) doesn't explain it
+for these 4 slots; differences 1 and 3 remain.
