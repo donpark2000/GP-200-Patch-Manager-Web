@@ -17,8 +17,6 @@ This journal records only what's new or different for the browser.
   come from the Windows USB-MIDI driver. The browser reaches the pedal
   through a different MIDI layer, so it may be cleaner, the same, or
   different. *To be answered by the phase 1 CLI-comparison test.*
-- **Q2. How long does reading all 256 slots take in the browser?** This
-  decides how much progress/cancel UI is needed.
 - **Q3. Does Web MIDI SysEx work from a local `file://` page** in Chrome
   and Edge? This decides whether a downloadable single-file version is
   possible.
@@ -51,6 +49,14 @@ This journal records only what's new or different for the browser.
   `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
   replaced by read-backs, only the 7 chunk gaps would still need timers.
 ## Resolved
+
+- **Q2. How long does reading all 256 slots take in the browser?** This
+  decides how much progress/cancel UI is needed. *Resolved 2026-10-02:
+  about 0.3 s (1 ms per slot), 0 re-reads, on this computer from the
+  hosted site in Edge; the export matched the backup byte for byte (entry
+  "Hosted site, this computer"). A full backup is effectively instant, so
+  it needs no cancel button; the progress UI can stay minimal. The laptop
+  log will add a second data point.*
 
 - **T2. Restore speed.** *Resolved 2026-10-02: the fast pacing (no
   pauses, read back until it matches, then the preset change; about 0.11 s
@@ -1537,3 +1543,32 @@ rule. Code comments unchanged.
 
 `CLAUDE.md` now has a "Starting a session" routine, so a new session can
 begin with just "start".
+
+## 2026-10-02: Hosted site, this computer: export MATCH
+
+The developer opened the live site in Edge on this computer, connected,
+exported all slots and saved the log (session folder
+`GP-200-testing\2026-10-02_hosted-site\`: `gp200_all_patches.zip`,
+`gp200_web_2026-10-02T20-39-47.log`).
+
+- `compare-zips.js` against `GP-200\Backups\2026-09-30_full-backup.zip`
+  (run by the developer, then again by Claude): 256 entries each, 256
+  slots and 313,344 bytes compared, **256 identical, RESULT: MATCH**.
+- Log: version `d263698 (2026-10-02)`, page
+  `https://donpark2000.github.io/GP-200-Patch-Manager-Web/`, Edge 155 on
+  Windows, `sysex=true`, one GP-200 in and out (Microsoft driver), wake
+  lock available, developer tools off. Identity query answered.
+- First read (1A): 7 chunks at offsets 0, 185, ... 1110 (370 nibbles each,
+  132 in the last), 1176 decoded bytes: the same layout as before.
+- **Read 256 of 256 slots in 0.3 s (1 ms per slot), 0 re-reads, 0
+  skipped.** The match with the backup shows the reads were real, so the
+  speed is genuine.
+- The User-IR/NAM warning named 48B and 48D, as on 2026-09-30.
+- The page was hidden for 3.1 s about a minute after the export; nothing
+  was running.
+
+So the hosted site (served from GitHub Pages, not localhost) reads the
+pedal exactly as the local copy and the CLI do. Q2 resolved (below).
+
+Next: the laptop. Its export and log get copied into the same session
+folder as `laptop_...`, so the folder is purged after that, not now.
