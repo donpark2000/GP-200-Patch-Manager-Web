@@ -1784,7 +1784,8 @@ now checks the offsets and length; it was run with the old 183 stride
 put back and failed, then passed again with 185. Full suite: 117 of 117
 pass.
 
-Lesson for the journal itself: an open question Claude raises should say
-whose question it is and what would close it, and be brought to the
-developer when it's added, not left to surface weeks later.
+On recording questions like these (developer, 2026-10-02): keep doing
+it. Writing them down as they come up guards against assuming too early
+that something doesn't matter, and closing them at the end of testing was
+cheap. Not proposed for the standards skill.
 
