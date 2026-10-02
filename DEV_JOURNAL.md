@@ -12,11 +12,6 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q1. Does the browser's MIDI path behave like Python's?** The CLI's
-  read noise (dead bytes `0x43`/`0x9F`, about 10% of reads) is suspected to
-  come from the Windows USB-MIDI driver. The browser reaches the pedal
-  through a different MIDI layer, so it may be cleaner, the same, or
-  different. *To be answered by the phase 1 CLI-comparison test.*
 - **Q3. Does Web MIDI SysEx work from a local `file://` page** in Chrome
   and Edge? This decides whether a downloadable single-file version is
   possible.
@@ -49,6 +44,16 @@ This journal records only what's new or different for the browser.
   `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
   replaced by read-backs, only the 7 chunk gaps would still need timers.
 ## Resolved
+
+- **Q1. Does the browser's MIDI path behave like Python's?** The CLI's
+  read noise (dead bytes `0x43`/`0x9F`, about 10% of reads) is suspected to
+  come from the Windows USB-MIDI driver. The browser reaches the pedal
+  through a different MIDI layer, so it may be cleaner, the same, or
+  different. *Resolved 2026-10-02: it produces the same backups, and
+  cleaner reads.* Full exports matched the CLI's byte for byte on this
+  computer (2026-09-30) and the backup from the hosted site on both
+  computers (2026-10-02 entries); none needed a re-read. The dead bytes
+  are normalized anyway, so this doesn't change any rule.
 
 - **Q2. How long does reading all 256 slots take in the browser?** This
   decides how much progress/cancel UI is needed. *Resolved 2026-10-02:
@@ -1572,3 +1577,37 @@ pedal exactly as the local copy and the CLI do. Q2 resolved (below).
 
 Next: the laptop. Its export and log get copied into the same session
 folder as `laptop_...`, so the folder is purged after that, not now.
+
+## 2026-10-02: Hosted site, laptop: export MATCH (phase 1 gate done)
+
+The developer exported all slots from the live site on the laptop (no
+Python, no repo there) and copied the files to this computer's session
+folder `GP-200-testing\2026-10-02_hosted-site\`:
+`laptop_gp200_all_patches.zip` (copied as `Laptop_...`, renamed by
+Claude to match the other names) and
+`laptop_gp200_web_2026-10-02T20-47-38.log`.
+
+- `compare-zips.js` against `GP-200\Backups\2026-09-30_full-backup.zip`:
+  256 entries each, 256 slots and 313,344 bytes compared, **256
+  identical, RESULT: MATCH**.
+- It's really a second export, not a copy of this computer's: the two
+  zips' MD5s differ and their entry timestamps are 13:38:30 (this
+  computer) vs 13:47:02 (laptop).
+- Log: version `d263698`, live site, Edge 155 on Windows, `sysex=true`,
+  one GP-200 in/out (Microsoft driver), wake lock available. The laptop
+  exported **twice** (at +80 s and +213 s); both read **256 of 256 in
+  0.6 s (2 ms per slot), 0 re-reads, 0 skipped**. The copied zip's
+  timestamp fits the second. First-read layout identical to this
+  computer's. Same User-IR/NAM warning (48B, 48D).
+- The laptop reads at half this computer's speed, still effectively
+  instant (Q2).
+
+**Phase 1 gate: done on both computers.** Computer 1: several full
+matches with the CLI (2026-09-30) and with the backup from the hosted
+site (today). Laptop: two clean full reads, one compared, MATCH. Across
+every full export so far the browser needed no re-reads; the CLI's read
+noise (dead bytes, about 10% of reads) hasn't appeared. Q1 resolved
+(below).
+
+Next: the fast round trip on the laptop (phase 2 on the second
+computer).

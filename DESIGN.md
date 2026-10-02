@@ -138,9 +138,9 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - **Export:** disabled until something is selected. One slot downloads a
   `.prst`; several download a `.zip`.
 - Progress while reading, since reading all 256 slots takes a while.
-- *Status: core and bare test page built; export-all matched the CLI's
-  byte-for-byte on real hardware on the developer's first computer (see the
-  journal). Second computer still to do.*
+- *Status: core and bare test page built; gate passed. Export-all matched
+  the CLI's byte-for-byte on the developer's first computer, and from the
+  hosted site matched the backup on both computers (see the journal).*
 
 ### Phase 2: restore
 
