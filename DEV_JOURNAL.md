@@ -1638,3 +1638,48 @@ after the restore), `laptop_after-shift_gp200_web_2026-10-02T21-07-50.log`
   154 slots really changed, the same count as on this computer.
 
 Next: step 2, restore back from 1A, export, compare unshifted.
+
+## 2026-10-02: Laptop round trip, step 2 (back from 1A): MATCH
+
+Same page and source zip. Files: `laptop_after-restore_gp200_web_2026-10-02T21-12-11.log`,
+`laptop_after-restore_gp200_all_patches.zip`.
+
+- **Wrote 256 of 256 in 29.7 s, 256 verified, 0 not verified**, no
+  confirmation reads, page visible. The same three patches read back with
+  a managed byte at 0 (1D 0x456, 4B 0x44e, 11A 0x456; each 2->0).
+- The log was saved before the export (saved 21:12:11Z; the zip's entries
+  are stamped 14:13:28 local), so it has no export lines. The export
+  itself is checked by the compare.
+- `compare-zips` backup vs `laptop_after-restore_...zip`: 256 entries
+  each, 313,344 bytes compared, **256 identical, RESULT: MATCH**, no
+  pedal-managed differences. After-shift vs after-restore: 102 identical,
+  so step 2 changed 154 slots back. All four zips in the folder are
+  different files (distinct MD5s).
+
+**Phase 2 on the second computer: PASS.** 511 of 511 fast writes
+verified from the hosted site on the laptop, both compares MATCH, the
+same managed-byte read-backs and timings (29.9 s / 29.7 s) as on this
+computer. The pedal is back to `GP-200\Backups\2026-09-30_full-backup.zip`
+exactly. With this, both phase gates have passed on both computers.
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- The app is live at https://donpark2000.github.io/GP-200-Patch-Manager-Web/
+  (version `d263698`), published from `main` by CI. `read-path` is ahead
+  of `main` by journal/`CLAUDE.md`/`DESIGN.md` updates only; no publish
+  needed for those.
+- Both gates passed on both computers, from the hosted site: backup
+  matches the backup file (and the CLI) byte for byte; a full fast round
+  trip (511 writes) verifies and compares MATCH. Q1 and Q2 resolved.
+- Reads: about 1-3 ms per slot (0.3-0.8 s for all 256), never a re-read.
+  Restore: about 30 s for 256 patches.
+- The pedal holds exactly `GP-200\Backups\2026-09-30_full-backup.zip`.
+
+**Next steps, in order:**
+1. T1: a deliberate hidden-tab restore (switch tabs or minimize during a
+   full restore; check timing and verify in the log).
+2. The designed UI (on a branch; publish deliberately). Notes so far: the
+   range entry should show its meaning in the grid; a backup is instant,
+   so no cancel button is needed for it.
+3. Undecided: backport the fast pacing to the CLI.

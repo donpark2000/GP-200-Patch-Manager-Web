@@ -158,7 +158,8 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - *Status: built in the bare test page (section 3, "Restore") and
   confirmed on real hardware on the developer's first computer: scratch-slot
   writes with changed content, then a full 256-slot round robin (see the
-  journal). Second computer still to do.*
+  journal). Phase 2 gate passed with the fast pacing on both computers,
+  the second from the hosted site (2026-10-02).*
 - Show the **User-IR / NAM (SnapTone) warning** in the preview (CLI README,
   "Known limitations"; `PROTOCOL_NOTES.md` Finding 11).
 - Write method (flash vs. live) is chosen by the app, not the user, based
