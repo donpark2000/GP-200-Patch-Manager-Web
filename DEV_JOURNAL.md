@@ -1180,3 +1180,31 @@ including the dead bytes): **all 4 identical**, with the 2s at 0x44e
 intact. The same export against `tuning-set-X.zip` differs in 69-97 bytes
 per slot (the check can fail). So difference 2 (time) doesn't explain it
 for these 4 slots; differences 1 and 3 remain.
+
+## 2026-10-01: Does the 2 -> 0 change matter? Changed-patch pairs
+
+Developer's direction: pursue a faster restore that's reliable, but
+remember that not every byte difference changes anything the user can set
+or hear; an unexpected change gets attention, then a judgement on whether
+it matters. First question: what do 0x44e/0x456 control?
+
+- **Backup survey** (`GP-200\Backups\2026-09-30_full-backup.zip`): 41 of
+  256 patches have a nonzero value at 0x44e or 0x456 (all checksums
+  valid). The three records at 0x448/0x450/0x458 always start
+  `10 00 04 00`, then `n p v 00` with n = 0, 1, 2; p ranges 00-0b (record
+  2 is always `02 0b 00`), v 0-3. Seen: v = 2 at 0x44e with p = 02 or 06;
+  v = 1, 2 or 3 at 0x456 with p = 00, 02, 03, 06, 08 or 09. Guess (not
+  checked): an assignment table (e.g. footswitch/EXP/CTRL), p a module, v
+  a parameter or mode.
+- **Pairs for the official Valeton desktop software**, session folder
+  `GP-200-testing\2026-10-01_changed-patch\` (made by a scratchpad script
+  from the backup): `2A_Rock Soul_original.prst` /
+  `2A_Rock Soul_changed-0x456.prst` (the patch the fast restore damaged
+  after a passing verify) and `4B_Twiggy Blues_original.prst` /
+  `4B_Twiggy Blues_changed-0x44e.prst` (read back 0 right after its
+  write). Each changed copy differs from its original only at that byte
+  (2 -> 0) and the checksum (0x4c7), re-read from disk; both checksums
+  valid; originals byte-identical to the backup; patch names unchanged.
+
+Next: the developer loads each pair into the desktop software and
+compares every setting, including assignments (footswitch, EXP, CTRL).
