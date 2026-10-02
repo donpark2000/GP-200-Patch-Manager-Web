@@ -1662,6 +1662,20 @@ same managed-byte read-backs and timings (29.9 s / 29.7 s) as on this
 computer. The pedal is back to `GP-200\Backups\2026-09-30_full-backup.zip`
 exactly. With this, both phase gates have passed on both computers.
 
+**Battery** (developer, afterwards): the laptop ran on battery for all of
+its tests. So the restore runs at full speed on battery with the page
+visible (29.9 s / 29.7 s, same as this computer plugged in). Not
+covered: a hidden page on battery, where browsers slow background tabs
+the most (T1).
+
+**Purged** `GP-200-testing\2026-10-02_hosted-site\` (developer, by hand,
+to the Recycle Bin). Claude's two attempts failed because the folder was
+some program's current folder (all 9 files were free; renaming the folder
+failed). That was a PowerShell window still `cd`'d into it from the
+compares; once closed, the delete worked. Lesson for test instructions:
+end with `cd` back out of the session folder (or close the window), or
+the purge fails.
+
 ## 2026-10-02: Status (start here next session)
 
 **Known:**
