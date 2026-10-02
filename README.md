@@ -4,13 +4,22 @@ A browser-based tool for **bulk backup and restore of Valeton GP-200
 patches** over USB-MIDI. It's the web companion to the command-line
 [GP-200 Patch Manager](https://github.com/donpark2000/GP-200-Patch-Manager).
 
-**Status: early test build.** Backup is verified against real hardware (it
-matches the CLI byte-for-byte). Restore is built and being tested; it
-writes to the pedal only after you confirm.
+**Open the app: <https://donpark2000.github.io/GP-200-Patch-Manager-Web/>**
+
+**Status: test build.** Backup and restore are verified on real hardware:
+full-pedal round trips kept every patch exactly, and a full restore of all
+256 slots takes about 30 seconds. It writes to the pedal only after you
+confirm. So far tested on one computer; a second is next.
 
 - Runs in **Chrome or Edge** on Windows, macOS, or Linux. Safari isn't
   supported, because it has no Web MIDI.
-- Nothing to install. Hosted on GitHub Pages.
+- Nothing to install. Connect the GP-200 by USB, open the page, and allow
+  MIDI access when the browser asks.
+- **Back up** exports one slot as a `.prst` or several as a `.zip`, each
+  file named after its slot and patch (e.g. `34A_Clean.prst`).
+  **Restore** writes `.prst` files or a `.zip` to consecutive slots from a
+  starting slot, shows what will be replaced, and checks every patch by
+  reading it back.
 
 This isn't a patch editor. If you want to create or edit patches, look at
 [GP200 Studio](https://github.com/kabir0st/gp200-studio) (a full editor) or
@@ -60,11 +69,16 @@ python -m http.server 8000
 
 then open <http://localhost:8000> in Chrome or Edge.
 
-Compare a CLI export with a web export (the phase 1 acceptance test):
+Compare two exports slot by slot, e.g. a backup with an export made after
+a restore (add `--shift 1` after restoring from slot 1B):
 
 ```
-node tools/compare-zips.js gp200_all_patches.zip web/gp200_all_patches.zip
+node tools/compare-zips.js backup.zip gp200_all_patches.zip
 ```
+
+Publishing: CI runs the tests on every pull request, and publishes the site
+to GitHub Pages only from `main`. Work on a branch; merging to `main` is
+the publish step. Add `?dev` to the page address for the developer tools.
 
 ## License
 

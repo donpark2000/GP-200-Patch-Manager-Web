@@ -21,6 +21,10 @@ not a patch editor.
 - **Supported browsers: Chrome and Edge** (any desktop OS). Safari has no
   Web MIDI, and Firefox's permission flow is awkward. Other community GP-200
   web tools have the same limitation, and users are used to it.
+- **Published from `main` only.** CI tests every pull request and
+  publishes to GitHub Pages only on `main`, stamping the commit into the
+  page. Work happens on branches; merging to `main` is the deliberate
+  publish step, done with the developer's OK.
 - **Plain JavaScript (ES modules), no build step.** What's in the repo is
   what's served. Unit tests run under Node without a bundler.
 - **A downloadable single-file build is a maybe.** It depends on whether

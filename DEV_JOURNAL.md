@@ -1453,3 +1453,37 @@ The standards-skill proposal (item 4, "check whether a difference
 matters") is in "Proposed additions" for the developer to add.
 
 **Purged to the Recycle Bin on 2026-10-02** (developer's OK): `2026-10-01_timing-late-check\` (10 files), `2026-10-01_changed-patch\` (4) and `2026-10-01_fast-gate\` (10). Their results are recorded above; those numbers are now the record. `GP-200\Backups\2026-09-30_full-backup.zip` is untouched.
+
+## 2026-10-02: Merged to main; site published on GitHub Pages
+
+The second computer has no Python and no copy of the repo, so it needs the
+hosted site; on the developer's OK the merge came before the
+second-computer test instead of after it.
+
+- PR [#1](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/1)
+  retitled ("Backup and restore over Web MIDI: read path, restore with
+  fast pacing, test tools"), description updated, merged with a merge
+  commit (0ef1c4f, 36 commits). `read-path` kept.
+- CI on main: tests passed, deploy succeeded. Live at
+  https://donpark2000.github.io/GP-200-Patch-Manager-Web/, `version.js`
+  stamped `0ef1c4f (2026-10-02)`. Built-in browser: secure context, Web
+  MIDI present, developer tools hidden without `?dev`, no console errors.
+  (CI notes: Node 20 actions are being forced onto Node 24; ubuntu-latest
+  moves to Ubuntu 26 from 2026-10-19. Neither affects the build yet.)
+- Local server stopped.
+
+Next: export all from the hosted site on this computer and compare with
+the backup (session folder `2026-10-02_hosted-site\`), then the same on
+the laptop (copy its export here to compare; no Python needed there).
+
+**README:** the developer reviewed PR #2's README; the CLI-comparison
+testing is behind us, so the README no longer mentions it (status, file
+naming and the compare example reworded). Kept: "web companion to the
+command-line GP-200 Patch Manager", the credits chain (required by the
+credit rules), and the pointer to the protocol docs in the CLI repo.
+
+**Idea (developer, undecided): backport the speed-up to the CLI.** Once
+the web app is complete, the CLI's remaining use is scripted automation.
+What a backport would take: the fast pacing (upload, read back until it
+matches, preset change), the pedal-managed bytes 0x44e/0x456 in its
+verify, and the confirmation reads. Not planned yet.
