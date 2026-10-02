@@ -1287,3 +1287,51 @@ default the CLI's; no console errors.
 
 **Gate run (next, hardware):** session folder
 `GP-200-testing\2026-10-01_fast-gate\`.
+
+## 2026-10-02: Plan for the fast pacing; confirmation reads
+
+Pushed `read-path` to GitHub (10 commits); from now on each commit is
+pushed (developer: protection against disk failure).
+
+**Developer's two ideas, in this order:**
+1. **Find out whether anything else should be ignored in verification.**
+   Write aggressively over a range of slots; before calling a write
+   failed, read it back a few times to see whether the difference stays
+   the same or changes; the developer inspects any difference in the
+   Valeton editor. Agreed form: the phase 2 gate with the fast pacing
+   (511 writes of real patches over the whole pedal, nearly all changing
+   the slot) is that test; any difference outside the pedal-managed bytes
+   is checked at the exact setting `compare-zips` names. (Writing one
+   patch to many slots was considered: a slot already holding it can't
+   show a write that didn't land, and the 0x44e/0x456 change depended on
+   the patch.) Harmless differences join the ignore list.
+2. **Then, only if errors remain, tune the pauses one at a time.** Raise
+   all four pauses (chunk gap, settle, after preset change, between
+   patches) in 10% steps of their CLI values until clean, then lower one
+   at a time to 0 or until errors return. Agreed refinements: all-zero is
+   tested first (the gate); time limits (poll/read-back) aren't swept; each
+   step is a full-pedal restore + export + compare; the shipped setting
+   needs two clean full runs. The developer notes that once harmless
+   differences are ignored, everything may pass and idea 2 may not be
+   needed.
+
+**Built: confirmation reads** (`device.js`, `CONFIRM_READS` = 3). When a
+write's read-back still mismatches (CLI pacing: after its one re-read;
+fast: after reading until the limit), the slot is read 3 more times. A full
+match passes the write ("matched later"; warning in the log). Otherwise
+it fails with `consistency` "stable" (same bytes and values in every read:
+stored) or "varies" (read noise, or the pedal still changing it); the
+reason says which ("..., the same in all 5 reads"), and for "varies" the
+log lists each distinct outcome with a count. A write that matches at once
+does no extra reads. `DESIGN.md` updated.
+
+Tests: 117, all passing (twice). New: a write that never lands is
+"stable" over 5 reads; in both pacings, a difference that changes from
+read to read fails as "varies", and a mismatch that clears on a
+confirmation read passes; a clean write does 1 read. Each shown to fail on
+a deliberate break (always "stable": 2 red; a later match never passing:
+2; no confirmation reads: 6).
+
+Exports read each slot once, so a `compare-zips` difference could be read
+noise in the export: before inspecting one, re-export the slots involved
+and compare again.

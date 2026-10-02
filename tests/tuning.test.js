@@ -247,7 +247,7 @@ test("verify before the switch: a slot that reads a pedal-managed byte different
 test("verify before the switch: any other byte read differently still fails the verify, with the offset", async () => {
   const { log, dev } = await setup({ unloadedReads: { off: 0x100, value: 0x7f } });
   const { rows } = await run(dev, log, { setX: fragX, setY: fragY, cycles: 1, verifyBeforeSwitch: true, late: "end", lateSettleMs: 0 });
-  assert.ok(rows.every((r) => !r.verified && r.rechecked && /^1 byte\(s\) differ from the file: 0x100:\d+->127$/.test(r.reason)), JSON.stringify(rows.map((r) => r.reason)));
+  assert.ok(rows.every((r) => !r.verified && r.rechecked && /^1 byte\(s\) differ from the file, the same in all 5 reads: 0x100:\d+->127$/.test(r.reason)), JSON.stringify(rows.map((r) => r.reason)));
 });
 
 test("verify before the switch with the late check before each overwrite on: warns", async () => {

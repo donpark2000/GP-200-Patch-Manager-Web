@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  checkDump, FAST_WRITE_TIMING, findGp200Ports, GP200, isFastTiming, plannedWriteMs, ReadError, slowWriteWarning, WRITE_TIMING,
+  checkDump, CONFIRM_READS, FAST_WRITE_TIMING, findGp200Ports, GP200, isFastTiming, plannedWriteMs, ReadError, slowWriteWarning, WRITE_TIMING,
 } from "../src/core/device.js";
 import { Logger } from "../src/core/log.js";
 import { exportPrst } from "../src/core/prst.js";
@@ -148,12 +148,15 @@ test("writeSlot: the pauses are really taken, settle before the preset change", 
   assert.ok(r.totalMs >= 7 * 2 + 30 + 5 - 2);
 });
 
-test("writeSlot: a write that never lands fails after one confirming re-read, and still selects the slot", async () => {
-  const { dev, pedal } = setup({}, { timing: NO_DELAY }); // no connect(): uploads are discarded
+test("writeSlot: a write that never lands fails after the confirmation reads, stable, and still selects the slot", async () => {
+  const { dev, pedal, log } = setup({}, { timing: NO_DELAY }); // no connect(): uploads are discarded
   const r = await dev.writeSlot(5, exportPrst(dumpWithName("Never"), skeletonBytes()), skeletonBytes());
   assert.equal(r.ok, false);
   assert.equal(r.recheckedAfterMismatch, true);
-  assert.equal(pedal.reads.get(5), 2);
+  assert.equal(pedal.reads.get(5), 2 + CONFIRM_READS);
+  assert.equal(r.consistency, "stable");
+  assert.match(r.reason, /byte\(s\) differ from the file, the same in all 5 reads$/);
+  assert.ok(log.lines.some((l) => l.includes("differed in all 5 reads: stored in the pedal, not read noise")));
   assert.equal(pedal.activeSlot, 5);
 });
 
@@ -247,3 +250,45 @@ for (const [name, timing] of [["the CLI's", NO_DELAY], ["fast", FAST]]) {
     assert.deepEqual(r.managed, []);
   });
 }
+
+// ---- Confirmation reads before a write is called failed (2026-10-02) -------
+
+// Flip one valid nibble in the second reply chunk, in a different place
+// per read, so the "stored" value seems to change: read noise.
+const noisy = (which) => (slot, n, chunks) => {
+  if (!which(n)) return chunks;
+  const c = Uint8Array.from(chunks[1]);
+  c[40 + 2 * n] ^= 0x03;
+  return [chunks[0], c, ...chunks.slice(2)];
+};
+
+for (const [name, timing] of [["the CLI's", NO_DELAY], ["fast", { ...FAST, readBackLimitMs: 0 }]]) {
+  test(`${name} pacing: differences that change from read to read fail as "varies", with every read listed`, async () => {
+    const { dev, log } = setup({ faults: noisy((n) => n >= 1) }, { timing });
+    await dev.connect();
+    const r = await dev.writeSlot(3, exportPrst(dumpWithName("Noisy"), skeletonBytes()), skeletonBytes());
+    assert.equal(r.ok, false);
+    assert.equal(r.consistency, "varies");
+    assert.match(r.reason, /changing between the 5 reads$/);
+    assert.ok(log.lines.some((l) => l.includes("the differences changed between the 5 reads") && /\("0x[0-9a-f]+:\d+" x1; /.test(l)));
+  });
+
+  test(`${name} pacing: a mismatch that clears on a confirmation read passes`, async () => {
+    const { dev, log } = setup({ faults: noisy((n) => n <= 2) }, { timing });
+    await dev.connect();
+    const r = await dev.writeSlot(3, exportPrst(dumpWithName("Clears"), skeletonBytes()), skeletonBytes());
+    assert.equal(r.ok, true);
+    assert.equal(r.consistency, "matched later");
+    assert.equal(r.confirmReads, 1);
+    assert.ok(log.lines.some((l) => l.includes("matched on confirmation read 1 of 3, after 2 mismatching read(s)")));
+  });
+}
+
+test("a write that matches at once does no confirmation reads", async () => {
+  const { dev, pedal } = setup({}, { timing: NO_DELAY });
+  await dev.connect();
+  const r = await dev.writeSlot(3, exportPrst(dumpWithName("Clean"), skeletonBytes()), skeletonBytes());
+  assert.equal(r.ok, true);
+  assert.equal(r.confirmReads, undefined);
+  assert.equal(pedal.reads.get(3), 1);
+});

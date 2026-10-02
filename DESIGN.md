@@ -86,8 +86,12 @@ These are deliberately simpler than the CLI's. See the journal entry of
      agree" loop.
 - **Writes (phase 2): write, then one read-back compare**, ignoring the
   device-owned bytes and the dead bytes, exactly as the CLI's
-  `verify_write_full` does. If the read-back mismatches, re-read **once**
-  before calling it a failure, so read noise can't pose as a failed write.
+  `verify_write_full` does. If the read-back still mismatches (after one
+  re-read; the fast pacing reads until it matches), read it **3 more
+  times** before calling it a failure: a later full match passes the
+  write, and otherwise the log says whether the difference was the same
+  in every read (stored in the pedal) or changed between reads (read
+  noise). So read noise can't pose as a failed write.
   Report a clear pass/fail. No automatic rewrites (the CLI tries up to 10);
   the user decides whether to retry.
 - **Write method: flash upload only**, ported byte-for-byte from the CLI

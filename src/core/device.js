@@ -39,6 +39,21 @@ export const READ_TIMEOUT_MS = 2000; // same budget as the CLI's READ_TIMEOUT_S
 export const READ_ATTEMPTS = 3;
 
 /**
+ * Extra reads before a mismatch is called a failed write (developer's
+ * idea, DEV_JOURNAL.md 2026-10-02): a later read that matches means the
+ * write landed; otherwise the log says whether the difference was the same
+ * in every read (stored in the pedal) or changed (read noise).
+ */
+export const CONFIRM_READS = 3;
+
+/** Distinct read outcomes with counts, in first-seen order: `"0x100:5" x2; "0x100:7" x1`. */
+function patterns(keys) {
+  const counts = new Map();
+  for (const k of keys) counts.set(k, (counts.get(k) ?? 0) + 1);
+  return [...counts].map(([k, c]) => `"${k}" x${c}`).join("; ");
+}
+
+/**
  * Write pacing, copied from the CLI's write_slot: 40 ms between chunks
  * (RigSheet's spacing), a 1 s settle, a preset change, 300 ms; the restore
  * adds 300 ms between patches. There's no write ACK, so these pauses are
@@ -244,16 +259,19 @@ export class GP200 {
     let last = null;
     let reason = "";
     let reads = 0;
+    const history = []; // per read: its mismatches, or null if unreadable
     while (reads < 2 || elapsed() < readBackLimitMs) {
       if (reads > 0 && readBackRetryMs > 0) await sleep(readBackRetryMs);
       reads++;
       const r = await this.readOnce(slot, readBackTimeoutMs);
       if (!r.ok) {
         reason = r.reason;
+        history.push(null);
         this.log.debug(`${label}: read-back ${reads} ${reason}`);
         continue;
       }
       last = this._compare(fileBytes, r.decoded, skeleton);
+      history.push(last.mismatches);
       if (last.mismatches.length === 0) {
         const readBackMs = elapsed();
         if (reads > 1) {
@@ -269,9 +287,52 @@ export class GP200 {
         recheckedAfterMismatch = true;
       }
     }
+    const timing = { reads, readBackMs: elapsed() };
+    if (last) return this._confirmFailure(slot, fileBytes, skeleton, last, history, { recheckedAfterMismatch, ...timing });
     return {
-      ok: false, mismatches: last?.mismatches ?? [], managed: last?.managed ?? [], deviceName: last?.deviceName ?? null,
-      roundtrip: last?.roundtrip ?? null, reason, recheckedAfterMismatch, reads, readBackMs: elapsed(),
+      ok: false, mismatches: [], managed: [], deviceName: null, roundtrip: null, reason, recheckedAfterMismatch, ...timing,
+    };
+  }
+
+  /**
+   * A write's read-back still mismatches: read CONFIRM_READS more times. A
+   * full match passes the write (the earlier reads were noise or a slow
+   * save). Otherwise it fails, and `consistency` says whether every read
+   * showed the same bytes and values ("stable": stored in the pedal) or not
+   * ("varies": read noise on top, or the pedal still changing it).
+   */
+  async _confirmFailure(slot, fileBytes, skeleton, last, history, extra) {
+    const label = slotToLabel(slot);
+    const key = (ms) => (ms ? ms.map((m) => `0x${m.off.toString(16)}:${m.actual}`).join(" ") : "unreadable");
+    const seen = [...history];
+    for (let i = 1; i <= CONFIRM_READS; i++) {
+      let decoded;
+      try {
+        ({ decoded } = await this.readDump(slot));
+      } catch (e) {
+        if (!(e instanceof ReadError)) throw e;
+        seen.push(null);
+        continue;
+      }
+      const c = this._compare(fileBytes, decoded, skeleton);
+      if (c.mismatches.length === 0) {
+        this.log.warn(`${label}: matched on confirmation read ${i} of ${CONFIRM_READS}, after ${seen.length} mismatching ` +
+          "read(s): the write landed (the earlier reads were read noise or a slow save)");
+        return { ok: true, ...c, ...extra, recheckedAfterMismatch: true, confirmReads: i, consistency: "matched later" };
+      }
+      seen.push(c.mismatches);
+      last = c;
+    }
+    const stable = seen.every((s) => key(s) === key(seen[0]));
+    const n = seen.length;
+    this.log.warn(`${label}: ${stable
+      ? `the same ${last.mismatches.length} byte(s) differed in all ${n} reads: stored in the pedal, not read noise`
+      : `the differences changed between the ${n} reads: read noise, or the pedal still changing the slot`}` +
+      (stable ? "" : ` (${patterns(seen.map(key))})`));
+    return {
+      ok: false, ...last, ...extra, recheckedAfterMismatch: true, confirmReads: CONFIRM_READS,
+      consistency: stable ? "stable" : "varies",
+      reason: `${last.mismatches.length} byte(s) differ from the file, ${stable ? `the same in all ${n} reads` : `changing between the ${n} reads`}`,
     };
   }
 
@@ -308,6 +369,7 @@ export class GP200 {
     const label = slotToLabel(slot);
     let recheckedAfterMismatch = false;
     let last = null;
+    const history = [];
     for (let read = 1; read <= 2; read++) {
       let decoded;
       try {
@@ -318,6 +380,7 @@ export class GP200 {
       }
       last = this._compare(fileBytes, decoded, skeleton);
       const { mismatches } = last;
+      history.push(mismatches);
       if (mismatches.length === 0) {
         if (recheckedAfterMismatch) {
           this.log.warn(`${label}: the first read-back mismatched but the re-read matched -- read noise, not a failed write`);
@@ -329,7 +392,7 @@ export class GP200 {
         recheckedAfterMismatch = true;
       }
     }
-    return { ok: false, ...last, reason: `${last.mismatches.length} byte(s) differ from the file`, recheckedAfterMismatch };
+    return this._confirmFailure(slot, fileBytes, skeleton, last, history, { recheckedAfterMismatch });
   }
 
   _send(msg) {
