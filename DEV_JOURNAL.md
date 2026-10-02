@@ -1881,3 +1881,10 @@ tells a template from a patch made by hand. So matching old copies by
 name is dropped. Default: write only "It's GP-200" slots, keep every
 other patch; "Every slot in the range" is the override. In the example
 range (44-A to 51-D) that now writes 9 and keeps 23.
+
+**Wording (mockup v6).** The developer: choosing "a template" is
+confusing, since the user picks an ordinary `.prst`. The screen keeps the
+name Template, with a fixed intro line, a "Choose a .prst file..." button
+and a "Write to range" action; Help now has three use cases (see
+`DESIGN.md`). The developer confirmed the Template screen otherwise
+matches what they want.

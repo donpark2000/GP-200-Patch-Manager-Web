@@ -163,6 +163,12 @@ to be designed.
   - No other name is treated as a template: a patch name doesn't say
     whether it was made as a patch or loaded as a template, and different
     ranges may hold different templates (developer).
+  - **Plain wording** (developer): the "template" is any ordinary `.prst`.
+    The screen keeps the name Template but says so in a fixed line at the
+    top; the button is "Choose a .prst file...", the action "Write to
+    range". Help gives use cases: a starting point for new patches, a
+    block set up for a gig, and clearing a range with an exported empty
+    ("It's GP-200") patch and "Every slot".
 - **Controls never appear or disappear.** A button stays visible, greyed
   out with the reason next to it, until its inputs are valid. The
   progress line is always there ("Ready." when idle).
