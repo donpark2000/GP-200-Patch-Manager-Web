@@ -1824,3 +1824,30 @@ was agreed before any layout work. Recorded in `DESIGN.md`, "Designed UI".
 
 The developer also fixed the git author name typo ("Donld" -> "Donald",
 global config); earlier commits keep the old spelling.
+
+## 2026-10-02: Designed UI: patch list and screens (mockup)
+
+A throwaway mockup (private Claude artifact, built from the developer's
+real names in `GP-200\Backups\2026-09-30_full-backup.zip`; no app code,
+nothing in the repo) settled the layout questions. Decisions, in order:
+
+- **Ranges, not free selection.** The developer: nobody needs random
+  access across 256 patches; related patches sit in one bank or
+  consecutive banks. Matches the restore (consecutive from a start slot)
+  and the CLI's range file names.
+- **"12-A" labels.** The developer worried that a bank x A-D grid would
+  confuse: Valeton always writes `<bank>-<letter>`. Of three layouts
+  (A: two halves of bank rows, B: 8 x 8 bank blocks, C: one labelled
+  list in 8 columns), C was kept. **Fits a full desktop screen** at 12 px
+  (developer's check); the laptop wasn't checked.
+- **Separate Back up and Restore screens.** With both control sets above
+  one list, the developer pointed out that nothing showed which one the
+  highlight belonged to, both could be filled in at once, and there was no
+  Restore button. Also: controls must not appear and disappear; grey them
+  out until their inputs are ready.
+
+Mockup version 3 has: blue backup range with the CLI file name; restore
+with example files, orange overwrite range, a "Pedal now / After
+restore" switch, counts of real vs default patches replaced, a 64-D
+overflow warning, a confirm dialog and a simulated progress bar; a Help
+draft with browser compatibility. `DESIGN.md`, "Designed UI", updated.

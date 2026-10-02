@@ -136,9 +136,26 @@ to be designed.
 - **One page, several screens.** Header links switch screens without
   reloading, so the pedal connection, the selection, picked files and a
   running restore survive (a Help screen can be read mid-restore). Each
-  screen has its own address, so Back and bookmarks work. Screens to
-  start: **Patches** (slot grid with backup and restore; the restore
-  preview shown on the grid) and **Help**.
+  screen has its own address, so Back and bookmarks work. Screens:
+  **Back up**, **Restore**, **Help**: one operation per screen, so the
+  list's highlight always means one thing (two control sets above one
+  list were ambiguous, developer 2026-10-02).
+- **The patch list:** all 256 patches on one screen, no scrolling on a
+  full desktop screen (checked by the developer in the mockup). One list,
+  each entry labelled the way Valeton writes it, "12-A Oldschool Fuzz",
+  flowing down 8 columns of 8 banks; a faint line between banks; default
+  names greyed. Read from the pedal on connect and after a restore.
+- **Slots are chosen as ranges**, not by clicking around the list
+  (developer: patches live together in a bank or consecutive banks).
+  Back up: From/To; Restore: a start slot. Clicking a patch fills in the
+  boxes. The app shows labels as "12-A" and accepts "12A"/"12-a"; file
+  names keep the CLI's style (`12A_Name.prst`).
+- **The list shows the range before anything runs:** blue for "will be
+  saved"; orange for "will be overwritten", with a switch to show the
+  list as it is now or after the restore (that is the restore preview).
+- **Controls never appear or disappear.** A button stays visible, greyed
+  out with the reason next to it, until its inputs are valid. The
+  progress line is always there ("Ready." when idle).
 - **Header:** "GP-200 Patch Manager", the screen links, and whether the
   pedal is connected.
 - **Footer:** "© Donald Parker", GPL-3.0, link to the GitHub project,
@@ -169,8 +186,9 @@ to be designed.
   ambiguous).
 - **Slot grid:** 64 banks × 4 slots (A–D), each cell showing its label and
   patch name.
-- **Selection:** click, shift-click for a range, **Select all**, **Clear**.
-- **Export:** disabled until something is selected. One slot downloads a
+- **Selection:** a From/To range (see "Designed UI"; replaces the
+  earlier click/shift-click idea).
+- **Export:** disabled until the range is valid. One slot downloads a
   `.prst`; several download a `.zip`.
 - Progress while reading, since reading all 256 slots takes a while.
 - *Status: core and bare test page built; gate passed. Export-all matched
