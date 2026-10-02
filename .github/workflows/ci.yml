@@ -40,7 +40,7 @@ jobs:
       - name: Assemble the site
         run: |
           mkdir -p _site
-          cp -r index.html src LICENSE _site/
+          cp -r index.html test.html src LICENSE _site/
           # Stamp the build so a saved log names the exact commit.
           stamp="${GITHUB_SHA::7} ($(date -u +%Y-%m-%d))"
           sed -i "s|export const VERSION = \".*\";|export const VERSION = \"${stamp}\";|" _site/src/version.js

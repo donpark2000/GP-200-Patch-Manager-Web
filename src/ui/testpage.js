@@ -1,6 +1,7 @@
-// Bare test page (DESIGN.md "Order of work", step 2): connect, export all or
-// a range, restore (test build), and a log that can be saved. Replaced by
-// the designed UI later; all protocol logic lives in src/core/.
+// Developer test page (test.html): connect, export all or a range, restore,
+// and a log that can be saved. Kept beside the designed UI, on the same core,
+// so a fault can be pinned on the core or on the new UI (DESIGN.md
+// "Architecture"). All protocol logic lives in src/core/.
 
 import { CLI_WRITE_TIMING, findGp200Ports, GP200, WRITE_TIMING } from "../core/device.js";
 import { exportWarnings, packageExport, readSlots } from "../core/export.js";

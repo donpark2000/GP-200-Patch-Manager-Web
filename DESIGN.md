@@ -68,8 +68,13 @@ Two layers, kept strictly apart:
 1. **Protocol core** (`src/core/`): Web MIDI I/O, SysEx framing, slot
    reads, normalization, `.prst` building. No DOM or UI code, so it can be
    unit-tested in Node against a fake MIDI device.
-2. **UI** (`src/ui/`): starts as a bare test page and is replaced by the
-   designed interface later without touching the core.
+2. **UI** (`src/ui/`): two pages on the same core. `index.html` is the
+   designed interface. `test.html` is the bare test page that proved the
+   core on hardware, kept as a reference: a fault that also shows there
+   is in the core, one that doesn't is in the new UI. Unlinked, labelled
+   as a developer page. The proven state is tagged `test-page-proven`
+   (developer, 2026-10-02: keep the proven interface rather than replace
+   it; one repo, so the core is never copied).
 
 A **debug log** is built in from the start (standards §1): an on-screen log
 panel plus "save log to file", including browser, OS, and MIDI port
@@ -200,8 +205,8 @@ to be designed.
 
 - Connect to the pedal (auto-detect the port; let the user pick if
   ambiguous).
-- **Slot grid:** 64 banks × 4 slots (A–D), each cell showing its label and
-  patch name.
+- **Patch list:** all 256 patches, each with its label and name (see
+  "Designed UI"; replaces the earlier 64 × 4 grid).
 - **Selection:** a From/To range (see "Designed UI"; replaces the
   earlier click/shift-click idea).
 - **Export:** disabled until the range is valid. One slot downloads a

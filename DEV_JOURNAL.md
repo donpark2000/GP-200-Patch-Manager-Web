@@ -1934,3 +1934,34 @@ matches what they want.
    developer's OK; Template is a restore-type write, so confirm the
    test plan first).
 4. Publish by merging to `main` only with the developer's OK.
+
+## 2026-10-02: Test page kept beside the designed UI
+
+The developer asked whether to start a new repo for the designed UI, so
+the interface that proved Web MIDI on hardware stays available if a
+problem turns up under the hood later. Agreed instead (Claude's
+recommendation, developer's OK): **one repo, both pages on one site.** A
+second repo would mean two copies of `src/core/`, every core fix made
+twice, and the "proven" copy drifting away from what the new UI runs, so
+it would stop telling us anything about the new site.
+
+- Tag **`test-page-proven`** on `d263698`, the published, gate-passing
+  commit (pushed to GitHub).
+- New branch **`designed-ui`**. The test page moved from `index.html` to
+  `test.html` (`src/ui/testpage.js`, `testpage.css`), labelled as the
+  developer test page with a link to the main app. CI publishes both.
+  `index.html` is a placeholder pointing to `test.html` until build step
+  2; this branch isn't published, so nobody sees it.
+- Use: if the designed UI misbehaves, repeat the same job on `test.html`.
+  Fails there too: the core. Works there: the new UI. Drawback: a change
+  to the core's interface must keep the test page working, and the
+  automated suite doesn't load pages, so check `test.html` in the browser
+  whenever the core changes.
+- **Snag:** first named `src/ui/test-page.js`, which broke `npm test`.
+  Node's `node --test` with no arguments runs every file matching
+  `test-*.js` (among other patterns), so it ran the page script as a test
+  (1 of 118 failed). Renamed to `testpage.js`: 117 pass, 0 fail. Checked
+  `test.html` in the built-in browser: loads, version stamp shown, no
+  console errors.
+- `DESIGN.md` "Architecture" and the README updated; the stale "64 × 4
+  slot grid" in Phase 1 now points to the patch list.

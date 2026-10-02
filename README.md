@@ -50,7 +50,8 @@ text is copied here.
 - The protocol itself is documented in the CLI repo's `PROTOCOL.md` and
   `PROTOCOL_NOTES.md`.
 
-Layout: `src/core/` is the protocol (no UI code), `src/ui/` the page,
+Layout: `src/core/` is the protocol (no UI code), `src/ui/` the pages
+(`index.html` the app, `test.html` the developer test page),
 `tests/` the Node test suite with a fake pedal, `tools/` helper scripts.
 
 Run the tests (Node.js 20 or newer, no packages to install):
