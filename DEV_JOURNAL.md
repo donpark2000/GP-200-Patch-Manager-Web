@@ -2306,3 +2306,82 @@ the GitHub tab opens filled in, the log drags in, the developer posts a
 test issue (their Submit), and it's closed afterwards. After the merge:
 the issue form shows on GitHub, and the app's link still opens the
 filled-in blank issue (not the form chooser).
+
+## 2026-10-02: Status (start here next session)
+
+Supersedes the status entries above. The developer starts fresh on
+2026-10-03 with the hardware checks.
+
+**Known:**
+- Branch `designed-ui`, pushed, clean. **Nothing published**: the live
+  site is still the test page (`d263698`, tag `test-page-proven`). It
+  changes only when `designed-ui` is merged to `main`, with the
+  developer's OK.
+- Decided and built today, all checked against the fake pedal only
+  (entries "Usability notes", "Not made by Valeton", "Report a problem"):
+  - welcome page = home (`#home`; the title links to it), with a
+    placeholder drawing of the pedal (the developer's own photos later);
+    "Connected" note there once connected; no header Reconnect;
+  - after connecting: Back up, with 1-A to 64-D filled in; after a lost
+    connection, back to the screen the user was on;
+  - footer: copyright/GPL, GitHub, GP200 Studio (gp200studio.com),
+    version; no credits, no Valeton line; outside links open a new tab;
+    "not made by Valeton" on the welcome page and in Help's About;
+  - Help: "Report a problem" (saves the log, opens a filled-in GitHub
+    issue in a new tab) and "Save log only"; issue form in the repo.
+  - Q7 fix: CI publishes the code in `v/<commit>/src/`
+    (`tools/stamp-site.js`); dry run passed.
+- Suite: 147 pass (`npm test`).
+- Sessions are grouped in the sidebar ("GP-200 Patch Manager Web") and
+  named `<Mon D> · <topic>` (`CLAUDE.md` start step 5).
+- Local server: the desktop app's preview server can hold port 8000. The
+  developer runs their own in the repo folder:
+  `python -m http.server 8001 --bind 127.0.0.1`, then
+  `http://localhost:8001/` in Chrome.
+
+**Ask the developer first:**
+1. `CLAUDE.md` says the app writes to the pedal only in the restore
+   feature (plus the timing test). The Template screen writes too, with
+   the same confirmation in the app. OK to add a line allowing it? Needed
+   before test 5. (Raised in the session that planned the build; not
+   recorded until now.)
+
+**Next: the hardware checks on localhost** (Chrome, this computer).
+Session folder `C:\Users\dpark\Documents\GP-200-testing\2026-10-03_designed-ui\`;
+point Chrome's downloads there for the session. Confirm the plan with
+the developer before any write.
+1. **Look and connect.** Welcome page, drawing, Connect; lands on Back up
+   with 1-A to 64-D; the list fills in with the real names; the title
+   goes to the welcome page with the "Connected" note. Anything
+   confusing gets noted.
+2. **Back up all 256** (new UI) -> compare with a fresh backup made the
+   proven way (test page `test.html` on localhost, or the CLI):
+   `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\compare-zips.js <proven>.zip <new-ui>.zip`.
+   Expect MATCH. Also back up one slot and a range (file names
+   `12A_Name.prst`, `gp200_12A_to_14D.zip`).
+3. **Restore round trip** with the new UI, as in the phase 2 gate: backup
+   A; restore A starting at 1-B; back up and compare with `--shift 1`;
+   restore A at 1-A; back up and compare: both MATCH, every write
+   verified. Check the preview (orange range, "After restore" view) and
+   the progress line on the way.
+4. **Unplug test:** unplug the USB cable while connected (not during a
+   write): the welcome page comes back with the reason; plug in,
+   Connect: back on the same screen.
+5. **Template on 64-A to 64-D** (after item 1 above): back up 64-A to
+   64-D first; make a mix of empty and non-empty slots there; Template
+   with "only empty" (the right slots written, the others kept), then
+   "Every slot"; then restore the 64-A to 64-D backup and compare.
+6. **Report a problem** in Chrome: the GitHub tab opens filled in (real
+   browser name, version "dev"), the saved log drags in. The developer
+   posts one test issue themselves; label/close it afterwards.
+7. Record results in this journal, then ask to purge the session folder.
+
+**Then publishing** (with the developer's OK): merge `designed-ui` to
+`main`. After the publish:
+- Q7: the live page loads from `v/<commit>/` (check the page source or
+  `curl -s https://donpark2000.github.io/GP-200-Patch-Manager-Web/ | grep v/`);
+  then close Q7.
+- GitHub shows the "Problem report" issue form, and the app's Report a
+  problem link still opens the filled-in issue (not the template
+  chooser).
+- The laptop: look at the hosted site, one backup compare.
