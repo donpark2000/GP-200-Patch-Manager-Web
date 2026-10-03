@@ -13,6 +13,11 @@ being asked (the developer's first message may just be "start"):
 3. Check `git status` and that the branch matches GitHub (`git fetch`).
 4. Reply with a short summary: where things stand, the next step, and
    anything needed from the developer. Then wait for the go-ahead.
+5. Name the session in the sidebar as `<Mon D> · <topic>` (e.g. "Oct 2 ·
+   Designed UI: build"), once the developer's go-ahead makes the topic
+   clear, so sessions can be told apart (they all start as "start").
+   Rename it if the work changes a lot; the status entry's topic is a
+   good final name.
 
 ## Working standards
 
