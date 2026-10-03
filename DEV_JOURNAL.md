@@ -2264,3 +2264,45 @@ localhost UI. Decisions in `DESIGN.md`. Built:
   and this project's 8 sessions grouped as "GP-200 Patch Manager Web".
   `CLAUDE.md` start step 5: each session names itself. Old sessions kept
   (transcripts hold detail the journal doesn't); archive if crowded.
+
+## 2026-10-02: Report a problem (Help)
+
+The developer asked about contact/support and suggested GitHub issues,
+maybe automated with the log. Agreed: GitHub issues; a fully automatic
+issue needs the user's GitHub sign-in (a server), so the app does the
+rest and the user posts. Built before the hardware checks so they test
+it too (developer: the UX side is the untested part). Decisions in
+`DESIGN.md` ("Report a problem").
+
+- `src/core/report.js`: `issueText`/`issueUrl` (the filled-in link,
+  shortened under 6,000 characters by cutting the last error), and
+  `browserSummary`. `Logger.lastError`.
+- Help: a "Report a problem" section (steps; what the log holds; public;
+  in memory only, nothing stored or sent) with **Report a problem** and
+  **Save log only**. About now points to it.
+- `.github/ISSUE_TEMPLATE/problem.yml` + `config.yml` (blank issues on).
+  Not checked by a YAML parser (none installed); GitHub uses the form only
+  from `main`.
+
+**Evidence:**
+- Suite 147 pass (5 new). The length test was checked to bite: the
+  20,000-character "é" error makes a 30,517-character link unshortened
+  and 9,566 after the first cut, so the halving loop is what keeps it
+  under the limit.
+- Browser (`?dev&fake`, the two link clicks recorded instead of
+  followed, so no file was saved and GitHub wasn't opened): one download
+  (`gp200_web_..._.log`) and one new-tab link to `.../issues/new`, 641
+  characters, title "Problem: ", body as designed; the message's
+  fallback link is the same URL; log lines "Report a problem...", "Log
+  saved: ...", "Issue link: 641 characters".
+- **Bug found and fixed:** the browser line said "Not?A_Brand 24". The
+  built-in browser lists only the decoy brand and "Chromium"; the code
+  skipped both and fell back to the decoy. Now: real name, else
+  Chromium, never the decoy (`browserSummary`, tested with Chrome, Edge,
+  that case, and no brands). Re-checked: "Chromium 152 on Windows".
+
+**To check in the hardware session:** press Report a problem in Chrome:
+the GitHub tab opens filled in, the log drags in, the developer posts a
+test issue (their Submit), and it's closed afterwards. After the merge:
+the issue form shows on GitHub, and the app's link still opens the
+filled-in blank issue (not the form chooser).

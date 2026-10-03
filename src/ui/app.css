@@ -154,6 +154,7 @@ footer a { color: var(--muted); }
 .welcome .strip { margin: 10px 0; }
 button.big { font-size: 18px; padding: 10px 26px; border-radius: 6px; margin-top: 6px; }
 .connect-msg { color: var(--bad); min-height: 1.5em; }
+.report-msg { min-height: 1.5em; }
 .note { color: var(--muted); font-size: var(--ui); }
 .connected-note { color: var(--ok); font-weight: 500; }
 .connected-note a { color: var(--fg); }

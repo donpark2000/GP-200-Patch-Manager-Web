@@ -250,7 +250,20 @@ to be designed.
   a restore takes about 30 s).
 - **Help screen:** quick start, what a restore overwrites, the
   User-IR/NAM limitation, browser compatibility, troubleshooting
-  (permission prompt, pedal not found); links to the README.
+  (permission prompt, pedal not found), Report a problem, About; links
+  to the README.
+- **Report a problem** (developer, 2026-10-02): support is through
+  GitHub issues (free account; public). In Help, not a tab of its own.
+  The button saves the log and opens GitHub's new-issue form in a new
+  tab, filled in with headings for the user's description, the log
+  file's name, and the app version, browser, page, connection, screen
+  and last error (`src/core/report.js`). The user drags the log in and
+  posts it; the app sends nothing (a link can't carry a file, and is
+  kept under 6,000 characters). Help says what the log contains, that
+  issues are public, and that the log is only in memory until saved.
+  The repo has an issue form (`.github/ISSUE_TEMPLATE/problem.yml`) with
+  the same headings for issues opened on GitHub directly; blank issues
+  stay enabled for the app's link.
   Browser compatibility (developer, 2026-10-02) names examples that work
   (Chrome, Edge on a computer) and that don't (Firefox, Safari, any
   browser on iPhone/iPad), and says how to tell: the app checks on

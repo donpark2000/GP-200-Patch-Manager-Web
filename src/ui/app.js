@@ -7,6 +7,7 @@
 import { CLI_WRITE_TIMING, findGp200Ports, GP200, WRITE_TIMING } from "../core/device.js";
 import { exportWarnings, packageExport, readPatchList, readSlots } from "../core/export.js";
 import { Logger } from "../core/log.js";
+import { browserSummary, issueUrl } from "../core/report.js";
 import {
   afterNames, backupSummary, parseRange, parseStart, restoreConfirmText, restoreSummary,
   screenAfterConnect, templateConfirmText, templateScreenSummary,
@@ -102,6 +103,7 @@ $("stop").addEventListener("click", () => {
   log.info("Stop requested: finishing the patch being written");
 });
 $("save-log").addEventListener("click", saveLog);
+$("report").addEventListener("click", onReport);
 $("dev-save-log").addEventListener("click", saveLog);
 $("clear-log").addEventListener("click", () => {
   log.clear();
@@ -838,11 +840,46 @@ function appendLogLine(line) {
   if (atBottom) el.scrollTop = el.scrollHeight;
 }
 
+/** Save the log to a file; returns its name. */
 function saveLog() {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  download(`gp200_web_${stamp}.log`, new TextEncoder().encode(log.text(environmentInfo())), "text/plain");
-  log.info("Log saved");
+  const fileName = `gp200_web_${stamp}.log`;
+  download(fileName, new TextEncoder().encode(log.text(environmentInfo())), "text/plain");
+  log.info(`Log saved: ${fileName}`);
+  return fileName;
 }
+
+/**
+ * Report a problem (Help): save the log, then open GitHub's new-issue form
+ * in a new tab, filled in with the version, browser and last error. The
+ * user writes the rest, drags the log in and posts it; the app sends nothing.
+ */
+function onReport() {
+  log.info("Report a problem: saving the log and opening GitHub's new-issue form");
+  const logFile = saveLog();
+  const url = issueUrl({
+    version: VERSION,
+    browser: browserSummary(navigator.userAgentData, navigator.userAgent),
+    page: location.host || location.protocol,
+    connected: Boolean(state.device),
+    screen: state.screen,
+    lastError: log.lastError,
+    logFile,
+  });
+  log.info(`Issue link: ${url.length} characters`);
+  // An <a> click, like the footer's links: opens a new tab, and the
+  // message below keeps the same link in case a blocker stopped it.
+  const a = Object.assign(document.createElement("a"), { href: url, target: "_blank", rel: "noopener" });
+  a.textContent = "open GitHub's form";
+  const msg = $("report-msg");
+  msg.replaceChildren(`Saved ${logFile}. In the GitHub tab, describe the problem and drag that file into the box. ` +
+    "No GitHub tab? ", a, ".");
+  const opener = a.cloneNode(true);
+  document.body.append(opener);
+  opener.click();
+  opener.remove();
+}
+
 
 function download(fileName, bytes, type) {
   const url = URL.createObjectURL(new Blob([bytes], { type }));

@@ -14,11 +14,15 @@ export class Logger {
     this.t0 = now();
     this.lines = [];
     this.debugEnabled = false;
+    this.lastError = null; // the last error's message, for "Report a problem"
   }
 
   info(msg) { this._add("INFO", msg); }
   warn(msg) { this._add("WARN", msg); }
-  error(msg) { this._add("ERROR", msg); }
+  error(msg) {
+    this.lastError = String(msg);
+    this._add("ERROR", msg);
+  }
   debug(msg) { if (this.debugEnabled) this._add("DEBUG", msg); }
 
   _add(level, msg) {
@@ -30,6 +34,7 @@ export class Logger {
 
   clear() {
     this.lines = [];
+    this.lastError = null;
   }
 
   /** Full log text for "save log", with an environment header on top. */

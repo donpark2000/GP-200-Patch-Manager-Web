@@ -201,15 +201,28 @@
       <li><b>A write wasn't verified:</b> the slot may not hold what you meant. Back up that slot to see what it
         holds, and try the restore again.</li>
     </ul>
-    <p>To report a problem, save a log and send it with your report. The log records what the app did, your
-      browser, the pedal's MIDI ports and the names of the patches it read or wrote.</p>
-    <p><button type="button" class="quiet" id="save-log">Save log</button></p>
+
+    <h2>Report a problem</h2>
+    <p>Problems and questions go to the project's GitHub page, as an &ldquo;issue&rdquo;. You need a free GitHub
+      account, and issues are public: anyone can read them.</p>
+    <ol>
+      <li>Press <b>Report a problem</b>. The app saves a log file (usually to your Downloads folder) and opens
+        GitHub's form for a new issue in a new tab, with the app version and your browser already filled in.</li>
+      <li>In the form, say what you were doing and what happened.</li>
+      <li>Drag the log file into the form's text box, check what it shows, then press Create.</li>
+    </ol>
+    <p>The log records what the app did, your browser, the pedal's MIDI ports and the names of the patches it
+      read or wrote. It stays on your computer until you save it: the app stores nothing and sends nothing
+      anywhere, and closing or reloading the page clears the log.</p>
+    <p class="grp"><button type="button" id="report">Report a problem</button>
+      <button type="button" class="quiet" id="save-log">Save log only</button></p>
+    <p class="report-msg" id="report-msg" role="status"></p>
     <p>More detail: the project's <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web#readme" target="_blank" rel="noopener">README</a>.</p>
 
     <h2>About</h2>
     <p>GP-200 Patch Manager is an independent, free, open-source tool (GPL-3.0) made by a GP-200 owner. It is not
       made, endorsed or supported by Valeton; "Valeton" and "GP-200" are used only to say which pedal it works
-      with. For problems with this tool, see "Something went wrong?" above, not Valeton's support.</p>
+      with. For problems with this tool, see &ldquo;Report a problem&rdquo; above, not Valeton's support.</p>
   </section>
 
   <section id="dev-log" class="devlog" aria-label="Developer log" hidden>
