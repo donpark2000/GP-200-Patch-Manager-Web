@@ -2248,3 +2248,19 @@ localhost UI. Decisions in `DESIGN.md`. Built:
   `#backup` with 1-A / 64-D filled in, summary "All 256 slots ...",
   "Ready."; the title went to `#home` with the connected note and no
   screen link lit; light and dark, 700 px wide: no sideways scroll.
+
+## 2026-10-02: "Not made by Valeton" moved; sessions named
+
+- The developer asked whether "Not affiliated with Valeton" belongs in
+  the footer (clean interface, not hiding it). Moved: the welcome page's
+  first sentence now ends "An independent tool, not made by Valeton.",
+  and Help ends with an "About" section (independent, GPL-3.0, not made,
+  endorsed or supported by Valeton; the names only say which pedal it
+  works with). The footer has no Valeton line. Test added (welcome and
+  Help have it, the footer doesn't); it failed first on a line break in
+  the Help text, then passed. Suite 142 pass. Checked in the browser.
+- Sidebar: every session started with "start" was titled "Session
+  start". The four were renamed from their transcripts (`Oct 2 · <topic>`)
+  and this project's 8 sessions grouped as "GP-200 Patch Manager Web".
+  `CLAUDE.md` start step 5: each session names itself. Old sessions kept
+  (transcripts hold detail the journal doesn't); archive if crowded.

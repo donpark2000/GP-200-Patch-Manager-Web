@@ -222,8 +222,11 @@ to be designed.
   sideways scrolling from 600 px up (measured, journal 2026-10-02).
 - **Footer:** "© Donald Parker", GPL-3.0, link to the GitHub project,
   GP200 Studio (its site, gp200studio.com) as the place to build and edit
-  patches, the app version, and a "not affiliated with Valeton" line. No
-  credits (see "Credit and licensing").
+  patches, and the app version. No credits (see "Credit and licensing").
+- **Not Valeton's** (developer, 2026-10-02: kept out of the footer for a
+  clean interface): the welcome page's first sentence ends "An
+  independent tool, not made by Valeton.", and Help has an "About"
+  section saying it in full.
 - **Links to other sites open in a new tab**, so the app (and a
   connection or a running restore) stays open (developer, 2026-10-02).
 - **Devices:** designed for desktop/laptop; usable on a narrow window,

@@ -98,3 +98,13 @@ test("index.html: the title links home, and there is no Reconnect button", () =>
   assert.match(html, /<h1><a href="#home"[^>]*>GP-200 Patch Manager<\/a><\/h1>/);
   assert.doesNotMatch(html, /id="reconnect"/);
 });
+
+test("index.html: 'not made by Valeton' on the welcome page and in Help, not in the footer", () => {
+  const html = readFileSync(join(REPO, "index.html"), "utf8");
+  const section = (id) => html.slice(html.indexOf(`id="${id}"`), html.indexOf("</section>", html.indexOf(`id="${id}"`)));
+  assert.match(section("scr-connect"), /not made by Valeton/);
+  assert.match(section("scr-help"), /<h2>About<\/h2>[\s\S]*not\s+made, endorsed or supported by Valeton/);
+  const footer = html.slice(html.indexOf("<footer>"), html.indexOf("</footer>"));
+  assert.ok(footer.length > 0, "footer found");
+  assert.doesNotMatch(footer, /Valeton/);
+});
