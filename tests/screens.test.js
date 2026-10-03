@@ -13,6 +13,7 @@ import {
   replaceCounts,
   restoreConfirmText,
   restoreSummary,
+  screenAfterConnect,
   templateConfirmText,
   templateScreenSummary,
 } from "../src/core/screens.js";
@@ -94,4 +95,16 @@ test("template screen summary and confirmation, both modes", () => {
 
   const many = planTemplate(file, parseRange("1A", "2D").slots, (s) => (s === 0 ? EMPTY_PATCH_NAME : "Mine"), "empty");
   assert.match(templateScreenSummary(many).text, /Writes 1\. Keeps 7: 1-B Mine, .*, 2-C Mine, and 1 more\.$/);
+});
+
+test("after connecting: Back up first; after a lost connection, back where the user was", () => {
+  for (const s of ["home", "backup", "restore", "template", "help", "nonsense"]) {
+    assert.equal(screenAfterConnect(s, false), "backup", `first connection from ${s}`);
+  }
+  assert.equal(screenAfterConnect("restore", true), "restore");
+  assert.equal(screenAfterConnect("template", true), "template");
+  assert.equal(screenAfterConnect("backup", true), "backup");
+  // The home page and Help aren't pedal screens: go to Back up.
+  assert.equal(screenAfterConnect("home", true), "backup");
+  assert.equal(screenAfterConnect("help", true), "backup");
 });

@@ -11,7 +11,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>GP-200 Patch Manager</h1>
+    <h1><a href="#home" id="home-link">GP-200 Patch Manager</a></h1>
     <nav aria-label="Screens">
       <a href="#backup" id="nav-backup">Back up</a>
       <a href="#restore" id="nav-restore">Restore</a>
@@ -20,14 +20,14 @@
     </nav>
     <div class="conn">
       <span id="conn-status" class="conn-status">Not connected</span>
-      <button type="button" class="quiet" id="reconnect" hidden>Reconnect</button>
     </div>
   </header>
 
   <p id="unsupported" class="banner error" hidden></p>
   <p id="hidden-banner" class="banner warn" hidden></p>
 
-  <section id="scr-connect" class="welcome" aria-label="Connect" hidden>
+  <section id="scr-connect" class="welcome" aria-label="Welcome" hidden>
+  <div class="welcome-text">
     <p class="lead">Back up and restore the patches on your Valeton GP-200 from this browser, over USB.</p>
     <ul>
       <li><b>Back up</b> saves any range of slots, or all 256, to a file on your computer.</li>
@@ -35,6 +35,7 @@
       <li><b>Template</b> fills a range of slots with one patch.</li>
     </ul>
     <p>Nothing is written to the pedal until you confirm, and every patch written is read back and checked.</p>
+    <div id="connect-area">
     <p><b>First:</b> connect the pedal to this computer with a USB cable, and close Valeton's editor and any
       other GP-200 tool (only one program can use the pedal at a time).</p>
     <div id="port-picker" class="strip" hidden>
@@ -44,8 +45,30 @@
     </div>
     <p><button type="button" class="big" id="connect">Connect to pedal</button></p>
     <p class="connect-msg" id="connect-msg" role="status"></p>
+    </div>
+    <p class="connected-note" id="connected-note" hidden>Connected to the pedal. Go to <a href="#backup">Back up</a>,
+      <a href="#restore">Restore</a> or <a href="#template">Template</a>.</p>
     <p class="note">Works in Chrome and Edge on a computer. The browser will ask to allow MIDI access: choose Allow.
       Questions? See <a href="#help">Help</a>.</p>
+  </div>
+  <!-- Placeholder drawing, not a photo (developer, 2026-10-02: photos of the
+       developer's own pedal later). Colours follow the page's theme. -->
+  <svg class="pedal-art" viewBox="0 0 400 200" role="img" aria-label="Drawing of a GP-200 pedal">
+    <rect class="body" x="4" y="14" width="392" height="176" rx="14"/>
+    <rect class="screen" x="104" y="32" width="104" height="58" rx="4"/>
+    <rect class="screen-line" x="114" y="44" width="54" height="7" rx="2"/>
+    <rect class="screen-line dim" x="114" y="58" width="80" height="5" rx="2"/>
+    <rect class="screen-line dim" x="114" y="70" width="64" height="5" rx="2"/>
+    <g class="knob"><circle cx="38" cy="50" r="13"/><circle cx="76" cy="50" r="13"/>
+      <circle cx="236" cy="50" r="13"/><circle cx="270" cy="50" r="13"/></g>
+    <g class="knob-mark"><path d="M38 50V39M76 50l7-8M236 50l-7-8M270 50V39"/></g>
+    <g class="led"><circle cx="48" cy="122" r="3.5"/><circle cx="114" cy="122" r="3.5"/>
+      <circle cx="180" cy="122" r="3.5"/><circle cx="246" cy="122" r="3.5"/></g>
+    <g class="switch"><circle cx="48" cy="156" r="17"/><circle cx="114" cy="156" r="17"/>
+      <circle cx="180" cy="156" r="17"/><circle cx="246" cy="156" r="17"/></g>
+    <rect class="expr" x="300" y="28" width="82" height="150" rx="10"/>
+    <g class="tread"><path d="M314 50h54M314 66h54M314 82h54M314 98h54M314 114h54M314 130h54M314 146h54M314 162h54"/></g>
+  </svg>
   </section>
 
   <section id="scr-backup" aria-label="Back up">
@@ -180,7 +203,7 @@
     <p>To report a problem, save a log and send it with your report. The log records what the app did, your
       browser, the pedal's MIDI ports and the names of the patches it read or wrote.</p>
     <p><button type="button" class="quiet" id="save-log">Save log</button></p>
-    <p>More detail: the project's <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web#readme">README</a>.</p>
+    <p>More detail: the project's <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web#readme" target="_blank" rel="noopener">README</a>.</p>
   </section>
 
   <section id="dev-log" class="devlog" aria-label="Developer log" hidden>
@@ -195,13 +218,9 @@
   </section>
 
   <footer>
-    <span>&copy; 2026 Donald Parker &middot; <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web/blob/main/LICENSE">GPL-3.0</a></span>
-    <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web">GitHub project</a>
-    <span>Build and edit patches with <a href="https://github.com/kabir0st/gp200-studio">GP200 Studio</a></span>
-    <span>Credits: the SysEx formats were reverse-engineered by Kabir S. Tamari's
-      <a href="https://github.com/kabir0st/gp200-studio">GP200 Studio</a> (GPL-3.0) and verified by the command-line
-      <a href="https://github.com/donpark2000/GP-200-Patch-Manager">GP-200 Patch Manager</a>; the upload addressing
-      was cross-checked against <a href="https://github.com/ricardo-mv/rigsheet">RigSheet</a>.</span>
+    <span>&copy; 2026 Donald Parker &middot; <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web/blob/main/LICENSE" target="_blank" rel="noopener">GPL-3.0</a></span>
+    <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web" target="_blank" rel="noopener">GitHub project</a>
+    <span>Build and edit patches with <a href="https://gp200studio.com/" target="_blank" rel="noopener">GP200 Studio</a></span>
     <span>Not affiliated with Valeton</span>
     <span id="version">Version</span>
   </footer>

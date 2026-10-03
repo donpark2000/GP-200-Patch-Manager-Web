@@ -44,6 +44,9 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Assemble the site
         run: |
           mkdir -p _site
@@ -58,6 +61,9 @@ jobs:
           stamp="${GITHUB_SHA::7} ($(date -u +%Y-%m-%d))"
           sed -i "s|export const VERSION = \".*\";|export const VERSION = \"${stamp}\";|" _site/src/version.js
           grep -q "${GITHUB_SHA::7}" _site/src/version.js
+          # A folder per publish (journal, Q7): browsers may reuse cached files
+          # for 10 minutes, so new and old files must never share an address.
+          node tools/stamp-site.js _site "${GITHUB_SHA::7}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

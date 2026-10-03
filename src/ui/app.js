@@ -1,5 +1,5 @@
 // The designed UI (DESIGN.md, "Designed UI"): one page, screens switched by
-// #backup / #restore / #template / #help, over the patch list. Thin by
+// #home / #backup / #restore / #template / #help, over the patch list. Thin by
 // design: plans, texts and checks come from src/core/ (Node-tested); this
 // file reads the inputs, renders, and logs. The developer test page
 // (test.html, src/ui/testpage.js) runs the same core.
@@ -9,7 +9,7 @@ import { exportWarnings, packageExport, readPatchList, readSlots } from "../core
 import { Logger } from "../core/log.js";
 import {
   afterNames, backupSummary, parseRange, parseStart, restoreConfirmText, restoreSummary,
-  templateConfirmText, templateScreenSummary,
+  screenAfterConnect, templateConfirmText, templateScreenSummary,
 } from "../core/screens.js";
 import { skeletonBytes } from "../core/skeleton.js";
 import { slotToDisplayLabel, TOTAL_SLOTS } from "../core/slots.js";
@@ -19,7 +19,7 @@ import { createZip } from "../core/zip.js";
 import { VERSION } from "../version.js";
 
 const $ = (id) => document.getElementById(id);
-const SCREENS = ["backup", "restore", "template", "help"];
+const SCREENS = ["home", "backup", "restore", "template", "help"]; // home: the welcome panel
 const PARAMS = new URLSearchParams(location.search);
 const DEV = PARAMS.has("dev");
 const FAKE = DEV && PARAMS.has("fake"); // the test suite's fake pedal, localhost only (fake-dev.js)
@@ -30,9 +30,10 @@ const PEDAL_SCREENS = ["backup", "restore", "template"];
 const log = new Logger({ onLine: appendLogLine });
 
 const state = {
-  screen: "backup",
+  screen: "home",
   midi: null,
   device: null,
+  wasConnected: false, // connected earlier this visit (screenAfterConnect)
   // names[slot]: undefined = not read yet, null = couldn't be read, else the patch name
   names: new Array(TOTAL_SLOTS).fill(undefined),
   busy: false, // false | "connect" | "backup" | "restore" | "template"
@@ -72,7 +73,6 @@ if (DEV) {
 addEventListener("hashchange", () => show(location.hash.slice(1)));
 document.addEventListener("visibilitychange", onVisibilityChange);
 $("connect").addEventListener("click", onConnect);
-$("reconnect").addEventListener("click", onConnect);
 
 for (const id of ["from", "to", "start", "tfrom", "tto"]) {
   $(id).addEventListener("input", () => {
@@ -121,14 +121,16 @@ show(location.hash.slice(1));
 // ---- Screens ----------------------------------------------------------------
 
 function show(name) {
-  if (!SCREENS.includes(name)) name = "backup";
+  if (!SCREENS.includes(name)) name = "home";
   if (name !== state.screen) log.info(`Screen: ${name}`);
   state.screen = name;
-  // Until the pedal is connected, the pedal screens show the welcome panel
-  // with its one control, Connect (developer, 2026-10-02).
-  const welcome = PEDAL_SCREENS.includes(name) && !state.device;
+  // The home page (the title links to it) is the welcome panel. Until the
+  // pedal is connected, the pedal screens show it too, with its one
+  // control, Connect (developer, 2026-10-02).
+  const welcome = name === "home" || (PEDAL_SCREENS.includes(name) && !state.device);
   $("scr-connect").hidden = !welcome;
   for (const n of SCREENS) {
+    if (n === "home") continue;
     $(`scr-${n}`).hidden = n !== name || welcome;
     const a = $(`nav-${n}`);
     a.classList.toggle("on", n === name);
@@ -230,7 +232,6 @@ function paint() {
     $(id).disabled = busy;
   }
   $("connect").disabled = busy || $("connect").dataset.unsupported === "1";
-  $("reconnect").disabled = busy;
   $("failed-readbacks").disabled = !state.failedReadbacks.length;
   if (state.screen === "backup") paintBackup();
   else if (state.screen === "restore") paintRestore();
@@ -345,7 +346,6 @@ function paintTemplate() {
 
 async function onConnect() {
   $("connect").disabled = true;
-  $("reconnect").disabled = true;
   $("connect-msg").textContent = "";
   try {
     if (FAKE) return await connectFake();
@@ -371,16 +371,14 @@ async function onConnect() {
     await state.device.connect();
     $("port-picker").hidden = true;
     setConn(`Connected: ${input.name}`, true);
-    setConnectButton(true);
-    show(state.screen); // leave the welcome panel; the list fills in as it's read
-    await refreshList("Reading the patches on the pedal");
+    await afterConnect();
   } catch (e) {
     state.device = null;
     const msg = e?.name === "SecurityError" || e?.name === "NotAllowedError"
       ? "MIDI access was blocked. Allow it from the icon in the address bar, then press “Connect to pedal” again."
       : `Couldn't connect: ${e?.message ?? e}`;
     setConn("Not connected");
-    setConnectButton(false);
+    setConnected(false);
     $("connect-msg").textContent = msg;
     setProgress(msg, "failed");
     log.error(msg);
@@ -396,8 +394,23 @@ async function connectFake() {
   state.device = new GP200({ input, output, log });
   await state.device.connect();
   setConn(`Connected: ${input.name}`, true);
-  setConnectButton(true);
-  show(state.screen);
+  await afterConnect();
+}
+
+/** Leave the welcome panel for the right screen, then read the list. */
+async function afterConnect() {
+  setConnected(true);
+  // Back up shows its default range in the boxes, not as grey hints
+  // (developer, 2026-10-02); a range the user typed is kept.
+  if (!$("from").value.trim() && !$("to").value.trim()) {
+    $("from").value = lab(0);
+    $("to").value = lab(TOTAL_SLOTS - 1);
+  }
+  const target = screenAfterConnect(state.screen, state.wasConnected);
+  state.wasConnected = true;
+  log.info(`Connected; showing ${target}`);
+  if (location.hash.slice(1) !== target) location.hash = target; // its hashchange shows it again: harmless
+  show(target); // the list fills in as it's read
   await refreshList("Reading the patches on the pedal");
 }
 
@@ -422,15 +435,25 @@ function onPortStateChange(e) {
   log.info(`MIDI port ${p.type} "${p.name}" is now ${p.state}/${p.connection}`);
   const d = state.device;
   if (p.state === "disconnected" && d && (p.id === d.input.id || p.id === d.output.id)) {
-    d.close();
-    state.device = null;
-    state.names.fill(undefined); // the list shows the pedal; with no pedal, nothing
-    setConn("Disconnected");
-    setConnectButton(false);
-    $("connect-msg").textContent = "The pedal was disconnected. Plug it back in and press “Connect to pedal”.";
-    show(state.screen);
+    dropConnection("Disconnected", "The pedal was disconnected. Plug it back in and press “Connect to pedal”.");
   }
   if (!state.device) fillPortPickers();
+}
+
+/**
+ * Treat the pedal as gone: the welcome panel comes back with `msg` under
+ * its Connect button. There's no other reconnect control (developer,
+ * 2026-10-02: the header's Reconnect was never needed).
+ */
+function dropConnection(status, msg) {
+  log.warn(`Connection dropped: ${msg}`);
+  state.device?.close();
+  state.device = null;
+  state.names.fill(undefined); // the list shows the pedal; with no pedal, nothing
+  setConn(status);
+  setConnected(false);
+  $("connect-msg").textContent = msg;
+  show(state.screen);
 }
 
 /**
@@ -652,7 +675,10 @@ async function runWrite(kind, items, what, doneText) {
     await refreshList("Reading the pedal again", true);
   } catch (e) {
     log.error(`Couldn't re-read the patch list: ${e?.stack ?? e}`);
-    appendProgress(" The list couldn't be read again; press Reconnect.");
+    // The pedal isn't answering: back to the welcome panel, with the
+    // write's result there since the progress line is hidden with the list.
+    dropConnection("Not connected", `${$("prog-label").textContent} Then the pedal stopped answering, so the list ` +
+      "couldn't be read again. Check the USB cable and press “Connect to pedal”.");
   }
   setBusy(false);
 }
@@ -776,9 +802,10 @@ async function holdWakeLock(hold) {
 
 // ---- Small helpers ----------------------------------------------------------
 
-/** Connected: a quiet Reconnect in the header (before that, the welcome panel has the button). */
-function setConnectButton(connected) {
-  $("reconnect").hidden = !connected;
+/** The welcome panel: the connect steps and button, or (connected) a note. */
+function setConnected(connected) {
+  $("connect-area").hidden = connected;
+  $("connected-note").hidden = !connected;
 }
 
 function setConn(text, ok = false) {

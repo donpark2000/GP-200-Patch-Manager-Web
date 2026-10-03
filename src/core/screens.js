@@ -140,3 +140,16 @@ export function templateConfirmText(plan) {
 export function afterNames(items) {
   return new Map(items.map((it) => [it.slot, it.patchName]));
 }
+
+const PEDAL_SCREENS = ["backup", "restore", "template"];
+
+/**
+ * The screen to show once the pedal is connected (developer, 2026-10-02):
+ * Back up, except after a lost connection, when the user returns to the
+ * pedal screen they were on (so a reconnect mid-restore doesn't move them).
+ * @param {string} current the screen showing now ("home", "backup", ...)
+ * @param {boolean} wasConnected the pedal was connected earlier this visit
+ */
+export function screenAfterConnect(current, wasConnected) {
+  return wasConnected && PEDAL_SCREENS.includes(current) ? current : "backup";
+}

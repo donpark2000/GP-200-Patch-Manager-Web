@@ -23,7 +23,9 @@ This journal records only what's new or different for the browser.
   to every relative import and to the CSS/JS links in the published copy
   (a `sed` in the assemble step, like the version stamp), so each publish
   is a fresh set of URLs. Nothing changes in the repo files or locally.
-  Needs the developer's OK; not yet done.
+  **Fix built** (developer's OK, 2026-10-02; entry "Usability notes"), as
+  a folder per publish instead of `?v=`: dry run passes. Close it once the
+  first publish shows the live page loading from `v/<commit>/`.
 
 ## Resolved
 
@@ -2185,3 +2187,64 @@ and the open publish question).
 **Then step 3, hardware checks** (plan in the previous status entry:
 look; backup compare; restore round trip; Template on 64-A to 64-D with
 the developer's OK and a backup of 64-A to 64-D first).
+
+## 2026-10-02: Usability notes; a folder per publish (Q7)
+
+The developer agreed to hardware checks before publishing, asked what Q7
+means in practice (explained: a returning visitor within 10 minutes of a
+publish can get a page that fails to start; in principle a quietly
+mismatched pair; fix approved), and gave usability notes from the
+localhost UI. Decisions in `DESIGN.md`. Built:
+
+- **Back up first after connecting**, with From/To filled in as 1-A and
+  64-D. They were empty boxes whose grey hint text ("1-A", "64-D") read
+  as a greyed-out range; empty still means "all" (core unchanged). After
+  a lost connection, back to the screen the user was on
+  (`screenAfterConnect` in `src/core/screens.js`, Node-tested).
+- **Home page** (`#home`, the title links to it): the welcome panel,
+  with "Connected to the pedal" and links in place of the connect steps
+  while connected (the developer chose this over "title goes to Back up
+  when connected").
+- **Reconnect removed.** The developer pointed out that a lost connection
+  already brings back the welcome panel. One more case used it: the
+  list's re-read failing after a write ("press Reconnect"). That case
+  now drops the connection too and shows the panel, with the write's
+  result and the reason under "Connect to pedal" (`dropConnection`).
+  Only reviewed in the code: the fake pedal can't make that read throw.
+- **Footer:** no credits (README and the source keep them; the copyright
+  and GPL-3.0 notice stays); GP200 Studio links to gp200studio.com
+  (checked: Kabir Tamari's GPL-3.0 editor, linking to
+  `kabir0st/gp200-studio`; the `?fbclid=` tracking tag the developer's
+  link carried was left off). The README's editor link too. Every link
+  to another site opens in a new tab (also Help's README link).
+- **Drawing of the pedal** on the welcome panel: an inline SVG
+  placeholder (body, screen, 4 knobs, 4 footswitches with LEDs,
+  expression pedal), beside the text, below it under 900 px. Not
+  Valeton's photos (copyrighted, and could look official next to "not
+  affiliated"); the developer will take photos of their own pedal later.
+  Stock photos: possible, but check the licence covers this use.
+- **Q7, a folder per publish.** Changed from the `?v=<commit>` proposal,
+  told to the developer before building: with `?v=` the server ignores
+  the tag, so an old cached page that lost part of its cache could still
+  be served a new file. With `v/<commit>/src/`, an old page finds its own
+  cached files or a 404, never a newer file, and only the 4 references in
+  the 2 pages change (no import is rewritten). `tools/stamp-site.js`
+  moves the folder, repoints the pages, and fails the publish unless
+  every relative reference points into the folder at a file that exists;
+  it prints how many it checked. CI runs it after the version stamp.
+
+**Evidence:**
+- Suite: 141 pass (7 new: `stampSite` on the real pages, 4 references
+  and both pages; failing on a reference left outside the folder, a
+  missing file, no `src/`, no pages, nothing to check, a bad stamp;
+  outside links open a new tab; title links home, no Reconnect;
+  `screenAfterConnect`). No `gp200-site-*` temp folders left.
+- Dry run of CI's assemble step in the scratchpad (stamp `abc1234`):
+  "code moved to v/abc1234/; 2 reference(s) in 1 page(s) point there, all
+  present". Served it: all 15 files loaded from `/v/abc1234/`, none from
+  elsewhere, version "abc1234 (dry run)"; the only 404 was `favicon.ico`
+  (there is none; not new).
+- Built-in browser, `?dev&fake`: from `#restore`, Connect went to
+  `#backup` with 1-A / 64-D filled in, summary "All 256 slots ...",
+  "Ready."; the title went to `#home` with the connected note and no
+  screen link lit; light and dark, 700 px wide: no sideways scroll.

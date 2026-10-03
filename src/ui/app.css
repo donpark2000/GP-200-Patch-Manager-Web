@@ -51,6 +51,8 @@ a { color: inherit; }
 
 header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 28px; padding-top: 10px; border-bottom: 1px solid var(--line); }
 header h1 { font-size: 22px; font-weight: 600; margin: 0 0 8px; }
+header h1 a { text-decoration: none; } /* back to the home page */
+header h1 a:hover { text-decoration: underline; text-decoration-thickness: 1px; }
 nav { display: flex; flex-wrap: wrap; gap: 4px; }
 nav a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 4px 10px 7px; border-bottom: 3px solid transparent; }
 nav a:hover { color: var(--fg); }
@@ -142,8 +144,10 @@ dialog p { margin: 6px 0; font-size: var(--text); line-height: 1.45; }
 footer { margin-top: auto; border-top: 1px solid var(--line); padding-block: 8px 10px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 18px; }
 footer a { color: var(--muted); }
 
-/* The welcome panel: what the app does and one control, Connect. */
-.welcome { max-width: 66ch; font-size: var(--text); line-height: 1.55; }
+/* The welcome panel: what the app does and one control, Connect, with a
+   drawing of the pedal beside it (below it on a narrow window). */
+.welcome { display: grid; grid-template-columns: minmax(0, 66ch) minmax(0, 380px); gap: 8px 40px; align-items: start; font-size: var(--text); line-height: 1.55; }
+@media (max-width: 900px) { .welcome { grid-template-columns: minmax(0, 66ch); } .pedal-art { max-width: 320px; } }
 .welcome .lead { font-size: 19px; margin: 14px 0 6px; }
 .welcome ul { margin: 4px 0; padding-left: 22px; }
 .welcome p { margin: 8px 0; }
@@ -151,3 +155,16 @@ footer a { color: var(--muted); }
 button.big { font-size: 18px; padding: 10px 26px; border-radius: 6px; margin-top: 6px; }
 .connect-msg { color: var(--bad); min-height: 1.5em; }
 .note { color: var(--muted); font-size: var(--ui); }
+.connected-note { color: var(--ok); font-weight: 500; }
+.connected-note a { color: var(--fg); }
+.pedal-art { width: 100%; height: auto; margin-top: 18px; }
+.pedal-art .body { fill: #2a2e2d; stroke: var(--line); stroke-width: 1.5; }
+.pedal-art .screen { fill: #12323d; stroke: #4a5250; }
+.pedal-art .screen-line { fill: #6cb8d3; }
+.pedal-art .screen-line.dim { fill: #3d7488; }
+.pedal-art .knob circle { fill: #474d4b; stroke: #646b68; stroke-width: 2; }
+.pedal-art .knob-mark path { stroke: #d7dbd8; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+.pedal-art .led circle { fill: var(--accent); }
+.pedal-art .switch circle { fill: #b9bfbc; stroke: #7d8481; stroke-width: 3; }
+.pedal-art .expr { fill: #383d3b; stroke: #555c59; stroke-width: 1.5; }
+.pedal-art .tread path { stroke: #2a2e2d; stroke-width: 4; stroke-linecap: round; }

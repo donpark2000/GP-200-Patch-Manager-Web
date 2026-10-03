@@ -27,6 +27,11 @@ not a patch editor.
   publishes to GitHub Pages only on `main`, stamping the commit into the
   page. Work happens on branches; merging to `main` is the deliberate
   publish step, done with the developer's OK.
+- **A folder per publish** (journal, Q7): the published copy keeps the
+  code in `v/<commit>/src/` and the pages point there
+  (`tools/stamp-site.js`, run by CI). Browsers may reuse a cached file for
+  10 minutes, and this way an old cached page can never get newer files.
+  The repo and localhost keep the plain `src/`.
 - **Plain JavaScript (ES modules), no build step.** What's in the repo is
   what's served. Unit tests run under Node without a bundler.
 - **A downloadable single-file build is a maybe.** It depends on whether
@@ -46,10 +51,10 @@ not a patch editor.
 
 ## Credit and licensing
 
-Protocol knowledge that came from other projects is credited wherever it's
-used: in the README, in the source file that implements it, and in the
-page's footer, since that's what users actually see. The CLI's rules carry
-over unchanged:
+Protocol knowledge that came from other projects is credited in the
+README and in the source file that implements it. Not in the page's
+footer (developer, 2026-10-02: the README is enough); the footer keeps the
+copyright and GPL-3.0 notice. The CLI's rules carry over unchanged:
 
 - **GP200 Studio** (GPL-3.0): the SysEx message formats and `.prst`
   layout were ported from it (via the CLI). Credit by name, with a link.
@@ -57,7 +62,7 @@ over unchanged:
 - **RigSheet** (all rights reserved): read-only cross-check only.
   Independently confirmed *facts* may be used and credited; RigSheet's code
   and text are never copied. Credited for the upload addressing (in the
-  write code, the README and the page footer), but **not recommended** as
+  write code and the README), but **not recommended** as
   a tool (developer, 2026-10-02: its UI is too hard to follow). GP200
   Studio is the only editor the README and page point users to.
 
@@ -191,25 +196,36 @@ to be designed.
 - **Controls never appear or disappear.** A button stays visible, greyed
   out with the reason next to it, until its inputs are valid. The
   progress line is always there ("Ready." when idle).
-- **Opening screen** (developer, 2026-10-02): until the pedal is
-  connected, Back up, Restore and Template show a welcome panel instead:
-  what the app does (three lines), what to do first (USB, close other
-  GP-200 tools), and one large "Connect to pedal" button, with the port
-  picker there if the GP-200 can't be told apart. Help stays reachable.
-  After connecting, the chosen screen appears; if the pedal is unplugged,
-  the panel comes back.
-- **Header:** "GP-200 Patch Manager", the screen links, and whether the
-  pedal is connected, with a quiet "Reconnect" once connected (the one
-  exception to the rule above: before connecting, the welcome panel's
-  button is the only way in).
+- **Opening screen** (developer, 2026-10-02): the home page (`#home`,
+  also the page with nothing after the `#`) is a welcome panel: what the
+  app does (three lines), what to do first (USB, close other GP-200
+  tools), and one large "Connect to pedal" button, with the port picker
+  there if the GP-200 can't be told apart, beside a drawing of the pedal
+  (a placeholder until the developer's own photos). Until the pedal is
+  connected, Back up, Restore and Template show the same panel. Help
+  stays reachable.
+  - **After connecting: Back up**, with its range filled in as 1-A to
+    64-D (in the boxes, not as grey hints). After a lost connection, the
+    user returns to the screen they were on.
+  - **Connected:** the home page shows "Connected to the pedal" with links
+    to the three screens in place of the connect steps and button.
+  - **Lost connection** (pedal unplugged, or it stops answering so the
+    list can't be read again after a write): the panel comes back with
+    the reason under "Connect to pedal". That is the only way to
+    reconnect; the header's "Reconnect" was dropped (developer: never
+    needed).
+- **Header:** "GP-200 Patch Manager" (a link to the home page), the screen
+  links, and whether the pedal is connected.
 - **Text sizes:** page text 16 px, controls 15 px, the list 14 px when 8
   columns of 16-character names fit, shrinking to 12 px; below a
   1,200 px window the list has 4 columns (14 px down to 12 px). No
   sideways scrolling from 600 px up (measured, journal 2026-10-02).
 - **Footer:** "© Donald Parker", GPL-3.0, link to the GitHub project,
-  GP200 Studio as the place to build and edit patches, the credits
-  required above (GP200 Studio, RigSheet), the app version, and a "not
-  affiliated with Valeton" line.
+  GP200 Studio (its site, gp200studio.com) as the place to build and edit
+  patches, the app version, and a "not affiliated with Valeton" line. No
+  credits (see "Credit and licensing").
+- **Links to other sites open in a new tab**, so the app (and a
+  connection or a running restore) stays open (developer, 2026-10-02).
 - **Devices:** designed for desktop/laptop; usable on a narrow window,
   not built for phones. Browsers that can't reach the pedal get a clear
   message.

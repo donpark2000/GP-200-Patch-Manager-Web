@@ -22,8 +22,8 @@ confirm. So far tested on one computer; a second is next.
   reading it back.
 
 This isn't a patch editor. If you want to create or edit patches, look at
-[GP200 Studio](https://github.com/kabir0st/gp200-studio), a full editor;
-this tool covers the narrower job of backing up and restoring whole banks.
+[GP200 Studio](https://gp200studio.com/), a full editor
+([source](https://github.com/kabir0st/gp200-studio)); this tool covers the narrower job of backing up and restoring whole banks.
 
 ## Credits
 
