@@ -24,6 +24,7 @@ const PARAMS = new URLSearchParams(location.search);
 const DEV = PARAMS.has("dev");
 const FAKE = DEV && PARAMS.has("fake"); // the test suite's fake pedal, localhost only (fake-dev.js)
 const lab = slotToDisplayLabel;
+const NOT_CONNECTED = "Press “Connect to pedal” (top right) first";
 
 const log = new Logger({ onLine: appendLogLine });
 
@@ -232,7 +233,7 @@ function paint() {
 /** The reason a button is greyed out, or "" if it can be pressed. */
 function blocker(extra) {
   if (state.busy) return busyText();
-  if (!state.device) return "Connect the pedal first";
+  if (!state.device) return NOT_CONNECTED;
   return extra ?? "";
 }
 
@@ -297,7 +298,7 @@ function templatePlan() {
   if (r.error) return r;
   if (state.template.error) return { slots: r.slots, error: state.template.error };
   if (!state.template.file) return { slots: r.slots, error: "Choose a .prst file" };
-  if (!state.device) return { slots: r.slots, error: "Connect the pedal first" };
+  if (!state.device) return { slots: r.slots, error: NOT_CONNECTED };
   const mode = $("tmode-all").checked ? "all" : "empty";
   const plan = planTemplate(state.template.file, r.slots, nameOf, mode);
   return { slots: r.slots, plan, error: plan.items.length ? null : "Nothing to write" };
@@ -359,12 +360,12 @@ async function onConnect() {
     await state.device.connect();
     $("port-picker").hidden = true;
     setConn(`Connected: ${input.name}`, true);
-    $("connect").textContent = "Reconnect";
+    setConnectButton(true);
     await refreshList("Reading the patches on the pedal");
   } catch (e) {
     state.device = null;
     const msg = e?.name === "SecurityError" || e?.name === "NotAllowedError"
-      ? "MIDI access was blocked. Allow it from the icon in the address bar, then press Connect again."
+      ? "MIDI access was blocked. Allow it from the icon in the address bar, then press “Connect to pedal” again."
       : `Couldn't connect: ${e?.message ?? e}`;
     setConn("Not connected");
     setProgress(msg, "failed");
@@ -380,7 +381,7 @@ async function connectFake() {
   state.device = new GP200({ input, output, log });
   await state.device.connect();
   setConn(`Connected: ${input.name}`, true);
-  $("connect").textContent = "Reconnect";
+  setConnectButton(true);
   await refreshList("Reading the patches on the pedal");
 }
 
@@ -408,8 +409,8 @@ function onPortStateChange(e) {
     d.close();
     state.device = null;
     state.names.fill(undefined); // the list shows the pedal; with no pedal, nothing
-    setConn("Disconnected: plug the pedal back in and press Connect");
-    $("connect").textContent = "Connect";
+    setConn("Disconnected: plug the pedal back in and press “Connect to pedal”");
+    setConnectButton(false);
     paint();
   }
   if (!state.device) fillPortPickers();
@@ -757,6 +758,12 @@ async function holdWakeLock(hold) {
 }
 
 // ---- Small helpers ----------------------------------------------------------
+
+/** Not connected: the main call to action. Connected: a quiet Reconnect. */
+function setConnectButton(connected) {
+  $("connect").textContent = connected ? "Reconnect" : "Connect to pedal";
+  $("connect").classList.toggle("quiet", connected);
+}
 
 function setConn(text, ok = false) {
   $("conn-status").textContent = text;

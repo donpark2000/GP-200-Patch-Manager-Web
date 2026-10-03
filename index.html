@@ -20,14 +20,14 @@
     </nav>
     <div class="conn">
       <span id="conn-status" class="conn-status">Not connected</span>
-      <button type="button" id="connect" class="quiet">Connect</button>
+      <button type="button" id="connect">Connect to pedal</button>
     </div>
   </header>
 
   <p id="unsupported" class="banner error" hidden></p>
   <p id="hidden-banner" class="banner warn" hidden></p>
   <div id="port-picker" class="strip" hidden>
-    <span>Pick the GP-200's ports, then press Connect:</span>
+    <span>Pick the GP-200's ports, then press &ldquo;Connect to pedal&rdquo;:</span>
     <label>Input <select id="in-port"></select></label>
     <label>Output <select id="out-port"></select></label>
   </div>
@@ -113,7 +113,7 @@
     <ol>
       <li>Connect the GP-200 to your computer with a USB cable.</li>
       <li>Close Valeton's editor and any other GP-200 tool: only one program can use the pedal at a time.</li>
-      <li>Open this page in Chrome or Edge and press <b>Connect</b>. Allow MIDI access when the browser asks.</li>
+      <li>Open this page in Chrome or Edge and press <b>Connect to pedal</b> (top right). Allow MIDI access when the browser asks.</li>
       <li>The list shows every patch on the pedal. <b>Back up</b> saves a range (or all 256) to a file;
         <b>Restore</b> writes saved patches back; <b>Template</b> fills a range with one patch.</li>
     </ol>
@@ -155,9 +155,9 @@
     <h2>Something went wrong?</h2>
     <ul>
       <li><b>No permission prompt, or "MIDI access was blocked":</b> click the icon at the right of the address
-        bar, allow MIDI devices for this site, then press Connect again.</li>
+        bar, allow MIDI devices for this site, then press &ldquo;Connect to pedal&rdquo; again.</li>
       <li><b>Pedal not found:</b> check the USB cable, close Valeton's editor and other GP-200 tools, unplug
-        and reconnect the pedal, then press Connect.</li>
+        and reconnect the pedal, then press &ldquo;Connect to pedal&rdquo;.</li>
       <li><b>A write wasn't verified:</b> the slot may not hold what you meant. Back up that slot to see what it
         holds, and try the restore again.</li>
     </ul>

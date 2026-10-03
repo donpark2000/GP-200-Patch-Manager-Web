@@ -2113,3 +2113,14 @@ with the developer before any write:
    slots; then "Every slot"; then restore the backup. Expect the right
    slots written, all verified, and the list matching a fresh backup.
 5. Decide Q7, then merge to `main` only with the developer's OK.
+
+## 2026-10-02: Connect button made obvious
+
+The developer saw "Connect the pedal first" but couldn't find a control
+to connect: the button was a small grey outline "Connect" at the right
+of the header. Now, while not connected, it's a solid orange "Connect to
+pedal" (the screen's main action) and the greyed-out reason says "Press
+"Connect to pedal" (top right) first"; once connected it becomes a quiet
+"Reconnect". Help and the error messages use the same label. Checked in
+the built-in browser (`?dev&fake`): orange before connecting, quiet
+"Reconnect" after, Back up enabled. Suite 134 pass.
