@@ -148,8 +148,9 @@ to be designed.
   **Back up**, **Restore**, **Template**, **Help**: one operation per screen, so the
   list's highlight always means one thing (two control sets above one
   list were ambiguous, developer 2026-10-02).
-- **The patch list:** all 256 patches on one screen, no scrolling on a
-  full desktop screen (checked by the developer in the mockup). One list,
+- **The patch list:** all 256 patches on one screen. Readability before
+  fitting without scrolling (developer, 2026-10-02: the first build's
+  12 px was too small; a bit of scrolling is fine). One list,
   each entry labelled the way Valeton writes it, "12-A Oldschool Fuzz",
   flowing down 8 columns of 8 banks; a faint line between banks; default
   names greyed. **Always shows what is on the pedal** (developer,
@@ -190,8 +191,21 @@ to be designed.
 - **Controls never appear or disappear.** A button stays visible, greyed
   out with the reason next to it, until its inputs are valid. The
   progress line is always there ("Ready." when idle).
+- **Opening screen** (developer, 2026-10-02): until the pedal is
+  connected, Back up, Restore and Template show a welcome panel instead:
+  what the app does (three lines), what to do first (USB, close other
+  GP-200 tools), and one large "Connect to pedal" button, with the port
+  picker there if the GP-200 can't be told apart. Help stays reachable.
+  After connecting, the chosen screen appears; if the pedal is unplugged,
+  the panel comes back.
 - **Header:** "GP-200 Patch Manager", the screen links, and whether the
-  pedal is connected.
+  pedal is connected, with a quiet "Reconnect" once connected (the one
+  exception to the rule above: before connecting, the welcome panel's
+  button is the only way in).
+- **Text sizes:** page text 16 px, controls 15 px, the list 14 px when 8
+  columns of 16-character names fit, shrinking to 12 px; below a
+  1,200 px window the list has 4 columns (14 px down to 12 px). No
+  sideways scrolling from 600 px up (measured, journal 2026-10-02).
 - **Footer:** "© Donald Parker", GPL-3.0, link to the GitHub project,
   GP200 Studio as the place to build and edit patches, the credits
   required above (GP200 Studio, RigSheet), the app version, and a "not

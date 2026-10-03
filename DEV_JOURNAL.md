@@ -2124,3 +2124,32 @@ pedal" (the screen's main action) and the greyed-out reason says "Press
 "Reconnect". Help and the error messages use the same label. Checked in
 the built-in browser (`?dev&fake`): orange before connecting, quiet
 "Reconnect" after, Back up enabled. Suite 134 pass.
+
+## 2026-10-02: Opening screen and bigger text
+
+The developer found the Connect button and connected (fake pedal), then
+asked for (1) an opening screen with one control, Connect, plus a short
+summary of the app, and (2) bigger text: "very small"; a bit of
+scrolling is acceptable for readability. Window-size behaviour was
+working well. Both in `DESIGN.md`.
+
+- **Welcome panel** (`#scr-connect`): shown on Back up / Restore /
+  Template while not connected. One large "Connect to pedal" button,
+  connect errors under it, port picker inside it. The header button is
+  now a quiet "Reconnect", present only while connected (exception to
+  "controls never appear or disappear", stated in `DESIGN.md`).
+  Checked: the panel on load; after Connect, the Restore screen with the
+  list; Reconnect shown.
+- **Sizes:** were 14 px text, 13 px controls, 12 px list. Now 16 / 15 /
+  14 px. The list size is computed from the window width so 8 columns of
+  worst-case names (16 characters) always fit: a column measured 10.75
+  font-sizes wide (129 px at 12 px, 137 px at 12.79 px).
+  - First try overflowed by 13 px at a 624 px window: `100vw` includes the
+    page's scrollbar (about 17 px). Allowed for it (+18 px, +2 spare).
+  - Second check found 8 columns overflowing between 761 and 1,180 px
+    (the 12 px floor can't fit 8 columns there): the switch to 4 columns
+    moved from 760 px to 1,200 px.
+  - Final, measured with every name set to a 16-character name: 1920 px:
+    14 px, 8 columns; 1300: 13.4 px, 8; 1200: 12.2 px, 8; 1199: 14 px, 4;
+    900: 14 px, 4; 600: 12 px, 4. Sideways scroll 0 at all of them.
+  - Below about 610 px the list scrolls sideways (phones: not supported).

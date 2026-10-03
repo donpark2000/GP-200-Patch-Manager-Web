@@ -24,7 +24,8 @@ const PARAMS = new URLSearchParams(location.search);
 const DEV = PARAMS.has("dev");
 const FAKE = DEV && PARAMS.has("fake"); // the test suite's fake pedal, localhost only (fake-dev.js)
 const lab = slotToDisplayLabel;
-const NOT_CONNECTED = "Press “Connect to pedal” (top right) first";
+const NOT_CONNECTED = "Connect the pedal first"; // rarely seen: these screens show the welcome panel until connected
+const PEDAL_SCREENS = ["backup", "restore", "template"];
 
 const log = new Logger({ onLine: appendLogLine });
 
@@ -71,6 +72,7 @@ if (DEV) {
 addEventListener("hashchange", () => show(location.hash.slice(1)));
 document.addEventListener("visibilitychange", onVisibilityChange);
 $("connect").addEventListener("click", onConnect);
+$("reconnect").addEventListener("click", onConnect);
 
 for (const id of ["from", "to", "start", "tfrom", "tto"]) {
   $(id).addEventListener("input", () => {
@@ -122,16 +124,20 @@ function show(name) {
   if (!SCREENS.includes(name)) name = "backup";
   if (name !== state.screen) log.info(`Screen: ${name}`);
   state.screen = name;
+  // Until the pedal is connected, the pedal screens show the welcome panel
+  // with its one control, Connect (developer, 2026-10-02).
+  const welcome = PEDAL_SCREENS.includes(name) && !state.device;
+  $("scr-connect").hidden = !welcome;
   for (const n of SCREENS) {
-    $(`scr-${n}`).hidden = n !== name;
+    $(`scr-${n}`).hidden = n !== name || welcome;
     const a = $(`nav-${n}`);
     a.classList.toggle("on", n === name);
     if (n === name) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
-  const help = name === "help";
-  $("listbox").hidden = help;
-  $("prog").hidden = help;
+  const noList = name === "help" || welcome;
+  $("listbox").hidden = noList;
+  $("prog").hidden = noList;
   paint();
 }
 
@@ -224,6 +230,7 @@ function paint() {
     $(id).disabled = busy;
   }
   $("connect").disabled = busy || $("connect").dataset.unsupported === "1";
+  $("reconnect").disabled = busy;
   $("failed-readbacks").disabled = !state.failedReadbacks.length;
   if (state.screen === "backup") paintBackup();
   else if (state.screen === "restore") paintRestore();
@@ -338,6 +345,8 @@ function paintTemplate() {
 
 async function onConnect() {
   $("connect").disabled = true;
+  $("reconnect").disabled = true;
+  $("connect-msg").textContent = "";
   try {
     if (FAKE) return await connectFake();
     if (!state.midi) {
@@ -351,6 +360,8 @@ async function onConnect() {
     if (!input || !output) {
       $("port-picker").hidden = false;
       setConn("Pick the GP-200's ports");
+      $("connect-msg").textContent =
+        "Couldn't tell which device is the GP-200: pick its ports above, then press “Connect to pedal” again.";
       log.warn("Couldn't pick the GP-200's ports automatically; choose them from the lists.");
       return;
     }
@@ -361,6 +372,7 @@ async function onConnect() {
     $("port-picker").hidden = true;
     setConn(`Connected: ${input.name}`, true);
     setConnectButton(true);
+    show(state.screen); // leave the welcome panel; the list fills in as it's read
     await refreshList("Reading the patches on the pedal");
   } catch (e) {
     state.device = null;
@@ -368,8 +380,11 @@ async function onConnect() {
       ? "MIDI access was blocked. Allow it from the icon in the address bar, then press “Connect to pedal” again."
       : `Couldn't connect: ${e?.message ?? e}`;
     setConn("Not connected");
+    setConnectButton(false);
+    $("connect-msg").textContent = msg;
     setProgress(msg, "failed");
     log.error(msg);
+    show(state.screen);
   } finally {
     paint();
   }
@@ -382,6 +397,7 @@ async function connectFake() {
   await state.device.connect();
   setConn(`Connected: ${input.name}`, true);
   setConnectButton(true);
+  show(state.screen);
   await refreshList("Reading the patches on the pedal");
 }
 
@@ -409,9 +425,10 @@ function onPortStateChange(e) {
     d.close();
     state.device = null;
     state.names.fill(undefined); // the list shows the pedal; with no pedal, nothing
-    setConn("Disconnected: plug the pedal back in and press “Connect to pedal”");
+    setConn("Disconnected");
     setConnectButton(false);
-    paint();
+    $("connect-msg").textContent = "The pedal was disconnected. Plug it back in and press “Connect to pedal”.";
+    show(state.screen);
   }
   if (!state.device) fillPortPickers();
 }
@@ -759,10 +776,9 @@ async function holdWakeLock(hold) {
 
 // ---- Small helpers ----------------------------------------------------------
 
-/** Not connected: the main call to action. Connected: a quiet Reconnect. */
+/** Connected: a quiet Reconnect in the header (before that, the welcome panel has the button). */
 function setConnectButton(connected) {
-  $("connect").textContent = connected ? "Reconnect" : "Connect to pedal";
-  $("connect").classList.toggle("quiet", connected);
+  $("reconnect").hidden = !connected;
 }
 
 function setConn(text, ok = false) {
