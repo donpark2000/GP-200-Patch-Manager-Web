@@ -2153,3 +2153,35 @@ working well. Both in `DESIGN.md`.
     14 px, 8 columns; 1300: 13.4 px, 8; 1200: 12.2 px, 8; 1199: 14 px, 4;
     900: 14 px, 4; 600: 12 px, 4. Sideways scroll 0 at all of them.
   - Below about 610 px the list scrolls sideways (phones: not supported).
+
+## 2026-10-02: Status (start here next session)
+
+Supersedes the status entry above (adds the welcome screen, text sizes,
+and the open publish question).
+
+**Known:**
+- Branch `designed-ui`, pushed, clean. The live site still has the test
+  page (`d263698`, tag `test-page-proven`): **nothing published**.
+  The developer expected the live site to change; it changes only when
+  `designed-ui` is merged to `main`, which needs their OK.
+- The designed UI is built: welcome panel with one Connect button until
+  connected, Back up / Restore / Template / Help, text 16/15/14 px with
+  the list sized to the window. Checked against the fake pedal only; the
+  developer has looked at it on localhost ("it is working").
+- `test.html`: the test page, unpublished (CI checkbox once on `main`).
+- Open question **Q7** (cached files after a publish; fix proposed:
+  `?v=<commit>` on the published copy's links).
+- Local server: the desktop app's preview server (port 8000) can be
+  stopped by the app. The developer can run their own:
+  `python -m http.server 8001 --bind 127.0.0.1` in the repo folder, then
+  `http://localhost:8001/`.
+
+**Waiting on the developer (ask first thing):**
+1. Publish order: Claude suggested hardware checks on localhost, then the
+   Q7 fix, then merge to `main`. Alternative: publish now so the laptop
+   can see it. Not decided.
+2. Q7: OK to add the `?v=<commit>` stamp in CI?
+
+**Then step 3, hardware checks** (plan in the previous status entry:
+look; backup compare; restore round trip; Template on 64-A to 64-D with
+the developer's OK and a backup of 64-A to 64-D first).
