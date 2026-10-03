@@ -12,7 +12,18 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-None. (Q3-Q6 closed 2026-10-02, see "Resolved".)
+- **Q7. Mixed old and new files for 10 minutes after a publish.** *Raised
+  2026-10-02 (entry "Build step 2").* GitHub Pages sends
+  `Cache-Control: max-age=600` (checked with `curl -I` on the live
+  `src/core/slots.js`), so a browser may reuse cached modules for up to 10
+  minutes. Right after a publish, a returning visitor can get the new
+  `app.js` with an old cached `slots.js`; the page then fails to start
+  ("does not provide an export named ..."). Seen locally during the
+  build (Python's server, same effect). Proposed fix: CI adds `?v=<commit>`
+  to every relative import and to the CSS/JS links in the published copy
+  (a `sed` in the assemble step, like the version stamp), so each publish
+  is a fresh set of URLs. Nothing changes in the repo files or locally.
+  Needs the developer's OK; not yet done.
 
 ## Resolved
 
@@ -2022,3 +2033,83 @@ suite 128 pass, 0 fail):
     The YAML itself is first checked by GitHub on the PR's CI run, and the
     checkbox appears only once the workflow is on `main` (GitHub reads
     `workflow_dispatch` inputs from the default branch).
+
+## 2026-10-02: Build step 2: the designed UI (fake pedal checks)
+
+Built `index.html`, `src/ui/app.js`, `src/ui/app.css` on the core, plus
+`src/core/screens.js` (range boxes, summaries, confirmations, "After"
+names; `tests/screens.test.js`, 6 tests). Suite: 134 pass, 0 fail. Clean
+room (fresh copy of the repo, run twice): 134 pass both times, 71 files
+before and after, no difference.
+
+Decisions taken while building, each with its reason (in `DESIGN.md`):
+- The write-timing test stays on `test.html?dev`; it isn't moved into
+  the new UI, since the test page is kept. (`CLAUDE.md` updated.)
+- No Google Fonts: the computer's own fonts, the list in Arial Narrow
+  where installed. No outside dependency.
+- "Stop after this patch" on the progress line, always visible, greyed
+  unless writing.
+- `?dev&fake`: the fake pedal from `tests/helpers/fake-pedal.js`, for
+  checking the screens without hardware (localhost only).
+- A Template plan needs both From and To (no blank meaning "everything").
+
+**Checked in the built-in browser with `?dev&fake`** (made-up names in
+banks 1-20, "Template" in 21-A to 22-D, the rest "It's GP-200"):
+- Connect: the list fills in, "Ready.", Back up enabled. Before
+  connecting, every button says "Connect the pedal first".
+- Template 21-A to 26-D, empty only: "24 slots, 21-A to 26-D (16 empty, 8
+  of your patches). Writes 16. Keeps 8: ...". Confirmation "Write Clean
+  Start.prst to 16 slots between 21-A and 26-D? 8 kept." "After" shows
+  the new name in italics.
+- **Re-check, live:** after planning, the fake pedal got "New Song" in
+  23-A. Write to range wrote nothing (fake pedal: 0 uploads), said
+  "23-A "It's GP-200" is now "New Song" ... Nothing written", and the
+  list and plan updated (15 to write). Pressed again: 15 written and
+  verified, uploads only to those 15 slots, list re-read.
+- Restore, 3 files from 64-C: "2 files go to 64-C to 64-D" plus "1 file
+  doesn't fit after 64-D". From 19-D, with the fake pedal corrupting the
+  upload to 20-A: "Restored 3 of 3: 2 verified, 1 NOT verified (20-A;
+  marked in red, see Help)", 20-A outlined red with a cross, the list
+  re-read (new names shown), "Download failed read-backs" enabled
+  (`?dev`).
+- Fixed on the way: empty slots now stay grey inside the blue backup
+  range; the failed mark was hard to tell from the orange range (now a
+  red outline and a cross); the result line and the timer disagreed by
+  0.1 s (the timer is cleared at the end).
+- Light and dark themes; a 624-px-wide pane gives 4 columns; Help;
+  without `?dev` the log panel and pacing switch are hidden.
+- **Fit:** with every name set to a 16-character name, the 8 columns need
+  1,130 px (a window about 1,180 px wide). On Back up the footer ends
+  about 810 px down: fits a maximized 1080p browser (about 950 px of
+  page); a 1366 x 768 laptop will scroll a little. Not checked on the
+  developer's screens yet.
+- The fake pedal reads 256 slots in about 4 s (the real one about 0.3 s),
+  so the re-read after a write is slower here than it will be on
+  hardware.
+- Raised **Q7** (cached files after a publish), see "Open questions".
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- Branch `designed-ui` (pushed). Live site unchanged (`d263698`, the test
+  page). Tag `test-page-proven` = that commit.
+- Build steps 1 and 2 done (entries above). The designed UI works against
+  the fake pedal; **nothing has touched real hardware yet**.
+- Test page: `test.html`, not published (CI checkbox to publish it
+  temporarily, available once the workflow is on `main`).
+- Open question: **Q7** (cached files after a publish; fix proposed).
+
+**Next: step 3, the developer's hardware checks.** Confirm this test plan
+with the developer before any write:
+1. Look: `npm run serve`, then `http://localhost:8000/` on this computer
+   (the laptop needs the hosted site, so after the merge, or a clone).
+   Does the list fit; is anything confusing.
+2. Back up all 256 with the new UI; `compare-zips` against a fresh backup
+   from the test page or the CLI: expect MATCH.
+3. Restore round trip as in the phase 2 gate (shifted restore, compare,
+   restore back, compare), with the new UI.
+4. Template on scratch slots 64-A to 64-D (needs the developer's OK): back
+   up 64-A to 64-D first; empty-only with a mix of empty and non-empty
+   slots; then "Every slot"; then restore the backup. Expect the right
+   slots written, all verified, and the list matching a fresh backup.
+5. Decide Q7, then merge to `main` only with the developer's OK.

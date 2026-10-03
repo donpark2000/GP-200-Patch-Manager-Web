@@ -43,7 +43,7 @@ this is the short version:
 - Plain JavaScript ES modules, no build step.
 - Never write to the pedal outside the phase 2 restore feature, and never
   without the user's confirmation in the app. One exception: the
-  developer-only write-timing test (`?dev`, `src/core/tuning.js`), which
+  developer-only write-timing test (`test.html?dev`, `src/core/tuning.js`), which
   may write only to the scratch slots 64A-64D, also after confirmation.
 
 ## Files: repo vs. test output vs. backups

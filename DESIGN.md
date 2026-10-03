@@ -200,10 +200,21 @@ to be designed.
   not built for phones. Browsers that can't reach the pedal get a clear
   message.
 - **Logs hidden.** Always recorded; "Save log" in Help so a user can send
-  it for support. The on-screen log panel only with `?dev`.
+  it for support. The on-screen log panel only with `?dev`, together with
+  the restore-pacing fallback and "Download failed read-backs". The
+  write-timing test stays on the test page (`test.html?dev`) only.
+- **`?dev&fake`** connects to the test suite's fake pedal instead of Web
+  MIDI, to check the screens without hardware. It loads `tests/`, which
+  is never published, so it works only on localhost.
+- **Fonts:** the computer's own (the list in Arial Narrow where
+  installed); nothing is loaded from other sites. The mockup's IBM Plex
+  from Google Fonts was dropped so the app has no outside dependency.
 - **Progress** for anything that takes time: a restore shows a progress
   bar, the slot and patch being written, and the elapsed time; a backup
-  (under a second) gets a short status line.
+  (under a second) gets a short status line. A **"Stop after this
+  patch"** button sits on the progress line, always visible, greyed out
+  unless a restore or Template write is running (the test page had one;
+  a restore takes about 30 s).
 - **Help screen:** quick start, what a restore overwrites, the
   User-IR/NAM limitation, browser compatibility, troubleshooting
   (permission prompt, pedal not found); links to the README.
