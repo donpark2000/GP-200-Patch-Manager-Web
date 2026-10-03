@@ -2339,12 +2339,11 @@ Supersedes the status entries above. The developer starts fresh on
   `python -m http.server 8001 --bind 127.0.0.1`, then
   `http://localhost:8001/` in Chrome.
 
-**Ask the developer first:**
-1. `CLAUDE.md` says the app writes to the pedal only in the restore
-   feature (plus the timing test). The Template screen writes too, with
-   the same confirmation in the app. OK to add a line allowing it? Needed
-   before test 5. (Raised in the session that planned the build; not
-   recorded until now.)
+**Settled before leaving:** the Template screen may write to the pedal,
+with the same confirmation in the app (developer, 2026-10-02;
+`CLAUDE.md` project rules updated). Nothing else to ask before starting;
+the developer asked for these next steps as the start-of-session
+summary.
 
 **Next: the hardware checks on localhost** (Chrome, this computer).
 Session folder `C:\Users\dpark\Documents\GP-200-testing\2026-10-03_designed-ui\`;
@@ -2367,7 +2366,7 @@ the developer before any write.
 4. **Unplug test:** unplug the USB cable while connected (not during a
    write): the welcome page comes back with the reason; plug in,
    Connect: back on the same screen.
-5. **Template on 64-A to 64-D** (after item 1 above): back up 64-A to
+5. **Template on 64-A to 64-D**: back up 64-A to
    64-D first; make a mix of empty and non-empty slots there; Template
    with "only empty" (the right slots written, the others kept), then
    "Every slot"; then restore the 64-A to 64-D backup and compare.

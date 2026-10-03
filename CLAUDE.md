@@ -46,8 +46,9 @@ this is the short version:
   unless `DESIGN.md` says otherwise.
 - Keep `src/core/` free of DOM/UI code.
 - Plain JavaScript ES modules, no build step.
-- Never write to the pedal outside the phase 2 restore feature, and never
-  without the user's confirmation in the app. One exception: the
+- Never write to the pedal outside the phase 2 restore feature and the
+  Template screen (developer, 2026-10-02), and never without the user's
+  confirmation in the app. One exception: the
   developer-only write-timing test (`test.html?dev`, `src/core/tuning.js`), which
   may write only to the scratch slots 64A-64D, also after confirmation.
 
