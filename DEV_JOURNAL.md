@@ -2372,7 +2372,9 @@ the developer before any write.
    "Every slot"; then restore the 64-A to 64-D backup and compare.
 6. **Report a problem** in Chrome: the GitHub tab opens filled in (real
    browser name, version "dev"), the saved log drags in. The developer
-   posts one test issue themselves; label/close it afterwards.
+   posts one test issue themselves; label/close it afterwards. Also
+   **Save log only** (developer, 2026-10-03: test both): one log file
+   saved, no GitHub tab.
 7. Record results in this journal, then ask to purge the session folder.
 
 **Then publishing** (with the developer's OK): merge `designed-ui` to
