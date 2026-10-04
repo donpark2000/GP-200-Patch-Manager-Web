@@ -108,3 +108,24 @@ test("index.html: 'not made by Valeton' on the welcome page and in Help, not in 
   assert.ok(footer.length > 0, "footer found");
   assert.doesNotMatch(footer, /Valeton/);
 });
+
+test("index.html: Valeton's editor may stay open; closing it is only a troubleshooting step", () => {
+  const html = readFileSync(join(REPO, "index.html"), "utf8");
+  const section = (id) => html.slice(html.indexOf(`id="${id}"`), html.indexOf("</section>", html.indexOf(`id="${id}"`)));
+  assert.match(section("scr-connect"), /Valeton's editor can stay open/);
+  const help = section("scr-help");
+  const quick = help.slice(help.indexOf("Quick start"), help.indexOf("</ol>"));
+  assert.match(quick, /can stay open/);
+  assert.match(quick, /reload the patches in the other tool/);
+  assert.doesNotMatch(html, /only one program can use the pedal at a time/);
+  assert.match(help, /Pedal not found:<\/b>[^<]*close Valeton's editor[\s\S]*?on\s+some computers/);
+});
+
+test("index.html: Help explains why a template is useful, then how", () => {
+  const html = readFileSync(join(REPO, "index.html"), "utf8");
+  const help = html.slice(html.indexOf('id="scr-help"'), html.indexOf("</section>", html.indexOf('id="scr-help"')));
+  const t = help.slice(help.indexOf("<h2>Templates</h2>"));
+  for (const want of [/wah/, /noise gate/, /send and return/, /CTRL 1/, /on stage/, /clean template/, /<h3>How it works<\/h3>/])
+    assert.match(t, want);
+  assert.ok(t.indexOf("on stage") < t.indexOf("How it works"), "why comes before how");
+});

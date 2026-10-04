@@ -190,16 +190,25 @@ to be designed.
   - **Plain wording** (developer): the "template" is any ordinary `.prst`.
     The screen keeps the name Template but says so in a fixed line at the
     top; the button is "Choose a .prst file...", the action "Write to
-    range". Help gives use cases: a starting point for new patches, a
-    block set up for a gig, and clearing a range with an exported empty
-    ("It's GP-200") patch and "Every slot".
+    range". Help says **why before how** (developer, 2026-10-03): a
+    template is a personal starting point that carries the player's
+    standards (wah, noise gate and its place in the chain, effects loop
+    placement, what CTRL 1/2 do), so patches work alike on stage, and
+    different banks can use different templates (clean, metal). Then the
+    use cases: new sounds from the template, a block set up for a gig,
+    and clearing a range with an exported empty ("It's GP-200") patch and
+    "Every slot".
+- **Other GP-200 tools may stay open** (developer, 2026-10-03, from
+  testing with Valeton's editor open): Help says not to use them while
+  this app reads or writes, and to reload their patches after a restore
+  before editing there. "Close them" is only a "Pedal not found" step.
 - **Controls never appear or disappear.** A button stays visible, greyed
   out with the reason next to it, until its inputs are valid. The
   progress line is always there ("Ready." when idle).
 - **Opening screen** (developer, 2026-10-02): the home page (`#home`,
   also the page with nothing after the `#`) is a welcome panel: what the
-  app does (three lines), what to do first (USB, close other GP-200
-  tools), and one large "Connect to pedal" button, with the port picker
+  app does (three lines), what to do first (USB; Valeton's editor can
+  stay open but not be used while this app reads or writes), and one large "Connect to pedal" button, with the port picker
   there if the GP-200 can't be told apart, beside a drawing of the pedal
   (a placeholder until the developer's own photos). Until the pedal is
   connected, Back up, Restore and Template show the same panel. Help

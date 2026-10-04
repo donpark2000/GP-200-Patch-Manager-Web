@@ -2384,3 +2384,42 @@ the developer before any write.
   problem link still opens the filled-in issue (not the template
   chooser).
 - The laptop: look at the hosted site, one backup compare.
+
+## 2026-10-03: Help: the editor may stay open; why use a template
+
+Two Help changes from the developer before the hardware checks.
+Decisions in `DESIGN.md`.
+
+- **Valeton's editor open.** Help said to close Valeton's editor
+  because "only one program can use the pedal at a time". That was an
+  inference from older Windows MIDI drivers (one program per port),
+  never tested with the GP-200. **Evidence against it:** the developer
+  often left Valeton's desktop software open during their own testing,
+  and the tests passed. The real risks: (1) both programs talking to
+  the pedal at once (the pedal's replies reach every program with the
+  port open; our checks would most likely catch it as a failed read or
+  an unverified write); (2) the editor showing patches loaded before a
+  restore and saving an old copy over a restored one (not checked
+  whether the editor re-reads on its own). New text: the welcome page
+  and Quick start say it can stay open but not be used while this app
+  reads or writes, and to reload its patches after a restore; "Pedal
+  not found" keeps "close it" as a step ("on some computers only one
+  program can use the pedal's connection at a time").
+  **To check in today's hardware session:** keep the editor open
+  throughout; after the restore, does it show the new patches or the
+  old ones?
+- **Templates: why before how.** The developer wanted Help to sell the
+  idea, from their own experience: patches that each work differently
+  are hard to use live; shared standards (preferred wah, noise gate and
+  its place in the chain, effects loop send/return placement, CTRL 1 on
+  the distortion and CTRL 2 on the modulation) help, and different
+  banks can have different templates (clean, metal). Help's Templates
+  section now starts with that, then "How it works" (an `h3`, styled in
+  `app.css`) with the use cases. The Template screen's intro line names
+  the same standards.
+
+**Evidence:** suite 149 pass (2 new in `site.test.js`: editor wording
+in the welcome page, Quick start and troubleshooting, and no "only one
+program can use the pedal at a time"; the Templates section has the
+why before "How it works"). Both new tests failed against the previous
+`index.html`. Help looked at in the built-in browser.

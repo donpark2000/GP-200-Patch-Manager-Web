@@ -37,8 +37,8 @@
     </ul>
     <p>Nothing is written to the pedal until you confirm, and every patch written is read back and checked.</p>
     <div id="connect-area">
-    <p><b>First:</b> connect the pedal to this computer with a USB cable, and close Valeton's editor and any
-      other GP-200 tool (only one program can use the pedal at a time).</p>
+    <p><b>First:</b> connect the pedal to this computer with a USB cable. Valeton's editor can stay open, but
+      don't use it while this app is reading or writing the pedal.</p>
     <div id="port-picker" class="strip" hidden>
       <span>More than one device could be the GP-200. Pick its ports, then press &ldquo;Connect to pedal&rdquo;:</span>
       <label>Input <select id="in-port"></select></label>
@@ -111,7 +111,8 @@
   </section>
 
   <section id="scr-template" aria-label="Template" hidden>
-    <p class="intro">Writes one patch (any .prst file) into every slot of a range, as a starting point for new patches. See Help for examples.</p>
+    <p class="intro">Writes one patch (any .prst file) into every slot of a range, as your own starting point for new patches: your usual wah, noise gate, effects loop and switch
+      settings in every one. See Help for why and how.</p>
     <div class="strip">
       <div class="grp">
         <label for="tfrom">From</label><input type="text" id="tfrom" placeholder="44-A" maxlength="5" autocomplete="off" spellcheck="false">
@@ -152,7 +153,9 @@
     <h2>Quick start</h2>
     <ol>
       <li>Connect the GP-200 to your computer with a USB cable.</li>
-      <li>Close Valeton's editor and any other GP-200 tool: only one program can use the pedal at a time.</li>
+      <li>Valeton's editor or another GP-200 tool can stay open, but don't use it while a backup, restore or
+        template write is running. After a restore, reload the patches in the other tool before editing there,
+        so it doesn't save an old copy over a restored patch.</li>
       <li>Open this page in Chrome or Edge and press <b>Connect to pedal</b>. Allow MIDI access when the browser asks.</li>
       <li>The list shows every patch on the pedal. <b>Back up</b> saves a range (or all 256) to a file;
         <b>Restore</b> writes saved patches back; <b>Template</b> fills a range with one patch.</li>
@@ -177,11 +180,27 @@
       back up or restore them.</p>
 
     <h2>Templates</h2>
+    <p>A template is your own starting point for new patches. Build one patch with the choices you want in
+      every patch, for example:</p>
+    <ul>
+      <li>your preferred wah;</li>
+      <li>your noise gate, and where it sits in the chain;</li>
+      <li>where the effects loop's send and return go in the chain;</li>
+      <li>what the switches do: say, CTRL 1 turns the distortion on and off, and CTRL 2 the modulation.</li>
+    </ul>
+    <p>Write it into the slots you'll use for new sounds, and every new patch starts with those choices already
+      made. You design the sound; the parts you rely on stay where you expect them.</p>
+    <p><b>Why it helps on stage:</b> when every patch is laid out differently, it's hard to remember how each
+      one works mid-song. When your patches share a few standards, a switch does the same job in every patch.</p>
+    <p><b>Different templates for different banks:</b> a bank or two built from a clean template, a bank or two
+      from a metal template, and so on. Each group keeps its own standards.</p>
+
+    <h3>How it works</h3>
     <p>The Template screen writes one ordinary patch file (.prst) into every slot of a range. Any .prst works:
       one you exported from the pedal, or one made in GP200 Studio. Some ways to use it:</p>
     <ul>
-      <li><b>A starting point for new patches.</b> Export a patch with your usual amp, cab and effects, then fill
-        the empty banks 50-64 with it. Each new patch starts from your rig instead of the factory default.</li>
+      <li><b>New sounds from your template.</b> Export your template patch from the pedal, then fill, say, the
+        empty banks 50-64 with it.</li>
       <li><b>Setting up a block for a gig or project.</b> Fill banks 40-44 with a basic patch, then adjust each
         slot for a song.</li>
       <li><b>Clearing old patches.</b> Export an empty slot ("It's GP-200") to get a blank .prst, then write it
@@ -196,8 +215,9 @@
     <ul>
       <li><b>No permission prompt, or "MIDI access was blocked":</b> click the icon at the right of the address
         bar, allow MIDI devices for this site, then press &ldquo;Connect to pedal&rdquo; again.</li>
-      <li><b>Pedal not found:</b> check the USB cable, close Valeton's editor and other GP-200 tools, unplug
-        and reconnect the pedal, then press &ldquo;Connect to pedal&rdquo;.</li>
+      <li><b>Pedal not found:</b> check the USB cable, and close Valeton's editor and other GP-200 tools (on
+        some computers only one program can use the pedal's connection at a time). Unplug and reconnect the
+        pedal, then press &ldquo;Connect to pedal&rdquo;.</li>
       <li><b>A write wasn't verified:</b> the slot may not hold what you meant. Back up that slot to see what it
         holds, and try the restore again.</li>
     </ul>
