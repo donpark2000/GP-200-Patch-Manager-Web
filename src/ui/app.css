@@ -104,6 +104,10 @@ button.quiet:disabled { background: transparent; border-color: var(--line); }
 /* The patch list: 256 entries flowing down 8 columns of 8 banks. */
 .listbox { overflow-x: auto; font-size: var(--fs); }
 .list { display: grid; grid-auto-flow: column; grid-template-rows: repeat(32, auto); grid-template-columns: repeat(8, max-content); column-gap: 14px; font-family: var(--narrow); }
+/* No browser text selection in the list: a drag selects a range instead,
+   and a stray highlight looked like a range on every screen (developer,
+   2026-10-05). */
+.list { -webkit-user-select: none; user-select: none; }
 .cell { display: flex; gap: 6px; padding: 0 4px; white-space: nowrap; border-radius: 2px; cursor: pointer; line-height: 1.45; }
 .cell:hover { outline: 1px solid var(--line); }
 .cell.bankstart { border-top: 1px solid var(--line); }
