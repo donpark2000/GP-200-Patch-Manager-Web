@@ -67,7 +67,8 @@ test("restore summary, overflow and confirmation", () => {
     "Hover a slot to see which file goes there.");
   assert.equal(s.overflowText, null);
   assert.equal(restoreConfirmText(plan, nameOf),
-    "Write 4 patches to 12-A to 12-D? This replaces 2 of your patches, 1 empty slot, 1 slot not read.");
+    "Write 4 patches to 12-A to 12-D? This replaces 2 of your patches, 1 empty slot, 1 slot not read." +
+    " If you haven't already, back up these slots first (Back up screen).", "ends with the backup reminder");
   assert.deepEqual([...afterNames(plan.items)], [[44, "A"], [45, "B"], [46, "C"], [47, "D"]]);
 
   const over = planUpload(files, 254); // 64-C: two fit, two don't
@@ -86,12 +87,14 @@ test("template screen summary and confirmation, both modes", () => {
   assert.equal(templateScreenSummary(safe).text,
     "4 slots, 12-A to 12-D (1 empty, 2 of your patches, 1 not read). Writes 1. " +
     "Keeps 3: 12-A Oldschool Fuzz, 12-C (not read), 12-D Lead.");
-  assert.equal(templateConfirmText(safe), "Write Clean Start.prst to 1 slot between 12-A and 12-D? 3 kept.");
+  assert.equal(templateConfirmText(safe), "Write Clean Start.prst to 1 slot between 12-A and 12-D? 3 kept." +
+    " If you haven't already, back up these slots first (Back up screen).");
 
   const all = planTemplate(file, range, nameOf, "all");
   assert.equal(templateScreenSummary(all).text,
     "4 slots, 12-A to 12-D (1 empty, 2 of your patches, 1 not read). Writes 4, 2 of them your own patches.");
-  assert.equal(templateConfirmText(all), "Write Clean Start.prst to 4 slots between 12-A and 12-D? 2 of them hold your own patches.");
+  assert.equal(templateConfirmText(all), "Write Clean Start.prst to 4 slots between 12-A and 12-D? 2 of them hold your own patches." +
+    " If you haven't already, back up these slots first (Back up screen).");
 
   const none = planTemplate(file, [44, 47], nameOf, "empty");
   assert.match(templateScreenSummary(none).text, /Nothing to write\.$/);

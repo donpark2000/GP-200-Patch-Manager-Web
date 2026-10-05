@@ -101,11 +101,15 @@ function overflowText(plan) {
 }
 
 /** Confirmation text for a restore. */
+/** Ends both write confirmations (developer, 2026-10-05: the one moment a
+ *  backup reminder matters). */
+export const BACKUP_FIRST = "If you haven't already, back up these slots first (Back up screen).";
+
 export function restoreConfirmText(plan, nameOf) {
   const slots = plan.items.map((it) => it.slot);
   const counts = replaceCounts(slots, nameOf);
   return `Write ${plural(slots.length, "patch", "patches")} to ${rangeText(slots)}? ` +
-    `This replaces ${replacingText(counts)}.`;
+    `This replaces ${replacingText(counts)}. ${BACKUP_FIRST}`;
 }
 
 /** Template summary for the screen (display labels; templateSummary in
@@ -133,7 +137,7 @@ export function templateConfirmText(plan) {
   return `Write ${plan.fileName} to ${plural(plan.items.length, "slot")} between ` +
     `${slotToDisplayLabel(plan.slots[0])} and ${slotToDisplayLabel(plan.slots[plan.slots.length - 1])}?` +
     (yoursWritten ? ` ${yoursWritten} of them ${yoursWritten === 1 ? "holds" : "hold"} your own patches.` : "") +
-    (plan.counts.keep ? ` ${plan.counts.keep} kept.` : "");
+    (plan.counts.keep ? ` ${plan.counts.keep} kept.` : "") + ` ${BACKUP_FIRST}`;
 }
 
 /** slot -> name each written slot will have afterwards ("After" view). */

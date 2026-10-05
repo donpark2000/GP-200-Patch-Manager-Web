@@ -24,6 +24,7 @@ import {
   isSysex,
   SUB_DUMP_CHUNK,
   SUB_IDENTITY_REPLY,
+  toHex,
 } from "./sysex.js";
 import {
   buildPrstFromDump,
@@ -158,7 +159,10 @@ export class GP200 {
   async connect() {
     const reply = await this._request(buildIdentityQuery(), SUB_IDENTITY_REPLY, 1);
     if (reply.length) {
-      this.log.info("Pedal answered the identity query");
+      // Logged whole for support: the reply doesn't carry the firmware
+      // version, and no capture yet shows how other models (LT, JR, ...)
+      // differ in it (journal 2026-10-05), so reports should include it.
+      this.log.info(`Pedal answered the identity query: ${toHex(reply[0])}`);
     } else {
       this.log.warn("No identity reply within the timeout; continuing anyway (reads don't need it)");
     }

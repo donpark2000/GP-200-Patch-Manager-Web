@@ -2571,3 +2571,97 @@ in the dark theme; Template 20-A to 24-D: 20 blue with no file; with a
 Merge permission: the developer chose to allow `Bash(gh pr merge:*)` in
 `.claude/settings.local.json`; Claude's attempt to add it was refused as
 self-modification, so the developer adds it by hand.
+
+## 2026-10-05: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- **The designed UI is live**: https://donpark2000.github.io/GP-200-Patch-Manager-Web/,
+  `a1fbfb3` (PR [#7](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/7),
+  CI 37388078223 passed, page loads `v/a1fbfb3/`). Published today in
+  three steps: #4 (designed UI), #6 (drag to pick a range, Help "Choosing
+  slots"), #7 (brighter range, same on Back up and Template). `main` and
+  `designed-ui` hold the same code.
+- Checked by the developer on localhost (UX, real pedal) and on the live
+  site: Help, Report a problem (GitHub issue page and log download), Back
+  up range selection. Pedal control itself wasn't re-run end to end with
+  the new UI (the developer is confident in it; the core is the proven
+  one).
+- Pedal drawing on the welcome page; the watermark was tried and left
+  out (entry "Watermark tried and left out").
+- No open questions (Q7 closed today).
+- Suite: 155 pass (`npm test`).
+- Merges: the session's permission check refuses `gh pr merge` in auto
+  mode. The developer will add `Bash(gh pr merge:*)` to
+  `.claude/settings.local.json` (git-ignored) themselves; until then they
+  merge. Claude merges only when asked in chat.
+- Local server: the developer's own on 8001 (`python -m http.server 8001
+  --bind 127.0.0.1` in the repo folder); Claude's preview uses 8000.
+
+**Not yet checked on the live site:**
+1. The new range colours (#7), both themes; Template's blue range before
+   a file is chosen, orange/blue once one is.
+2. GitHub's own "New issue" page offers the "Problem report" form.
+3. The laptop: look at the site, one backup compare.
+
+**Next:** those checks, then anything the developer wants next. The CLI
+speed-up backport (journal 2026-10-02) is not wanted for now (developer,
+2026-10-05).
+
+**Update, same day:** the developer checked #7 on the live site (both
+changes good) and ran backups and writes from it: both work. Before
+sharing the site with the GP-200 Facebook group, Claude's suggestions
+are in the next entry.
+Session folder `GP-200-testing\2026-10-05_designed-ui\` is empty: OK to
+purge (ask).
+
+## 2026-10-05: Before sharing the site: tested-with statement, backup reminder
+
+The developer plans to share the site with the GP-200 Facebook group,
+saying it was tested only with their pedal and that every write should
+follow a backup. Claude suggested five things; the developer agreed to
+all, and added: say it was tested on firmware 1.8.0, other Valeton
+pedals untested, "use at your own risk, but please let me know if you try
+it and it works".
+
+**Finding: the app can't read the firmware or the model.** Claude had
+proposed logging the firmware from the identity reply. GP200 Studio's
+source (facts only, read on GitHub 2026-10-05): its
+`parseIdentityResponse` notes that the reply's bytes 22 and 26 read "1.2"
+whatever the firmware (probably a protocol version) and that the
+firmware isn't sent in the identity reply; its own firmware check
+(`sub=0x0A`) only checks that a reply arrived. Its `deviceModel.ts` says
+the GP-200, R, X, JR and LT write the same 1224-byte `.prst` and speak
+the same SysEx (the LT has 4 CTRL footswitches instead of 8), and that
+the model isn't auto-detected: no capture from an LT shows its
+`deviceType` byte (byte 18; 0x04 in its GP-200 capture). Its tested
+firmware list is `['1.8']`. So the model and firmware are stated, not
+detected, and a block on other models isn't possible (nor wanted:
+warn, don't block).
+
+**Done:**
+1. README: "Status: test build" replaced by the tested-with statement
+   (GP-200, firmware 1.8.0; others at own risk; back up first; please
+   report how it went), the screens (Template, choosing slots), "nothing
+   is sent anywhere", the IR/NAM note, `test.html` described as not
+   published, `?dev&fake`.
+2. Welcome page note and Help "Which pedals and firmware?": the same
+   statement; a "tell us it worked" link opens a prefilled public issue
+   ("Works on: ", headings for model and firmware, what was tried,
+   anything wrong).
+3. The identity reply is logged whole on connect (`device.js`), so a
+   report from another model shows what its pedal answered.
+4. Test issue #5 closed with a note.
+5. Restore and Template confirmations end with "If you haven't already,
+   back up these slots first (Back up screen)." (`BACKUP_FIRST`).
+Also: the problem report (app link and the repo's issue form) has a
+"Pedal model and firmware" heading.
+
+**Evidence:** suite 156 pass. New or changed tests: the identity-reply
+log line (failed against the old line), both confirmation texts (failed
+until updated to the reminder), the report's model/firmware heading, the
+welcome/Help statement and the works-on link (its URL decoded: GitHub's
+new-issue page, title "Works on: ", body starting with the model and
+firmware heading). Looked at in the built-in browser: welcome note and
+Help text as intended, link opens a new tab, no console errors.
