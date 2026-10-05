@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Drawing of a GP-200 pedal" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a5688"/><stop offset="1" stop-color="#2c4472"/>
+    </linearGradient>
+    <radialGradient id="red-knob" cx=".4" cy=".35" r=".7">
+      <stop offset="0" stop-color="#e2474d"/><stop offset=".7" stop-color="#b8212a"/><stop offset="1" stop-color="#8e1820"/>
+    </radialGradient>
+    <radialGradient id="black-knob" cx=".4" cy=".35" r=".7">
+      <stop offset="0" stop-color="#3a3d42"/><stop offset="1" stop-color="#121315"/>
+    </radialGradient>
+    <linearGradient id="expr" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c32a33"/><stop offset="1" stop-color="#9e1f27"/>
+    </linearGradient>
+    <linearGradient id="led" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c7a35"/><stop offset=".5" stop-color="#5df58a"/><stop offset="1" stop-color="#1c7a35"/>
+    </linearGradient>
+    <linearGradient id="screen-top" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4be37a"/><stop offset=".6" stop-color="#e8d23a"/><stop offset="1" stop-color="#e2453c"/>
+    </linearGradient>
+    <!-- Footswitch caps: lit ones glow from the middle. -->
+    <radialGradient id="sw-red" cx=".5" cy=".45" r=".55">
+      <stop offset="0" stop-color="#ffb3a8"/><stop offset=".35" stop-color="#ff3b30"/><stop offset="1" stop-color="#c3121a"/>
+    </radialGradient>
+    <radialGradient id="sw-green" cx=".5" cy=".45" r=".55">
+      <stop offset="0" stop-color="#3f9c6a"/><stop offset=".6" stop-color="#1f6b45"/><stop offset="1" stop-color="#123f2a"/>
+    </radialGradient>
+    <radialGradient id="sw-yellow" cx=".5" cy=".45" r=".55">
+      <stop offset="0" stop-color="#fbffc2"/><stop offset=".4" stop-color="#eef53c"/><stop offset="1" stop-color="#b9b818"/>
+    </radialGradient>
+    <radialGradient id="sw-navy" cx=".5" cy=".45" r=".55">
+      <stop offset="0" stop-color="#3d55c9"/><stop offset=".6" stop-color="#2236a6"/><stop offset="1" stop-color="#141f6a"/>
+    </radialGradient>
+    <radialGradient id="sw-blue" cx=".5" cy=".45" r=".55">
+      <stop offset="0" stop-color="#9fd0ff"/><stop offset=".5" stop-color="#4a9ae6"/><stop offset="1" stop-color="#2a63b0"/>
+    </radialGradient>
+    <radialGradient id="sw-lit-blue" cx=".5" cy=".45" r=".55">
+      <stop offset="0" stop-color="#6f8cff"/><stop offset=".55" stop-color="#2148e8"/><stop offset="1" stop-color="#4fe0e6"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+    <g id="sw-rings" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="1.5">
+      <circle r="19"/><circle r="12"/><circle r="5" fill="#fff" fill-opacity=".12"/>
+    </g>
+  </defs>
+
+  <!-- Body -->
+  <rect x="10" y="12" width="620" height="398" rx="12" fill="#1d2f52"/>
+  <rect x="10" y="10" width="620" height="394" rx="12" fill="url(#body)"/>
+  <text x="32" y="30" font-size="21" font-weight="900" font-style="italic" fill="#e3e7ee" letter-spacing="1">GP-200</text>
+  <rect x="530" y="30" width="60" height="7" rx="2" fill="#0d1a12"/>
+  <rect x="534" y="32" width="52" height="3" rx="1.5" fill="url(#led)"/>
+
+  <!-- Control panel -->
+  <rect x="30" y="36" width="460" height="158" rx="14" fill="#131517"/>
+  <rect x="38" y="40" width="210" height="112" rx="10" fill="#1c1f23" stroke="#2c3036"/>
+
+  <!-- Screen -->
+  <rect x="48" y="44" width="190" height="94" rx="3" fill="#10202c"/>
+  <rect x="50" y="46" width="186" height="1.5" fill="url(#screen-top)"/>
+  <text x="53" y="56" font-size="5.5" fill="#cfe1ec">EXP1: A  B   |   EXP2: ON   |   BPM: 120   |   Patch VOL: 50</text>
+  <rect x="50" y="60" width="186" height="24" rx="2" fill="#3fb4ea"/>
+  <text x="56" y="78" font-size="15" font-weight="700" fill="#fff">64-D</text>
+  <rect x="99" y="63" width="1.2" height="18" fill="#e8f6fd"/>
+  <text x="168" y="78" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">It's GP-200</text>
+  <g font-size="6" font-weight="700" text-anchor="middle">
+    <rect x="50" y="87" width="44" height="13" rx="2" fill="#d33a44" stroke="#ff7a80"/><text x="72" y="96" fill="#fff">BANK-</text>
+    <rect x="97" y="87" width="44" height="13" rx="2" fill="#d33a44" stroke="#ff7a80"/><text x="119" y="96" fill="#fff">BANK+</text>
+    <rect x="144" y="87" width="44" height="13" rx="2" fill="#d9cd2e" stroke="#f6ee7a"/><text x="166" y="96" fill="#2a2a10">CTRL 1</text>
+    <rect x="191" y="87" width="45" height="13" rx="2" fill="#d9cd2e" stroke="#f6ee7a"/><text x="213" y="96" fill="#2a2a10">CTRL 2</text>
+    <rect x="50" y="103" width="44" height="13" rx="2" fill="#1a2630" stroke="#e8eef2"/><text x="72" y="112" fill="#fff">A</text>
+    <rect x="97" y="103" width="44" height="13" rx="2" fill="#1a2630" stroke="#e8eef2"/><text x="119" y="112" fill="#fff">B</text>
+    <rect x="144" y="103" width="44" height="13" rx="2" fill="#1a2630" stroke="#e8eef2"/><text x="166" y="112" fill="#fff">C</text>
+    <rect x="191" y="103" width="45" height="13" rx="2" fill="#2aa79e" stroke="#7fe3dc"/><text x="213" y="112" fill="#fff">D</text>
+  </g>
+  <g font-size="5" fill="#cfd8de" text-anchor="middle">
+    <rect x="50" y="119" width="60" height="17" rx="2" fill="#2d3c47"/>
+    <circle cx="58" cy="127.5" r="5" fill="none" stroke="#cfd8de" stroke-width=".8"/><circle cx="72" cy="127.5" r="5" fill="#46545e"/><text x="97" y="125">OFF</text><text x="97" y="133">OFF</text>
+    <rect x="113" y="119" width="60" height="17" rx="2" fill="#2d3c47"/>
+    <circle cx="121" cy="127.5" r="5" fill="none" stroke="#cfd8de" stroke-width=".8"/><circle cx="135" cy="127.5" r="5" fill="#46545e"/><text x="160" y="125">OFF</text><text x="160" y="133">OFF</text>
+    <rect x="176" y="119" width="60" height="17" rx="2" fill="#2d3c47"/>
+    <path d="M182 125h3l4-3v11l-4-3h-3z" fill="#cfd8de"/><circle cx="198" cy="127.5" r="5" fill="none" stroke="#4fb3ff" stroke-width="1.6"/><text x="222" y="125">Patch VOL</text><text x="222" y="133">50</text>
+  </g>
+
+  <!-- Knobs under the screen -->
+  <g>
+    <circle cx="72" cy="172" r="17" fill="#0a0b0c" opacity=".6"/><circle cx="70" cy="169" r="16" fill="url(#red-knob)"/>
+    <circle cx="144" cy="172" r="17" fill="#0a0b0c" opacity=".6"/><circle cx="142" cy="169" r="16" fill="url(#red-knob)"/>
+    <circle cx="215" cy="170" r="17" fill="#0a0b0c" opacity=".6"/><circle cx="213" cy="167" r="16" fill="url(#red-knob)"/>
+    <path d="M216 160l-5 10" stroke="#f2f2f2" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Right side of the panel: buttons, tone knobs, big knobs -->
+  <g font-size="5.5" fill="#d3d6db" text-anchor="middle" font-weight="700">
+    <text x="318" y="60">BACK</text><text x="349" y="60">GLOBAL</text><text x="380" y="60">DRUM</text><text x="411" y="60">SAVE</text>
+    <circle cx="318" cy="69" r="5.5" fill="#050506" stroke="#2a2c30"/><circle cx="349" cy="69" r="5.5" fill="#050506" stroke="#2a2c30"/>
+    <circle cx="380" cy="69" r="5.5" fill="#050506" stroke="#2a2c30"/><circle cx="411" cy="69" r="5.5" fill="#050506" stroke="#2a2c30"/>
+    <text x="324" y="111">VOLUME</text><text x="364" y="111">GAIN</text><text x="404" y="111">PRESENCE</text>
+    <text x="324" y="147">BASS</text><text x="364" y="147">MIDDLE</text><text x="404" y="147">TREBLE</text>
+    <text x="446" y="86">MASTER</text>
+  </g>
+  <g stroke="#f2f2f2" stroke-width="1.6" stroke-linecap="round">
+    <circle cx="324" cy="92" r="10.5" fill="url(#black-knob)" stroke="#2c2e33" stroke-width="1"/><path d="M324 92l3-8"/>
+    <circle cx="364" cy="92" r="10.5" fill="url(#black-knob)" stroke="#2c2e33" stroke-width="1"/><path d="M364 92l3-8"/>
+    <circle cx="404" cy="92" r="10.5" fill="url(#black-knob)" stroke="#2c2e33" stroke-width="1"/><path d="M404 92l1-9"/>
+    <circle cx="324" cy="128" r="10.5" fill="url(#black-knob)" stroke="#2c2e33" stroke-width="1"/><path d="M324 128l1-9"/>
+    <circle cx="364" cy="128" r="10.5" fill="url(#black-knob)" stroke="#2c2e33" stroke-width="1"/><path d="M364 128l2-9"/>
+    <circle cx="404" cy="128" r="10.5" fill="url(#black-knob)" stroke="#2c2e33" stroke-width="1"/><path d="M404 128l2-9"/>
+  </g>
+  <circle cx="284" cy="111" r="19" fill="#0a0b0c" opacity=".6"/><circle cx="282" cy="108" r="18" fill="url(#red-knob)"/>
+  <circle cx="448" cy="111" r="19" fill="#0a0b0c" opacity=".6"/><circle cx="446" cy="108" r="18" fill="url(#red-knob)"/>
+  <path d="M449 99l-4 8" stroke="#f2f2f2" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Effect buttons -->
+  <g font-size="5" fill="#7d838a" text-anchor="middle" font-weight="700">
+    <rect x="252" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="261" y="175">PRE</text>
+    <rect x="274" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="283" y="175">WAH</text>
+    <rect x="296" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="305" y="175">DST</text>
+    <rect x="318" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="327" y="175">AMP</text>
+    <rect x="340" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="349" y="175">NR</text>
+    <rect x="362" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="371" y="175">CAB</text>
+    <rect x="384" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="393" y="175">EQ</text>
+    <rect x="406" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="415" y="175">MOD</text>
+    <rect x="428" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="437" y="175">DLY</text>
+    <rect x="450" y="165" width="18" height="16" rx="3" fill="#1d1f22" stroke="#33363b"/><text x="459" y="175">RVB</text>
+  </g>
+
+  <!-- Footswitch labels -->
+  <g fill="#e2e6ee">
+    <text x="120" y="290" font-size="17" text-anchor="middle" letter-spacing="1.5">BANK</text>
+    <path d="M49 277h18l-9 15z" fill="none" stroke="#e2e6ee" stroke-width="1.3"/><path d="M55 282h6" stroke="#e2e6ee" stroke-width="1.3"/>
+    <path d="M173 292h18l-9-15z" fill="none" stroke="#e2e6ee" stroke-width="1.3"/><path d="M179 287h6M182 284v6" stroke="#e2e6ee" stroke-width="1.3"/>
+    <text x="282" y="290" font-size="17" letter-spacing="1">CTRL</text>
+    <text x="332" y="290" font-size="6">HOLD FOR LOOPER</text>
+    <text x="406" y="290" font-size="17" letter-spacing="1">TAP</text>
+    <text x="445" y="290" font-size="6">HOLD FOR TUNER</text>
+    <g font-size="30" font-weight="300" text-anchor="middle">
+      <text x="58" y="335">A</text><text x="182" y="335">B</text><text x="306" y="335">C</text><text x="430" y="335">D</text>
+    </g>
+  </g>
+
+  <!-- Footswitches: glow for the lit ones, then the cap -->
+  <circle cx="58" cy="244" r="30" fill="#ff2a20" opacity=".55" filter="url(#glow)"/>
+  <circle cx="306" cy="244" r="30" fill="#e8f53a" opacity=".55" filter="url(#glow)"/>
+  <circle cx="430" cy="244" r="30" fill="#e8f53a" opacity=".55" filter="url(#glow)"/>
+  <circle cx="430" cy="370" r="30" fill="#47d8ff" opacity=".45" filter="url(#glow)"/>
+  <g>
+    <circle cx="60" cy="248" r="27" fill="#14223f"/><circle cx="58" cy="244" r="26" fill="url(#sw-red)"/><use href="#sw-rings" x="58" y="244"/>
+    <circle cx="184" cy="248" r="27" fill="#14223f"/><circle cx="182" cy="244" r="26" fill="url(#sw-green)"/><use href="#sw-rings" x="182" y="244"/>
+    <circle cx="308" cy="248" r="27" fill="#14223f"/><circle cx="306" cy="244" r="26" fill="url(#sw-yellow)"/><use href="#sw-rings" x="306" y="244"/>
+    <circle cx="432" cy="248" r="27" fill="#14223f"/><circle cx="430" cy="244" r="26" fill="url(#sw-yellow)"/><use href="#sw-rings" x="430" y="244"/>
+    <circle cx="60" cy="374" r="27" fill="#14223f"/><circle cx="58" cy="370" r="26" fill="url(#sw-navy)"/><use href="#sw-rings" x="58" y="370"/>
+    <circle cx="184" cy="374" r="27" fill="#14223f"/><circle cx="182" cy="370" r="26" fill="url(#sw-blue)"/><use href="#sw-rings" x="182" y="370"/>
+    <circle cx="308" cy="374" r="27" fill="#14223f"/><circle cx="306" cy="370" r="26" fill="url(#sw-blue)"/><use href="#sw-rings" x="306" y="370"/>
+    <circle cx="432" cy="374" r="27" fill="#14223f"/><circle cx="430" cy="370" r="26" fill="url(#sw-lit-blue)"/><use href="#sw-rings" x="430" y="370"/>
+  </g>
+
+  <!-- Expression pedal: wide toe, a step on the left, narrower heel; raised
+       plates separated by angled grooves. Drawn 92 wide, stretched so its top
+       is as wide as the footswitch spacing (developer, 2026-10-05). -->
+  <g transform="matrix(1.326 0 0 1 -200.8 0)">
+  <clipPath id="expr-inner"><path vector-effect="non-scaling-stroke" d="M533 74q0-6 6-6h70q4 0 4 4v312q0 5-5 5h-58q-5 0-5-5v-98l-12-14z"/></clipPath>
+  <path vector-effect="non-scaling-stroke" d="M527 72q0-10 10-10h74q8 0 8 9v318q0 8-8 8h-66q-8 0-8-8v-96l-12-14z" fill="#141f38" transform="translate(3 4)"/>
+  <path vector-effect="non-scaling-stroke" d="M527 72q0-10 10-10h74q8 0 8 9v318q0 8-8 8h-66q-8 0-8-8v-96l-12-14z" fill="url(#expr)" stroke="#7e161d" stroke-width="1.5"/>
+  <path vector-effect="non-scaling-stroke" d="M533 74q0-6 6-6h70q4 0 4 4v312q0 5-5 5h-58q-5 0-5-5v-98l-12-14z" fill="none" stroke="#7e161d" stroke-width="1.5"/>
+  <g clip-path="url(#expr-inner)" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <g stroke="#7e161d" stroke-width="2.6"><g id="grooves">
+      <path vector-effect="non-scaling-stroke" d="M520 96L560 80L590 102L625 86M560 80L556 60"/>
+      <path vector-effect="non-scaling-stroke" d="M520 134L548 144L575 122L625 154M575 122L590 102"/>
+      <path vector-effect="non-scaling-stroke" d="M520 176L565 164L600 190L625 180M565 164L548 144"/>
+      <path vector-effect="non-scaling-stroke" d="M520 218L552 230L585 204L625 226M585 204L600 190"/>
+      <path vector-effect="non-scaling-stroke" d="M520 262L570 250L600 274L625 266M570 250L552 230"/>
+      <path vector-effect="non-scaling-stroke" d="M520 308L560 298L590 322L625 302M560 298L600 274"/>
+      <path vector-effect="non-scaling-stroke" d="M520 350L548 362L582 338L625 364M582 338L590 322M548 362L556 400"/>
+    </g></g>
+    <use href="#grooves" stroke="#dc4b53" stroke-width="1" transform="translate(0 2)" opacity=".7"/>
+  </g>
+  </g>
+</svg>

@@ -160,13 +160,3 @@ button.big { font-size: 18px; padding: 10px 26px; border-radius: 6px; margin-top
 .connected-note { color: var(--ok); font-weight: 500; }
 .connected-note a { color: var(--fg); }
 .pedal-art { width: 100%; height: auto; margin-top: 18px; }
-.pedal-art .body { fill: #2a2e2d; stroke: var(--line); stroke-width: 1.5; }
-.pedal-art .screen { fill: #12323d; stroke: #4a5250; }
-.pedal-art .screen-line { fill: #6cb8d3; }
-.pedal-art .screen-line.dim { fill: #3d7488; }
-.pedal-art .knob circle { fill: #474d4b; stroke: #646b68; stroke-width: 2; }
-.pedal-art .knob-mark path { stroke: #d7dbd8; stroke-width: 2.5; stroke-linecap: round; fill: none; }
-.pedal-art .led circle { fill: var(--accent); }
-.pedal-art .switch circle { fill: #b9bfbc; stroke: #7d8481; stroke-width: 3; }
-.pedal-art .expr { fill: #383d3b; stroke: #555c59; stroke-width: 1.5; }
-.pedal-art .tread path { stroke: #2a2e2d; stroke-width: 4; stroke-linecap: round; }

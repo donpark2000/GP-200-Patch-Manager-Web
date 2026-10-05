@@ -37,12 +37,13 @@ test("stamp-site: the real pages point into v/<stamp>/ and every file is there",
   const r = stampSite(site, "abc1234");
   assert.deepEqual(r.problems, []);
   assert.equal(r.pages, 2);
-  assert.equal(r.refs, 4, "app.css, app.js, testpage.css, testpage.js");
+  assert.equal(r.refs, 5, "app.css, app.js, pedal.svg, testpage.css, testpage.js");
   assert.equal(existsSync(join(site, "src")), false, "src/ moved, not copied");
   assert.equal(existsSync(join(site, "v/abc1234/src/core/slots.js")), true);
   const index = readFileSync(join(site, "index.html"), "utf8");
   assert.match(index, /<script type="module" src="v\/abc1234\/src\/ui\/app\.js"><\/script>/);
   assert.match(index, /href="v\/abc1234\/src\/ui\/app\.css"/);
+  assert.match(index, /<img class="pedal-art" src="v\/abc1234\/src\/ui\/pedal\.svg"/);
   assert.match(index, /href="#home"/, "in-page links unchanged");
   assert.match(index, /href="https:\/\/gp200studio\.com\/"/, "other sites unchanged");
   assert.match(readFileSync(join(site, "test.html"), "utf8"), /href="\.\/"/, "the test page's link home unchanged");
@@ -119,6 +120,19 @@ test("index.html: Valeton's editor may stay open; closing it is only a troublesh
   assert.match(quick, /reload the patches in the other tool/);
   assert.doesNotMatch(html, /only one program can use the pedal at a time/);
   assert.match(help, /Pedal not found:<\/b>[^<]*close Valeton's editor[\s\S]*?on\s+some computers/);
+});
+
+test("index.html: the welcome page's pedal drawing exists, loads nothing from outside, and has no Valeton name", () => {
+  const html = readFileSync(join(REPO, "index.html"), "utf8");
+  const section = html.slice(html.indexOf('id="scr-connect"'), html.indexOf("</section>", html.indexOf('id="scr-connect"')));
+  const img = section.match(/<img class="pedal-art" src="([^"]+)" alt="([^"]+)"/);
+  assert.ok(img, "the drawing is on the welcome page, with alt text");
+  assert.ok(img[1].startsWith("src/"), "under src/, so the publish stamp moves it with the code");
+  const svg = readFileSync(join(REPO, img[1]), "utf8");
+  assert.match(svg, /^<svg [^>]*viewBox="0 0 640 420"/);
+  assert.doesNotMatch(svg, /valeton/i);
+  const outside = [...svg.matchAll(/(?:href|src)="(?!#)([^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(outside, [], "only references inside the file");
 });
 
 test("index.html: Help explains why a template is useful, then how", () => {

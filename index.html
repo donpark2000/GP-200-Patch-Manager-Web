@@ -52,24 +52,9 @@
     <p class="note">Works in Chrome and Edge on a computer. The browser will ask to allow MIDI access: choose Allow.
       Questions? See <a href="#help">Help</a>.</p>
   </div>
-  <!-- Placeholder drawing, not a photo (developer, 2026-10-02: photos of the
-       developer's own pedal later). Colours follow the page's theme. -->
-  <svg class="pedal-art" viewBox="0 0 400 200" role="img" aria-label="Drawing of a GP-200 pedal">
-    <rect class="body" x="4" y="14" width="392" height="176" rx="14"/>
-    <rect class="screen" x="104" y="32" width="104" height="58" rx="4"/>
-    <rect class="screen-line" x="114" y="44" width="54" height="7" rx="2"/>
-    <rect class="screen-line dim" x="114" y="58" width="80" height="5" rx="2"/>
-    <rect class="screen-line dim" x="114" y="70" width="64" height="5" rx="2"/>
-    <g class="knob"><circle cx="38" cy="50" r="13"/><circle cx="76" cy="50" r="13"/>
-      <circle cx="236" cy="50" r="13"/><circle cx="270" cy="50" r="13"/></g>
-    <g class="knob-mark"><path d="M38 50V39M76 50l7-8M236 50l-7-8M270 50V39"/></g>
-    <g class="led"><circle cx="48" cy="122" r="3.5"/><circle cx="114" cy="122" r="3.5"/>
-      <circle cx="180" cy="122" r="3.5"/><circle cx="246" cy="122" r="3.5"/></g>
-    <g class="switch"><circle cx="48" cy="156" r="17"/><circle cx="114" cy="156" r="17"/>
-      <circle cx="180" cy="156" r="17"/><circle cx="246" cy="156" r="17"/></g>
-    <rect class="expr" x="300" y="28" width="82" height="150" rx="10"/>
-    <g class="tread"><path d="M314 50h54M314 66h54M314 82h54M314 98h54M314 114h54M314 130h54M314 146h54M314 162h54"/></g>
-  </svg>
+  <!-- Drawn from a photo of the developer's own pedal (2026-10-05); the
+       Valeton name is left off, as the app isn't Valeton's. -->
+  <img class="pedal-art" src="src/ui/pedal.svg" alt="Drawing of a GP-200 pedal" width="640" height="420">
   </section>
 
   <section id="scr-backup" aria-label="Back up">
@@ -186,7 +171,8 @@
       <li>your preferred wah;</li>
       <li>your noise gate, and where it sits in the chain;</li>
       <li>where the effects loop's send and return go in the chain;</li>
-      <li>what the switches do: say, CTRL 1 turns the distortion on and off, and CTRL 2 the modulation.</li>
+      <li>what the switches do (for example, you could assign CTRL 1 to the distortion module and CTRL 2 to the
+        modulation module, and choose the initial state of each as "on" or "off").</li>
     </ul>
     <p>Write it into the slots you'll use for new sounds, and every new patch starts with those choices already
       made. You design the sound; the parts you rely on stay where you expect them.</p>

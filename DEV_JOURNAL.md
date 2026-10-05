@@ -2425,3 +2425,38 @@ in the welcome page, Quick start and troubleshooting, and no "only one
 program can use the pedal at a time"; the Templates section has the
 why before "How it works"). Both new tests failed against the previous
 `index.html`. Help looked at in the built-in browser.
+
+## 2026-10-05: Final localhost look; pedal drawing; Help wording
+
+The developer ran the designed UI on localhost before publishing, mainly
+for the interface ("very confident in the pedal control"). Claude had
+pointed out first that no hardware run of the designed UI is recorded
+(the last real compares are the test page's and the live site's, Oct
+1-2); the developer chose a localhost check rather than a full repeat
+of the 2026-10-02 plan. Their verdict: "Almost perfect", two changes.
+
+- **Help, Templates:** the CTRL example now reads "what the switches do
+  (for example, you could assign CTRL 1 to the distortion module and
+  CTRL 2 to the modulation module, and choose the initial state of each
+  as "on" or "off")" (developer's wording, typo and spacing fixed).
+- **Pedal drawing** (`src/ui/pedal.svg`) replaces the placeholder on the
+  welcome page. Drawn by hand as SVG from the developer's photo
+  (`Downloads\GP-200.JPG`, taken at an angle), not a filtered photo: no
+  image tools are installed, and the developer asked for "a drawing
+  instead of a bad photo". Photo positions were mapped onto a
+  straightened outline (inverse bilinear from the body's four corners),
+  then adjusted by eye. Only the pedal; no Valeton name or logo, and no
+  "X" after GP-200 (the app isn't Valeton's). Developer's correction:
+  the footswitches are equally spaced and the expression pedal's top is
+  about as wide as that spacing; the angle had squeezed both. Now 124
+  apart, pedal stretched to match (`matrix(1.326 ...)`, lines kept at
+  their width with `non-scaling-stroke`).
+  An `<img>` under `src/`, so the publish stamp moves it with the code.
+
+**Evidence:** suite 150 pass. New test in `site.test.js`: the welcome
+page shows the drawing with alt text, from under `src/`; the file has
+the expected `viewBox`, no "Valeton", and no outside references. It
+failed on a broken `viewBox` and on "VALETON" put into the drawing. The
+stamp test failed as it should when the drawing added a fifth reference
+(4 expected); it now expects 5 and checks the drawing's new path.
+Looked at in the built-in browser at 1,300 px, dark theme.
