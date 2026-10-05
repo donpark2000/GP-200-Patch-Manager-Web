@@ -2606,6 +2606,6 @@ Supersedes the status entries above.
 3. The laptop: look at the site, one backup compare.
 
 **Next:** those checks, then anything the developer wants next (e.g. the
-pedal photo variants, the CLI speed-up backport idea, journal 2026-10-02).
+CLI speed-up backport idea, journal 2026-10-02).
 Session folder `GP-200-testing\2026-10-05_designed-ui\` is empty: OK to
 purge (ask).
