@@ -25,6 +25,12 @@ body:
       description: What you saw, including any message on the screen, and what you expected instead.
     validations:
       required: true
+  - type: input
+    id: pedal
+    attributes:
+      label: Pedal model and firmware
+      description: The app can't read these from the pedal.
+      placeholder: e.g. GP-200, firmware 1.8.0
   - type: textarea
     id: log
     attributes:

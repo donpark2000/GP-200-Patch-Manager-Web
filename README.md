@@ -6,20 +6,35 @@ patches** over USB-MIDI. It's the web companion to the command-line
 
 **Open the app: <https://donpark2000.github.io/GP-200-Patch-Manager-Web/>**
 
-**Status: test build.** Backup and restore are verified on real hardware:
-full-pedal round trips kept every patch exactly, and a full restore of all
-256 slots takes about 30 seconds. It writes to the pedal only after you
-confirm. So far tested on one computer; a second is next.
+**Tested with one pedal: a GP-200 on firmware 1.8.0.** Other firmware
+versions and the other pedals in the GP-200 family (such as the GP-200LT
+and GP-200JR, which are said to use the same patch files) haven't been
+tested: use it with them at your own risk, and **back up before writing
+anything**. If you try it with another model or firmware, please say how it
+went, whether it worked or not, by opening an
+[issue](https://github.com/donpark2000/GP-200-Patch-Manager-Web/issues/new)
+with your pedal's model and firmware (the app can't read them).
 
-- Runs in **Chrome or Edge** on Windows, macOS, or Linux. Safari isn't
-  supported, because it has no Web MIDI.
-- Nothing to install. Connect the GP-200 by USB, open the page, and allow
-  MIDI access when the browser asks.
-- **Back up** exports one slot as a `.prst` or several as a `.zip`, each
-  file named after its slot and patch (e.g. `34A_Clean.prst`).
-  **Restore** writes `.prst` files or a `.zip` to consecutive slots from a
-  starting slot, shows what will be replaced, and checks every patch by
-  reading it back.
+On the developer's pedal, full-pedal round trips kept every patch exactly,
+and a full restore of all 256 slots takes about 30 seconds.
+
+- Runs in **Chrome or Edge** on a Windows, macOS, or Linux computer.
+  Firefox, Safari and phones/tablets can't reach the pedal (no Web MIDI).
+- Nothing to install, and nothing is sent anywhere: your patches stay on
+  your computer. Connect the GP-200 by USB, open the page, and allow MIDI
+  access when the browser asks.
+- The list shows all 256 patches on the pedal. Choose slots by dragging
+  across the list, clicking the first and last, or typing them in.
+- **Back up** saves one slot as a `.prst` or several as a `.zip`, each file
+  named after its slot and patch (e.g. `34A_Clean.prst`).
+- **Restore** writes `.prst` files or a `.zip` to consecutive slots from a
+  starting slot.
+- **Template** writes one `.prst` into a range of slots, by default only
+  into empty ones ("It's GP-200"), as a starting point for new patches.
+- Every write shows what will be replaced, asks you to confirm, and is
+  checked by reading the patch back. Your own IRs and NAM captures aren't
+  in a backup, only the slot each patch uses (see Help).
+- Problems: in the app, Help > Report a problem.
 
 This isn't a patch editor. If you want to create or edit patches, look at
 [GP200 Studio](https://gp200studio.com/), a full editor
@@ -50,9 +65,11 @@ text is copied here.
 - The protocol itself is documented in the CLI repo's `PROTOCOL.md` and
   `PROTOCOL_NOTES.md`.
 
-Layout: `src/core/` is the protocol (no UI code), `src/ui/` the pages
-(`index.html` the app, `test.html` the developer test page),
-`tests/` the Node test suite with a fake pedal, `tools/` helper scripts.
+Layout: `src/core/` is the protocol (no UI code), `src/ui/` the pages'
+code (`index.html` is the app; `test.html`, the developer test page that
+first proved the core on hardware, is kept for local use and not
+published), `tests/` the Node test suite with a fake pedal, `tools/`
+helper scripts.
 
 Run the tests (Node.js 20 or newer, no packages to install):
 
@@ -78,7 +95,8 @@ node tools/compare-zips.js backup.zip gp200_all_patches.zip
 
 Publishing: CI runs the tests on every pull request, and publishes the site
 to GitHub Pages only from `main`. Work on a branch; merging to `main` is
-the publish step. Add `?dev` to the page address for the developer tools.
+the publish step. Add `?dev` to the page address for the developer tools,
+and `?dev&fake` (localhost only) to use the test suite's fake pedal.
 
 ## License
 

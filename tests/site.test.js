@@ -151,6 +151,24 @@ test("index.html: Help explains choosing slots: drag, click, type, Restore's sta
     assert.match(t, want);
 });
 
+test("index.html: tested model and firmware stated on the welcome page and in Help, with a way to report success", () => {
+  const html = readFileSync(join(REPO, "index.html"), "utf8");
+  const section = (id) => html.slice(html.indexOf(`id="${id}"`), html.indexOf("</section>", html.indexOf(`id="${id}"`)));
+  assert.match(section("scr-connect"), /Tested with a GP-200 on firmware 1\.8\.0; other models and firmware at your own risk/);
+  const help = section("scr-help");
+  const i = help.indexOf("<h2>Which pedals and firmware?</h2>");
+  assert.ok(i > 0);
+  const t = help.slice(i, help.indexOf("<h2>", i + 1));
+  assert.match(t, /firmware 1\.8\.0/);
+  assert.match(t, /at your own risk, and back up before writing anything/);
+  const link = t.match(/<a href="([^"]+)"[^>]*>tell us it worked<\/a>/);
+  assert.ok(link, "a link to report that it worked");
+  const u = new URL(link[1].replaceAll("&amp;", "&"));
+  assert.equal(`${u.origin}${u.pathname}`, "https://github.com/donpark2000/GP-200-Patch-Manager-Web/issues/new");
+  assert.equal(u.searchParams.get("title"), "Works on: ");
+  assert.match(u.searchParams.get("body"), /^### Pedal model and firmware\n/);
+});
+
 test("index.html: Help explains why a template is useful, then how", () => {
   const html = readFileSync(join(REPO, "index.html"), "utf8");
   const help = html.slice(html.indexOf('id="scr-help"'), html.indexOf("</section>", html.indexOf('id="scr-help"')));

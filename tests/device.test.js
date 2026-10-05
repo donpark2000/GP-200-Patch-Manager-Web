@@ -30,7 +30,8 @@ test("connect: handshake sends identity query then enter-editor-mode", async () 
   const { pedal, log, dev } = setup();
   await dev.connect();
   assert.deepEqual(pedal.sent.map((m) => m[9]), [0x04, 0x12]);
-  assert.ok(log.lines.some((l) => l.includes("answered the identity query")));
+  assert.ok(log.lines.some((l) => l.includes("answered the identity query: f0 21 25 7e 47 50 2d 32 12 08")),
+    "the whole reply is logged, for support (it carries no firmware version)");
 });
 
 test("connect: a silent pedal only warns (reads don't need the handshake)", async () => {

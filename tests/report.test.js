@@ -27,6 +27,7 @@ test("the issue link: GitHub's new-issue form with the details filled in", () =>
   assert.equal(d.title, "Problem: ");
   assert.equal(d.body, issueText(info).body, "the body survives the link unchanged");
   assert.match(d.body, /^### What I was doing\n\n\n### What happened\n/);
+  assert.match(d.body, /### Pedal model and firmware\ne\.g\. GP-200, firmware 1\.8\.0 \(the app can't read these from the pedal\)\n/);
   assert.match(d.body, /Drag the log file you saved \(gp200_web_2026-10-02T19-30-00\.log\) into this box/);
   assert.match(d.body, /this issue is public/);
   assert.match(d.body, /- App version: abc1234 \(2026-10-02\)\n- Browser: Google Chrome 141 on Windows\n/);

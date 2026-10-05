@@ -2605,7 +2605,63 @@ Supersedes the status entries above.
 2. GitHub's own "New issue" page offers the "Problem report" form.
 3. The laptop: look at the site, one backup compare.
 
-**Next:** those checks, then anything the developer wants next (e.g. the
-CLI speed-up backport idea, journal 2026-10-02).
+**Next:** those checks, then anything the developer wants next. The CLI
+speed-up backport (journal 2026-10-02) is not wanted for now (developer,
+2026-10-05).
+
+**Update, same day:** the developer checked #7 on the live site (both
+changes good) and ran backups and writes from it: both work. Before
+sharing the site with the GP-200 Facebook group, Claude's suggestions
+are in the next entry.
 Session folder `GP-200-testing\2026-10-05_designed-ui\` is empty: OK to
 purge (ask).
+
+## 2026-10-05: Before sharing the site: tested-with statement, backup reminder
+
+The developer plans to share the site with the GP-200 Facebook group,
+saying it was tested only with their pedal and that every write should
+follow a backup. Claude suggested five things; the developer agreed to
+all, and added: say it was tested on firmware 1.8.0, other Valeton
+pedals untested, "use at your own risk, but please let me know if you try
+it and it works".
+
+**Finding: the app can't read the firmware or the model.** Claude had
+proposed logging the firmware from the identity reply. GP200 Studio's
+source (facts only, read on GitHub 2026-10-05): its
+`parseIdentityResponse` notes that the reply's bytes 22 and 26 read "1.2"
+whatever the firmware (probably a protocol version) and that the
+firmware isn't sent in the identity reply; its own firmware check
+(`sub=0x0A`) only checks that a reply arrived. Its `deviceModel.ts` says
+the GP-200, R, X, JR and LT write the same 1224-byte `.prst` and speak
+the same SysEx (the LT has 4 CTRL footswitches instead of 8), and that
+the model isn't auto-detected: no capture from an LT shows its
+`deviceType` byte (byte 18; 0x04 in its GP-200 capture). Its tested
+firmware list is `['1.8']`. So the model and firmware are stated, not
+detected, and a block on other models isn't possible (nor wanted:
+warn, don't block).
+
+**Done:**
+1. README: "Status: test build" replaced by the tested-with statement
+   (GP-200, firmware 1.8.0; others at own risk; back up first; please
+   report how it went), the screens (Template, choosing slots), "nothing
+   is sent anywhere", the IR/NAM note, `test.html` described as not
+   published, `?dev&fake`.
+2. Welcome page note and Help "Which pedals and firmware?": the same
+   statement; a "tell us it worked" link opens a prefilled public issue
+   ("Works on: ", headings for model and firmware, what was tried,
+   anything wrong).
+3. The identity reply is logged whole on connect (`device.js`), so a
+   report from another model shows what its pedal answered.
+4. Test issue #5 closed with a note.
+5. Restore and Template confirmations end with "If you haven't already,
+   back up these slots first (Back up screen)." (`BACKUP_FIRST`).
+Also: the problem report (app link and the repo's issue form) has a
+"Pedal model and firmware" heading.
+
+**Evidence:** suite 156 pass. New or changed tests: the identity-reply
+log line (failed against the old line), both confirmation texts (failed
+until updated to the reminder), the report's model/firmware heading, the
+welcome/Help statement and the works-on link (its URL decoded: GitHub's
+new-issue page, title "Works on: ", body starting with the model and
+firmware heading). Looked at in the built-in browser: welcome note and
+Help text as intended, link opens a new tab, no console errors.

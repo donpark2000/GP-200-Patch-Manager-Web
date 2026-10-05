@@ -207,6 +207,16 @@ to be designed.
     use cases: new sounds from the template, a block set up for a gig,
     and clearing a range with an exported empty ("It's GP-200") patch and
     "Every slot".
+- **Tested with one pedal, said plainly** (developer, 2026-10-05, before
+  sharing the site): the welcome page, Help ("Which pedals and firmware?")
+  and the README say it was tested with a GP-200 on firmware 1.8.0, and
+  other models and firmware are at the user's own risk, back up first.
+  **Warn, don't block:** the app can't tell the model or firmware from
+  the pedal (journal 2026-10-05), and the developer wants people to try
+  it and say whether it worked; Help has a "tell us it worked" link (a
+  prefilled GitHub issue) and the problem report asks for the model and
+  firmware. The identity reply is logged whole. Both write confirmations
+  end with a reminder to back up first.
 - **Other GP-200 tools may stay open** (developer, 2026-10-03, from
   testing with Valeton's editor open): Help says not to use them while
   this app reads or writes, and to reload their patches after a restore
