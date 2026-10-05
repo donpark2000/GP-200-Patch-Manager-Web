@@ -2460,3 +2460,25 @@ failed on a broken `viewBox` and on "VALETON" put into the drawing. The
 stamp test failed as it should when the drawing added a fifth reference
 (4 expected); it now expects 5 and checks the drawing's new path.
 Looked at in the built-in browser at 1,300 px, dark theme.
+
+## 2026-10-05: Watermark tried and left out
+
+The developer suggested the pedal drawing as a faint, angled watermark
+behind the other screens. Tried on localhost, three versions:
+
+1. The colour drawing, grey (`grayscale`), 7% then 12%, turned 30 then
+   20 degrees, fixed behind the page. Light theme: visible. Dark theme:
+   "a very light grey box, no details" (developer), even inverted: the
+   drawing is mostly dark blue, so in grey it has little contrast.
+2. Fixed below the headers (top 210 px): the list starts at a different
+   height on each screen (Back up 193 px, Restore 234, Template 288 at
+   1,300 px), so it ran into the Template controls; and the blue "will
+   be saved" cells cover the whole Back up list, hiding anything behind.
+3. **Outlines only** (`pedal-outline.svg`, turned 20 degrees in the file),
+   used as a CSS `mask` painted with `var(--fg)` at 16%, as `.list::after`
+   (absolutely placed, so not a grid item): exactly the list's area, over
+   the cells, light lines in the dark theme. Developer: "Much better".
+
+**Decision (developer):** leave it out for now; the colour drawing stays
+on the welcome page only. Nothing of it is committed. To bring it back,
+version 3 is the one to rebuild.
