@@ -1,7 +1,23 @@
 # Notes for Claude
 
-Read `DESIGN.md` (decisions) and `DEV_JOURNAL.md` (reasoning, findings,
-open questions) before starting work.
+## Starting a session
+
+Do this at the start of every session, before anything else, without
+being asked (the developer's first message may just be "start"):
+
+1. Load the `software-project-standards` skill.
+2. Read `DESIGN.md` (decisions). In `DEV_JOURNAL.md` (reasoning, findings),
+   read the "Open questions" section and the **latest "Status (start here
+   next session)" entry**; the journal is long, so read older entries only
+   when a task needs them.
+3. Check `git status` and that the branch matches GitHub (`git fetch`).
+4. Reply with a short summary: where things stand, the next step, and
+   anything needed from the developer. Then wait for the go-ahead.
+5. Name the session in the sidebar as `<Mon D> · <topic>` (e.g. "Oct 2 ·
+   Designed UI: build"), once the developer's go-ahead makes the topic
+   clear, so sessions can be told apart (they all start as "start").
+   Rename it if the work changes a lot; the status entry's topic is a
+   good final name.
 
 ## Working standards
 
@@ -30,9 +46,10 @@ this is the short version:
   unless `DESIGN.md` says otherwise.
 - Keep `src/core/` free of DOM/UI code.
 - Plain JavaScript ES modules, no build step.
-- Never write to the pedal outside the phase 2 restore feature, and never
-  without the user's confirmation in the app. One exception: the
-  developer-only write-timing test (`?dev`, `src/core/tuning.js`), which
+- Never write to the pedal outside the phase 2 restore feature and the
+  Template screen (developer, 2026-10-02), and never without the user's
+  confirmation in the app. One exception: the
+  developer-only write-timing test (`test.html?dev`, `src/core/tuning.js`), which
   may write only to the scratch slots 64A-64D, also after confirmation.
 
 ## Files: repo vs. test output vs. backups

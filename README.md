@@ -22,8 +22,8 @@ confirm. So far tested on one computer; a second is next.
   reading it back.
 
 This isn't a patch editor. If you want to create or edit patches, look at
-[GP200 Studio](https://github.com/kabir0st/gp200-studio), a full editor;
-this tool covers the narrower job of backing up and restoring whole banks.
+[GP200 Studio](https://gp200studio.com/), a full editor
+([source](https://github.com/kabir0st/gp200-studio)); this tool covers the narrower job of backing up and restoring whole banks.
 
 ## Credits
 
@@ -50,7 +50,8 @@ text is copied here.
 - The protocol itself is documented in the CLI repo's `PROTOCOL.md` and
   `PROTOCOL_NOTES.md`.
 
-Layout: `src/core/` is the protocol (no UI code), `src/ui/` the page,
+Layout: `src/core/` is the protocol (no UI code), `src/ui/` the pages
+(`index.html` the app, `test.html` the developer test page),
 `tests/` the Node test suite with a fake pedal, `tools/` helper scripts.
 
 Run the tests (Node.js 20 or newer, no packages to install):

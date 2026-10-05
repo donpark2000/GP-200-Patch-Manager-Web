@@ -1,0 +1,42 @@
+# The form for a new issue opened on GitHub directly. The app's "Report a
+# problem" button (Help) fills in a plain issue with the same headings
+# instead, since a link can't fill a form's fields reliably; blank issues
+# stay enabled for it (config.yml).
+name: Problem report
+description: Something in GP-200 Patch Manager didn't work as expected.
+title: "Problem: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Tip: in the app, Help > **Report a problem** fills in most of this for you.
+        Issues are public, so don't include anything private.
+  - type: textarea
+    id: doing
+    attributes:
+      label: What I was doing
+      description: Which screen (Back up, Restore, Template), which slots, which files.
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What you saw, including any message on the screen, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: In the app, Help > Save log, then drag the file here. It lists your patch names.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: At the bottom of the app's page.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and computer
+      placeholder: e.g. Chrome on Windows 11

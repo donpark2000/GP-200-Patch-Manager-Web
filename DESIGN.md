@@ -21,14 +21,21 @@ not a patch editor.
 - **Supported browsers: Chrome and Edge** (any desktop OS). Safari has no
   Web MIDI, and Firefox's permission flow is awkward. Other community GP-200
   web tools have the same limitation, and users are used to it.
+  iPhone/iPad: unsupported in any browser (confirmed 2026-10-02, Edge on
+  iPhone). Android: untested.
 - **Published from `main` only.** CI tests every pull request and
   publishes to GitHub Pages only on `main`, stamping the commit into the
   page. Work happens on branches; merging to `main` is the deliberate
   publish step, done with the developer's OK.
+- **A folder per publish** (journal, Q7): the published copy keeps the
+  code in `v/<commit>/src/` and the pages point there
+  (`tools/stamp-site.js`, run by CI). Browsers may reuse a cached file for
+  10 minutes, and this way an old cached page can never get newer files.
+  The repo and localhost keep the plain `src/`.
 - **Plain JavaScript (ES modules), no build step.** What's in the repo is
   what's served. Unit tests run under Node without a bundler.
 - **A downloadable single-file build is a maybe.** It depends on whether
-  Web MIDI SysEx works from a `file://` page (open question in the journal).
+  Web MIDI SysEx works from a `file://` page; untested, parked (journal, Q3).
 
 ## Relationship to the CLI
 
@@ -44,10 +51,10 @@ not a patch editor.
 
 ## Credit and licensing
 
-Protocol knowledge that came from other projects is credited wherever it's
-used: in the README, in the source file that implements it, and in the
-page's footer, since that's what users actually see. The CLI's rules carry
-over unchanged:
+Protocol knowledge that came from other projects is credited in the
+README and in the source file that implements it. Not in the page's
+footer (developer, 2026-10-02: the README is enough); the footer keeps the
+copyright and GPL-3.0 notice. The CLI's rules carry over unchanged:
 
 - **GP200 Studio** (GPL-3.0): the SysEx message formats and `.prst`
   layout were ported from it (via the CLI). Credit by name, with a link.
@@ -55,7 +62,7 @@ over unchanged:
 - **RigSheet** (all rights reserved): read-only cross-check only.
   Independently confirmed *facts* may be used and credited; RigSheet's code
   and text are never copied. Credited for the upload addressing (in the
-  write code, the README and the page footer), but **not recommended** as
+  write code and the README), but **not recommended** as
   a tool (developer, 2026-10-02: its UI is too hard to follow). GP200
   Studio is the only editor the README and page point users to.
 
@@ -66,8 +73,16 @@ Two layers, kept strictly apart:
 1. **Protocol core** (`src/core/`): Web MIDI I/O, SysEx framing, slot
    reads, normalization, `.prst` building. No DOM or UI code, so it can be
    unit-tested in Node against a fake MIDI device.
-2. **UI** (`src/ui/`): starts as a bare test page and is replaced by the
-   designed interface later without touching the core.
+2. **UI** (`src/ui/`): two pages on the same core. `index.html` is the
+   designed interface. `test.html` is the bare test page that proved the
+   core on hardware, kept as a reference: a fault that also shows there
+   is in the core, one that doesn't is in the new UI. Labelled as a
+   developer page and **not published** (developer, 2026-10-02): run it
+   on localhost, or publish it temporarily by running the CI workflow by
+   hand with "include test page" ticked; the next normal publish takes it
+   down. The proven state is tagged `test-page-proven` (developer,
+   2026-10-02: keep the proven interface rather than replace it; one
+   repo, so the core is never copied).
 
 A **debug log** is built in from the start (standards §1): an on-screen log
 panel plus "save log to file", including browser, OS, and MIDI port
@@ -126,21 +141,159 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - These rules hold only if the browser's MIDI path behaves like the CLI's.
   The acceptance tests below exist to prove that.
 
+## Designed UI
+
+Agreed 2026-10-02 (journal, "Designed UI: first decisions"); layout still
+to be designed.
+
+- **One page, several screens.** Header links switch screens without
+  reloading, so the pedal connection, the selection, picked files and a
+  running restore survive (a Help screen can be read mid-restore). Each
+  screen has its own address, so Back and bookmarks work. Screens:
+  **Back up**, **Restore**, **Template**, **Help**: one operation per screen, so the
+  list's highlight always means one thing (two control sets above one
+  list were ambiguous, developer 2026-10-02).
+- **The patch list:** all 256 patches on one screen. Readability before
+  fitting without scrolling (developer, 2026-10-02: the first build's
+  12 px was too small; a bit of scrolling is fine). One list,
+  each entry labelled the way Valeton writes it, "12-A Oldschool Fuzz",
+  flowing down 8 columns of 8 banks; a faint line between banks; default
+  names greyed. **Always shows what is on the pedal** (developer,
+  2026-10-02): read on connect, re-read after every restore or Template
+  run (also one that stopped early or had failures), and updated with
+  the names the Template's pre-write re-check reads.
+- **Slots are chosen as ranges**, not by clicking around the list
+  (developer: patches live together in a bank or consecutive banks).
+  Back up: From/To; Restore: a start slot. Clicking a patch fills in the
+  boxes. The app shows labels as "12-A" and accepts "12A"/"12-a"; file
+  names keep the CLI's style (`12A_Name.prst`).
+- **The list shows the range before anything runs:** blue for "will be
+  saved"; orange for "will be overwritten", with a switch to show the
+  list as it is now or after the restore (that is the restore preview).
+- **Template screen** (the CLI's `apply-template`, developer
+  2026-10-02): one `.prst` into a From/To range, one confirmation for the
+  range, then the restore's write, verify and progress. **By default it
+  writes only empty slots** and keeps every other patch; "Every slot in
+  the range" overwrites them too (the CLI's behaviour). The summary counts
+  empty slots and the user's patches, and names the kept ones.
+  - **Empty** means the patch name "It's GP-200", nothing else.
+  - **Re-checked before writing.** The plan comes from the patch list
+    read on connect; just before writing, the range is read again (a
+    fraction of a second). If any slot changed (a patch saved on the
+    pedal meanwhile, a slot that can't be read), nothing is written and
+    the plan is shown again. The CLI instead reads each name right before
+    its write; that would add a read to the proven fast write sequence,
+    so the check happens once, before the first write.
+  - No other name is treated as a template: a patch name doesn't say
+    whether it was made as a patch or loaded as a template, and different
+    ranges may hold different templates (developer).
+  - **Plain wording** (developer): the "template" is any ordinary `.prst`.
+    The screen keeps the name Template but says so in a fixed line at the
+    top; the button is "Choose a .prst file...", the action "Write to
+    range". Help says **why before how** (developer, 2026-10-03): a
+    template is a personal starting point that carries the player's
+    standards (wah, noise gate and its place in the chain, effects loop
+    placement, what CTRL 1/2 do), so patches work alike on stage, and
+    different banks can use different templates (clean, metal). Then the
+    use cases: new sounds from the template, a block set up for a gig,
+    and clearing a range with an exported empty ("It's GP-200") patch and
+    "Every slot".
+- **Other GP-200 tools may stay open** (developer, 2026-10-03, from
+  testing with Valeton's editor open): Help says not to use them while
+  this app reads or writes, and to reload their patches after a restore
+  before editing there. "Close them" is only a "Pedal not found" step.
+- **Controls never appear or disappear.** A button stays visible, greyed
+  out with the reason next to it, until its inputs are valid. The
+  progress line is always there ("Ready." when idle).
+- **Opening screen** (developer, 2026-10-02): the home page (`#home`,
+  also the page with nothing after the `#`) is a welcome panel: what the
+  app does (three lines), what to do first (USB; Valeton's editor can
+  stay open but not be used while this app reads or writes), and one large "Connect to pedal" button, with the port picker
+  there if the GP-200 can't be told apart, beside a drawing of the pedal
+  (a placeholder until the developer's own photos). Until the pedal is
+  connected, Back up, Restore and Template show the same panel. Help
+  stays reachable.
+  - **After connecting: Back up**, with its range filled in as 1-A to
+    64-D (in the boxes, not as grey hints). After a lost connection, the
+    user returns to the screen they were on.
+  - **Connected:** the home page shows "Connected to the pedal" with links
+    to the three screens in place of the connect steps and button.
+  - **Lost connection** (pedal unplugged, or it stops answering so the
+    list can't be read again after a write): the panel comes back with
+    the reason under "Connect to pedal". That is the only way to
+    reconnect; the header's "Reconnect" was dropped (developer: never
+    needed).
+- **Header:** "GP-200 Patch Manager" (a link to the home page), the screen
+  links, and whether the pedal is connected.
+- **Text sizes:** page text 16 px, controls 15 px, the list 14 px when 8
+  columns of 16-character names fit, shrinking to 12 px; below a
+  1,200 px window the list has 4 columns (14 px down to 12 px). No
+  sideways scrolling from 600 px up (measured, journal 2026-10-02).
+- **Footer:** "© Donald Parker", GPL-3.0, link to the GitHub project,
+  GP200 Studio (its site, gp200studio.com) as the place to build and edit
+  patches, and the app version. No credits (see "Credit and licensing").
+- **Not Valeton's** (developer, 2026-10-02: kept out of the footer for a
+  clean interface): the welcome page's first sentence ends "An
+  independent tool, not made by Valeton.", and Help has an "About"
+  section saying it in full.
+- **Links to other sites open in a new tab**, so the app (and a
+  connection or a running restore) stays open (developer, 2026-10-02).
+- **Devices:** designed for desktop/laptop; usable on a narrow window,
+  not built for phones. Browsers that can't reach the pedal get a clear
+  message.
+- **Logs hidden.** Always recorded; "Save log" in Help so a user can send
+  it for support. The on-screen log panel only with `?dev`, together with
+  the restore-pacing fallback and "Download failed read-backs". The
+  write-timing test stays on the test page (`test.html?dev`) only.
+- **`?dev&fake`** connects to the test suite's fake pedal instead of Web
+  MIDI, to check the screens without hardware. It loads `tests/`, which
+  is never published, so it works only on localhost.
+- **Fonts:** the computer's own (the list in Arial Narrow where
+  installed); nothing is loaded from other sites. The mockup's IBM Plex
+  from Google Fonts was dropped so the app has no outside dependency.
+- **Progress** for anything that takes time: a restore shows a progress
+  bar, the slot and patch being written, and the elapsed time; a backup
+  (under a second) gets a short status line. A **"Stop after this
+  patch"** button sits on the progress line, always visible, greyed out
+  unless a restore or Template write is running (the test page had one;
+  a restore takes about 30 s).
+- **Help screen:** quick start, what a restore overwrites, the
+  User-IR/NAM limitation, browser compatibility, troubleshooting
+  (permission prompt, pedal not found), Report a problem, About; links
+  to the README.
+- **Report a problem** (developer, 2026-10-02): support is through
+  GitHub issues (free account; public). In Help, not a tab of its own.
+  The button saves the log and opens GitHub's new-issue form in a new
+  tab, filled in with headings for the user's description, the log
+  file's name, and the app version, browser, page, connection, screen
+  and last error (`src/core/report.js`). The user drags the log in and
+  posts it; the app sends nothing (a link can't carry a file, and is
+  kept under 6,000 characters). Help says what the log contains, that
+  issues are public, and that the log is only in memory until saved.
+  The repo has an issue form (`.github/ISSUE_TEMPLATE/problem.yml`) with
+  the same headings for issues opened on GitHub directly; blank issues
+  stay enabled for the app's link.
+  Browser compatibility (developer, 2026-10-02) names examples that work
+  (Chrome, Edge on a computer) and that don't (Firefox, Safari, any
+  browser on iPhone/iPad), and says how to tell: the app checks on
+  opening and says plainly if this browser can't reach the pedal.
+
 ## Phases
 
 ### Phase 1: read-only backup
 
 - Connect to the pedal (auto-detect the port; let the user pick if
   ambiguous).
-- **Slot grid:** 64 banks × 4 slots (A–D), each cell showing its label and
-  patch name.
-- **Selection:** click, shift-click for a range, **Select all**, **Clear**.
-- **Export:** disabled until something is selected. One slot downloads a
+- **Patch list:** all 256 patches, each with its label and name (see
+  "Designed UI"; replaces the earlier 64 × 4 grid).
+- **Selection:** a From/To range (see "Designed UI"; replaces the
+  earlier click/shift-click idea).
+- **Export:** disabled until the range is valid. One slot downloads a
   `.prst`; several download a `.zip`.
 - Progress while reading, since reading all 256 slots takes a while.
-- *Status: core and bare test page built; export-all matched the CLI's
-  byte-for-byte on real hardware on the developer's first computer (see the
-  journal). Second computer still to do.*
+- *Status: core and bare test page built; gate passed. Export-all matched
+  the CLI's byte-for-byte on the developer's first computer, and from the
+  hosted site matched the backup on both computers (see the journal).*
 
 ### Phase 2: restore
 
@@ -158,7 +311,8 @@ These are deliberately simpler than the CLI's. See the journal entry of
 - *Status: built in the bare test page (section 3, "Restore") and
   confirmed on real hardware on the developer's first computer: scratch-slot
   writes with changed content, then a full 256-slot round robin (see the
-  journal). Second computer still to do.*
+  journal). Phase 2 gate passed with the fast pacing on both computers,
+  the second from the hosted site (2026-10-02).*
 - Show the **User-IR / NAM (SnapTone) warning** in the preview (CLI README,
   "Known limitations"; `PROTOCOL_NOTES.md` Finding 11).
 - Write method (flash vs. live) is chosen by the app, not the user, based
@@ -166,7 +320,8 @@ These are deliberately simpler than the CLI's. See the journal entry of
 
 ### Later
 
-- Load one template into many slots (the CLI's `apply-template`).
+- Load one template into many slots: now planned as the Template screen
+  ("Designed UI").
 - Anything else users ask for.
 
 ### Out of scope

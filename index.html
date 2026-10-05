@@ -4,147 +4,260 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GP-200 Patch Manager</title>
-  <link rel="stylesheet" href="src/ui/style.css">
+  <meta name="description" content="Back up and restore Valeton GP-200 patches from the browser, over USB.">
+  <link rel="stylesheet" href="src/ui/app.css">
   <script type="module" src="src/ui/app.js"></script>
 </head>
 <body>
-  <main>
-    <header>
-      <h1>GP-200 Patch Manager</h1>
-      <p class="sub">Early test build: read-only backup over Web MIDI. Chrome or Edge only.
-        <span id="version" class="muted"></span></p>
-    </header>
+<div class="wrap">
+  <header>
+    <h1><a href="#home" id="home-link">GP-200 Patch Manager</a></h1>
+    <nav aria-label="Screens">
+      <a href="#backup" id="nav-backup">Back up</a>
+      <a href="#restore" id="nav-restore">Restore</a>
+      <a href="#template" id="nav-template">Template</a>
+      <a href="#help" id="nav-help">Help</a>
+    </nav>
+    <div class="conn">
+      <span id="conn-status" class="conn-status">Not connected</span>
+    </div>
+  </header>
 
-    <p id="unsupported" class="banner error" hidden></p>
-    <p id="hidden-banner" class="banner warn" hidden></p>
+  <p id="unsupported" class="banner error" hidden></p>
+  <p id="hidden-banner" class="banner warn" hidden></p>
 
-    <section aria-labelledby="h-connect">
-      <h2 id="h-connect">1. Connect</h2>
-      <p class="muted">Close Valeton's editor and any other GP-200 tool first; only one program can use the pedal at a time.</p>
-      <div class="row">
-        <button id="connect">Connect to pedal</button>
-        <span id="status" class="status">Not connected</span>
-      </div>
-      <div id="port-picker" class="row" hidden>
-        <label>Input <select id="in-port"></select></label>
-        <label>Output <select id="out-port"></select></label>
-      </div>
-    </section>
+  <section id="scr-connect" class="welcome" aria-label="Welcome" hidden>
+  <div class="welcome-text">
+    <p class="lead">Back up and restore the patches on your Valeton GP-200 from this browser, over USB.
+      An independent tool, not made by Valeton.</p>
+    <ul>
+      <li><b>Back up</b> saves any range of slots, or all 256, to a file on your computer.</li>
+      <li><b>Restore</b> writes saved patches back, to the same slots or to others.</li>
+      <li><b>Template</b> fills a range of slots with one patch.</li>
+    </ul>
+    <p>Nothing is written to the pedal until you confirm, and every patch written is read back and checked.</p>
+    <div id="connect-area">
+    <p><b>First:</b> connect the pedal to this computer with a USB cable. Valeton's editor can stay open, but
+      don't use it while this app is reading or writing the pedal.</p>
+    <div id="port-picker" class="strip" hidden>
+      <span>More than one device could be the GP-200. Pick its ports, then press &ldquo;Connect to pedal&rdquo;:</span>
+      <label>Input <select id="in-port"></select></label>
+      <label>Output <select id="out-port"></select></label>
+    </div>
+    <p><button type="button" class="big" id="connect">Connect to pedal</button></p>
+    <p class="connect-msg" id="connect-msg" role="status"></p>
+    </div>
+    <p class="connected-note" id="connected-note" hidden>Connected to the pedal. Go to <a href="#backup">Back up</a>,
+      <a href="#restore">Restore</a> or <a href="#template">Template</a>.</p>
+    <p class="note">Works in Chrome and Edge on a computer. The browser will ask to allow MIDI access: choose Allow.
+      Questions? See <a href="#help">Help</a>.</p>
+  </div>
+  <!-- Drawn from a photo of the developer's own pedal (2026-10-05); the
+       Valeton name is left off, as the app isn't Valeton's. -->
+  <img class="pedal-art" src="src/ui/pedal.svg" alt="Drawing of a GP-200 pedal" width="640" height="420">
+  </section>
 
-    <section aria-labelledby="h-export">
-      <h2 id="h-export">2. Back up</h2>
-      <div class="row">
-        <label>From <input id="from" placeholder="1A" size="5" autocomplete="off"></label>
-        <label>To <input id="to" placeholder="64D" size="5" autocomplete="off"></label>
-        <span class="muted">Empty From starts at 1A; empty To runs to 64D; both empty is all 256. One slot gives a .prst, more give a .zip.</span>
+  <section id="scr-backup" aria-label="Back up">
+    <div class="strip">
+      <div class="grp">
+        <label for="from">From</label><input type="text" id="from" placeholder="1-A" maxlength="5" autocomplete="off" spellcheck="false">
+        <label for="to">To</label><input type="text" id="to" placeholder="64-D" maxlength="5" autocomplete="off" spellcheck="false">
+        <button type="button" class="save" id="go-backup">Back up</button>
+        <span class="why" id="why-backup"></span>
       </div>
-      <div class="row">
-        <button id="export" disabled>Export</button>
-        <button id="cancel" class="secondary" hidden>Cancel</button>
-        <progress id="progress" max="1" value="0" hidden></progress>
-        <span id="progress-text" class="muted"></span>
-      </div>
-      <ul id="warnings" class="warnings"></ul>
-    </section>
+    </div>
+    <p class="sum" id="sum-backup"></p>
+    <ul class="warnings" id="warn-backup"></ul>
+  </section>
 
-    <section aria-labelledby="h-restore">
-      <h2 id="h-restore">3. Restore (test build: writes to the pedal)</h2>
-      <p class="muted">Pick one or more .prst files, or one .zip. They fill consecutive slots from the starting slot.
-        Nothing is written until you confirm. Each patch is read back and checked after writing.
-        Keep this tab in front while writing: browsers slow down pages in background tabs.</p>
-      <div class="row">
-        <label>Starting slot <input id="restore-start" placeholder="64A" size="5" autocomplete="off"></label>
-        <label>Files <input id="restore-files" type="file" accept=".prst,.zip" multiple></label>
-        <label id="restore-pacing-row" hidden>Pacing (developer) <select id="restore-pacing">
+  <section id="scr-restore" aria-label="Restore" hidden>
+    <div class="strip">
+      <div class="grp">
+        <label for="start">Start at</label><input type="text" id="start" placeholder="34-A" maxlength="5" autocomplete="off" spellcheck="false">
+        <button type="button" class="quiet" id="pick">Choose files&hellip;</button>
+        <input type="file" id="files" accept=".prst,.zip" multiple hidden>
+        <span class="files" id="files-text">No files chosen</span>
+      </div>
+      <div class="grp">
+        <span class="seg" role="group" aria-label="What the list shows">
+          <button type="button" id="show-now" class="on" aria-pressed="true">Pedal now</button>
+          <button type="button" id="show-after" aria-pressed="false">After restore</button>
+        </span>
+        <label id="pacing-row" hidden>Pacing (developer) <select id="pacing">
           <option value="fast">Fast (about 0.1 s per patch)</option>
           <option value="cli">The CLI's (about 1.9 s per patch; fallback)</option>
         </select></label>
+        <button type="button" id="go-restore">Restore</button>
+        <span class="why" id="why-restore"></span>
       </div>
-      <table id="restore-plan" class="plan" hidden>
-        <thead><tr><th>File</th><th>Patch</th><th>Slot</th><th>Replaces</th><th>Result</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <ul id="restore-warnings" class="warnings"></ul>
-      <div class="row">
-        <button id="restore-write" disabled>Write to pedal</button>
-        <button id="restore-stop" class="secondary" hidden>Stop after this patch</button>
-        <span id="restore-status" class="muted"></span>
-        <button id="restore-failed" class="secondary" hidden>Download failed read-backs</button>
-      </div>
-    </section>
+    </div>
+    <p class="sum"><span id="sum-restore"></span> <span class="warnline" id="over-restore"></span></p>
+    <ul class="warnings" id="warn-restore"></ul>
+  </section>
 
-    <section id="dev-tuning" aria-labelledby="h-tuning" hidden>
-      <h2 id="h-tuning">Developer: write-timing test (scratch slots 64A-64D only)</h2>
-      <p class="muted">Shown only when the page is opened with <code>?dev</code>. Pick 1-4 patches for set X and the
-        same number of different patches for set Y; patch 1 goes to 64A, 2 to 64B, and so on. Each write switches a
-        slot to whichever set it doesn't hold, so every write changes it, and each is verified like a restore.
-        A late check re-reads every write again after the test has moved on (the pedal can change a byte after
-        the verify): at the end, plus before each overwrite or two writes later if chosen below.
-        Afterwards, restore your 64A-64D backup.</p>
-      <div class="row">
-        <label>Set X <input id="tune-x" type="file" accept=".prst,.zip" multiple></label>
-        <label>Set Y <input id="tune-y" type="file" accept=".prst,.zip" multiple></label>
+  <section id="scr-template" aria-label="Template" hidden>
+    <p class="intro">Writes one patch (any .prst file) into every slot of a range, as your own starting point for new patches: your usual wah, noise gate, effects loop and switch
+      settings in every one. See Help for why and how.</p>
+    <div class="strip">
+      <div class="grp">
+        <label for="tfrom">From</label><input type="text" id="tfrom" placeholder="44-A" maxlength="5" autocomplete="off" spellcheck="false">
+        <label for="tto">To</label><input type="text" id="tto" placeholder="51-D" maxlength="5" autocomplete="off" spellcheck="false">
+        <button type="button" class="quiet" id="tpick">Choose a .prst file&hellip;</button>
+        <input type="file" id="tfile" accept=".prst" hidden>
+        <span class="files" id="tfile-text">No file chosen</span>
       </div>
-      <div class="row">
-        <label>Mode <select id="tune-mode">
-          <option value="fixed">Fixed: settle, preset change, verify (as a restore)</option>
-          <option value="poll">Poll: settle, then read until the new patch appears</option>
-        </select></label>
-        <label>Writes per slot <input id="tune-cycles" class="num" type="number" min="1" max="200"></label>
+      <div class="grp" role="radiogroup" aria-label="Which slots get the patch">
+        <label><input type="radio" name="tmode" id="tmode-empty" value="empty" checked> Empty slots only (&ldquo;It's GP-200&rdquo;)</label>
+        <label><input type="radio" name="tmode" id="tmode-all" value="all"> Every slot in the range</label>
       </div>
-      <div class="row">
-        <label>Chunk gap <input id="tune-chunk" class="num" type="number" min="0"> ms</label>
-        <label>Settle <input id="tune-settle" class="num" type="number" min="0"> ms</label>
-        <label>After preset change <input id="tune-preset" class="num" type="number" min="0"> ms</label>
-        <label>Between writes <input id="tune-between" class="num" type="number" min="0"> ms</label>
+      <div class="grp">
+        <span class="seg" role="group" aria-label="What the list shows">
+          <button type="button" id="tshow-now" class="on" aria-pressed="true">Pedal now</button>
+          <button type="button" id="tshow-after" aria-pressed="false">After</button>
+        </span>
+        <button type="button" id="go-template">Write to range</button>
+        <span class="why" id="why-template"></span>
       </div>
-      <div class="row">
-        <label>Poll timeout <input id="tune-poll-timeout" class="num" type="number" min="10"> ms</label>
-        <label>Poll limit <input id="tune-poll-max" class="num" type="number" min="100"> ms</label>
-        <button id="tune-defaults" class="secondary">Reset to the CLI's timing</button>
-      </div>
-      <div class="row">
-        <label>Late check <select id="tune-late">
-          <option value="overwrite">Before each overwrite, and at the end (adds one read, a few ms, before each upload)</option>
-          <option value="twoLater">Two writes later, after that write's verify, and at the end (3-4 patches per set)</option>
-          <option value="end">At the end only (each slot's last write)</option>
-        </select></label>
-      </div>
-      <div class="row">
-        <label><input type="checkbox" id="tune-verify-first"> Verify before the preset change, as the withdrawn fast
-          restore did (nothing is sent between the preset change and the next upload)</label>
-      </div>
-      <ul id="tune-warnings" class="warnings"></ul>
-      <div class="row">
-        <button id="tune-run" disabled>Run timing test</button>
-        <button id="tune-stop" class="secondary" hidden>Stop after this write</button>
-        <span id="tune-status" class="muted"></span>
-        <button id="tune-csv" class="secondary" hidden>Download results (CSV)</button>
-      </div>
-    </section>
+    </div>
+    <p class="sum" id="sum-template"></p>
+    <ul class="warnings" id="warn-template"></ul>
+  </section>
 
-    <section aria-labelledby="h-log">
-      <h2 id="h-log">Log</h2>
-      <div class="row">
-        <label><input type="checkbox" id="debug"> Debug (log every MIDI message)</label>
-        <button id="save-log" class="secondary">Save log</button>
-        <button id="clear-log" class="secondary">Clear</button>
-      </div>
-      <pre id="log" tabindex="0" aria-live="off"></pre>
-    </section>
+  <div class="prog" id="prog" role="status">
+    <span id="prog-label">Ready.</span>
+    <span class="bar" aria-hidden="true"><i id="prog-bar"></i></span>
+    <span id="prog-time"></span>
+    <button type="button" class="quiet" id="stop" disabled>Stop after this patch</button>
+  </div>
 
-    <footer>
-      <p>For backing up and restoring whole banks. To create or edit patches, try
-        <a href="https://github.com/kabir0st/gp200-studio">GP200 Studio</a>.</p>
-      <p>Credits: the GP-200's SysEx message formats were reverse-engineered by Kabir S. Tamari's
-        <a href="https://github.com/kabir0st/gp200-studio">GP200 Studio</a> (GPL-3.0), then verified and
-        extended on real hardware by the command-line
-        <a href="https://github.com/donpark2000/GP-200-Patch-Manager">GP-200 Patch Manager</a>.
-        The upload addressing was found by cross-checking against
-        <a href="https://github.com/ricardo-mv/rigsheet">RigSheet</a>'s independent reverse-engineering.</p>
-      <p><a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web">Source code</a> · GPL-3.0 ·
-        Not affiliated with Valeton.</p>
-    </footer>
-  </main>
+  <div class="listbox" id="listbox">
+    <div class="list" id="list" aria-label="Patches on the pedal"></div>
+  </div>
+
+  <section id="scr-help" class="help" aria-label="Help" hidden>
+    <h2>Quick start</h2>
+    <ol>
+      <li>Connect the GP-200 to your computer with a USB cable.</li>
+      <li>Valeton's editor or another GP-200 tool can stay open, but don't use it while a backup, restore or
+        template write is running. After a restore, reload the patches in the other tool before editing there,
+        so it doesn't save an old copy over a restored patch.</li>
+      <li>Open this page in Chrome or Edge and press <b>Connect to pedal</b>. Allow MIDI access when the browser asks.</li>
+      <li>The list shows every patch on the pedal. <b>Back up</b> saves a range (or all 256) to a file;
+        <b>Restore</b> writes saved patches back; <b>Template</b> fills a range with one patch.</li>
+    </ol>
+
+    <h2>Will it work in my browser?</h2>
+    <ul>
+      <li>Works: Chrome and Edge on a Windows, Mac or Linux computer.</li>
+      <li>Doesn't work: Firefox, Safari, and any browser on an iPhone or iPad.</li>
+      <li>Not tested: Android, and other browsers built on Chrome (Opera, Brave, Vivaldi).</li>
+    </ul>
+    <p>To check, just open the page. If your browser can't reach the pedal, the page says so straight away.</p>
+
+    <h2>Before you restore</h2>
+    <p>A restore overwrites the slots shown in orange; every other slot is left alone. Back up the pedal first.
+      Each patch is read back and checked after it's written, and the list is read again afterwards, so it always
+      shows what's on the pedal.</p>
+    <p>Keep this tab in front while writing: browsers slow down pages in background tabs.</p>
+    <p><b>Your own IRs and NAM captures aren't in a backup.</b> A patch only stores the <i>number</i> of the
+      User-IR or SnapTone (NAM) slot it uses, not the file in it. On another pedal, or after that slot has been
+      loaded with something else, the patch will sound different. The app warns about these patches when you
+      back up or restore them.</p>
+
+    <h2>Templates</h2>
+    <p>A template is your own starting point for new patches. Build one patch with the choices you want in
+      every patch, for example:</p>
+    <ul>
+      <li>your preferred wah;</li>
+      <li>your noise gate, and where it sits in the chain;</li>
+      <li>where the effects loop's send and return go in the chain;</li>
+      <li>what the switches do (for example, you could assign CTRL 1 to the distortion module and CTRL 2 to the
+        modulation module, and choose the initial state of each as "on" or "off").</li>
+    </ul>
+    <p>Write it into the slots you'll use for new sounds, and every new patch starts with those choices already
+      made. You design the sound; the parts you rely on stay where you expect them.</p>
+    <p><b>Why it helps on stage:</b> when every patch is laid out differently, it's hard to remember how each
+      one works mid-song. When your patches share a few standards, a switch does the same job in every patch.</p>
+    <p><b>Different templates for different banks:</b> a bank or two built from a clean template, a bank or two
+      from a metal template, and so on. Each group keeps its own standards.</p>
+
+    <h3>How it works</h3>
+    <p>The Template screen writes one ordinary patch file (.prst) into every slot of a range. Any .prst works:
+      one you exported from the pedal, or one made in GP200 Studio. Some ways to use it:</p>
+    <ul>
+      <li><b>New sounds from your template.</b> Export your template patch from the pedal, then fill, say, the
+        empty banks 50-64 with it.</li>
+      <li><b>Setting up a block for a gig or project.</b> Fill banks 40-44 with a basic patch, then adjust each
+        slot for a song.</li>
+      <li><b>Clearing old patches.</b> Export an empty slot ("It's GP-200") to get a blank .prst, then write it
+        with "Every slot in the range" chosen. Those slots count as empty again.</li>
+    </ul>
+    <p>By default it fills only empty slots ("It's GP-200") and keeps every other patch, because the app can't
+      tell an earlier template from a patch you made. Choose "Every slot in the range" to overwrite those too.
+      Just before writing, the range is read again; if anything on the pedal changed since, nothing is written
+      and the plan is shown again.</p>
+
+    <h2>Something went wrong?</h2>
+    <ul>
+      <li><b>No permission prompt, or "MIDI access was blocked":</b> click the icon at the right of the address
+        bar, allow MIDI devices for this site, then press &ldquo;Connect to pedal&rdquo; again.</li>
+      <li><b>Pedal not found:</b> check the USB cable, and close Valeton's editor and other GP-200 tools (on
+        some computers only one program can use the pedal's connection at a time). Unplug and reconnect the
+        pedal, then press &ldquo;Connect to pedal&rdquo;.</li>
+      <li><b>A write wasn't verified:</b> the slot may not hold what you meant. Back up that slot to see what it
+        holds, and try the restore again.</li>
+    </ul>
+
+    <h2>Report a problem</h2>
+    <p>Problems and questions go to the project's GitHub page, as an &ldquo;issue&rdquo;. You need a free GitHub
+      account, and issues are public: anyone can read them.</p>
+    <ol>
+      <li>Press <b>Report a problem</b>. The app saves a log file (usually to your Downloads folder) and opens
+        GitHub's form for a new issue in a new tab, with the app version and your browser already filled in.</li>
+      <li>In the form, say what you were doing and what happened.</li>
+      <li>Drag the log file into the form's text box, check what it shows, then press Create.</li>
+    </ol>
+    <p>The log records what the app did, your browser, the pedal's MIDI ports and the names of the patches it
+      read or wrote. It stays on your computer until you save it: the app stores nothing and sends nothing
+      anywhere, and closing or reloading the page clears the log.</p>
+    <p class="grp"><button type="button" id="report">Report a problem</button>
+      <button type="button" class="quiet" id="save-log">Save log only</button></p>
+    <p class="report-msg" id="report-msg" role="status"></p>
+    <p>More detail: the project's <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web#readme" target="_blank" rel="noopener">README</a>.</p>
+
+    <h2>About</h2>
+    <p>GP-200 Patch Manager is an independent, free, open-source tool (GPL-3.0) made by a GP-200 owner. It is not
+      made, endorsed or supported by Valeton; "Valeton" and "GP-200" are used only to say which pedal it works
+      with. For problems with this tool, see &ldquo;Report a problem&rdquo; above, not Valeton's support.</p>
+  </section>
+
+  <section id="dev-log" class="devlog" aria-label="Developer log" hidden>
+    <div class="grp">
+      <b>Log (developer)</b>
+      <label><input type="checkbox" id="debug"> Debug (log every MIDI message)</label>
+      <button type="button" class="quiet" id="dev-save-log">Save log</button>
+      <button type="button" class="quiet" id="clear-log">Clear</button>
+      <button type="button" class="quiet" id="failed-readbacks" disabled>Download failed read-backs</button>
+    </div>
+    <pre id="log" tabindex="0" aria-live="off"></pre>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 Donald Parker &middot; <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web/blob/main/LICENSE" target="_blank" rel="noopener">GPL-3.0</a></span>
+    <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web" target="_blank" rel="noopener">GitHub project</a>
+    <span>Build and edit patches with <a href="https://gp200studio.com/" target="_blank" rel="noopener">GP200 Studio</a></span>
+    <span id="version">Version</span>
+  </footer>
+</div>
+
+<dialog id="confirm" aria-labelledby="confirm-title">
+  <h3 id="confirm-title">Overwrite patches on the pedal?</h3>
+  <p id="confirm-text"></p>
+  <p>This can't be undone except by restoring a backup.</p>
+  <div class="dlgbtns">
+    <button type="button" class="quiet" id="confirm-cancel">Cancel</button>
+    <button type="button" id="confirm-ok">Write</button>
+  </div>
+</dialog>
 </body>
 </html>

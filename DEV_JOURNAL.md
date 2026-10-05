@@ -12,34 +12,72 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q1. Does the browser's MIDI path behave like Python's?** The CLI's
-  read noise (dead bytes `0x43`/`0x9F`, about 10% of reads) is suspected to
-  come from the Windows USB-MIDI driver. The browser reaches the pedal
-  through a different MIDI layer, so it may be cleaner, the same, or
-  different. *To be answered by the phase 1 CLI-comparison test.*
-- **Q2. How long does reading all 256 slots take in the browser?** This
-  decides how much progress/cancel UI is needed.
-- **Q3. Does Web MIDI SysEx work from a local `file://` page** in Chrome
-  and Edge? This decides whether a downloadable single-file version is
-  possible.
-- **Q4. Does the browser deliver each SysEx message whole?** Web MIDI
-  should, but a split or merged message would need reassembly in the core.
-  *The app logs a warning for any SysEx without a closing F7.*
-- **Q5. What do real read replies look like?** The CLI never recorded the
-  exact chunk layout (offset units, payload sizes) or the decoded dump
-  length. The fake pedal in the tests *assumes* the write path's layout:
-  183-byte strides, offsets in decoded bytes, a 1182-byte dump. Only
-  chunk order depends on the offsets, so a wrong assumption wouldn't break
-  exports, but the fake should match reality. *The app logs the real
-  layout on the first read of every export ("First read ...").*
-- **Q6. Is the connect handshake needed for read-only use?** The CLI always
-  sends the identity query and "enter editor mode"; reads work without
-  them (PROTOCOL.md §2). The web app does the same, for parity with the
-  tested CLI. Open: does editor mode have any visible effect on the pedal?
+- **Q7. Mixed old and new files for 10 minutes after a publish.** *Raised
+  2026-10-02 (entry "Build step 2").* GitHub Pages sends
+  `Cache-Control: max-age=600` (checked with `curl -I` on the live
+  `src/core/slots.js`), so a browser may reuse cached modules for up to 10
+  minutes. Right after a publish, a returning visitor can get the new
+  `app.js` with an old cached `slots.js`; the page then fails to start
+  ("does not provide an export named ..."). Seen locally during the
+  build (Python's server, same effect). Proposed fix: CI adds `?v=<commit>`
+  to every relative import and to the CSS/JS links in the published copy
+  (a `sed` in the assemble step, like the version stamp), so each publish
+  is a fresh set of URLs. Nothing changes in the repo files or locally.
+  **Fix built** (developer's OK, 2026-10-02; entry "Usability notes"), as
+  a folder per publish instead of `?v=`: dry run passes. Close it once the
+  first publish shows the live page loading from `v/<commit>/`.
 
-- **T1. Background-tab timer throttling.** Chrome slows timers in hidden
-  tabs (to about once a second as soon as the tab is hidden, and after
-  about 5 minutes hidden it can throttle chained timers to roughly once a
+## Resolved
+
+- **Q3-Q6.** *Closed 2026-10-02 with the developer (entry "Open questions
+  Q3-Q6 closed").* Claude had raised them while setting up and porting;
+  none was ever a decision for the developer. Outcomes:
+  - **Q3 (`file://` page): parked** until a downloadable version is
+    wanted. The hosted site is the product; trying it is a 5-minute test.
+  - **Q4 (SysEx delivered whole): resolved by the evidence.** Every full
+    export on both computers had 0 re-reads and matched byte for byte; a
+    split or merged message would have failed the sanity checks and forced
+    a re-read. The F7 warning stays in the log as a tripwire.
+  - **Q5 (real read layout): resolved.** The hardware logs show 7 chunks
+    at offsets 0, 185, ... 1110 (370 nibbles each, 132 in the last), 1176
+    decoded bytes (entry "Hosted site, this computer"). The fake pedal had
+    assumed 183-byte chunks and 1182 bytes; it now uses the real layout,
+    and a test pins it.
+  - **Q6 (handshake for reads): settled, keep CLI parity.** The app keeps
+    sending the identity query and "enter editor mode", as the tested CLI
+    does. Whether editor mode visibly changes the pedal isn't pursued.
+
+  The original questions, for the record:
+
+  - **Q3. Does Web MIDI SysEx work from a local `file://` page** in Chrome
+    and Edge? This decides whether a downloadable single-file version is
+    possible.
+  - **Q4. Does the browser deliver each SysEx message whole?** Web MIDI
+    should, but a split or merged message would need reassembly in the core.
+    *The app logs a warning for any SysEx without a closing F7.*
+  - **Q5. What do real read replies look like?** The CLI never recorded the
+    exact chunk layout (offset units, payload sizes) or the decoded dump
+    length. The fake pedal in the tests *assumes* the write path's layout:
+    183-byte strides, offsets in decoded bytes, a 1182-byte dump. Only
+    chunk order depends on the offsets, so a wrong assumption wouldn't break
+    exports, but the fake should match reality. *The app logs the real
+    layout on the first read of every export ("First read ...").*
+  - **Q6. Is the connect handshake needed for read-only use?** The CLI always
+    sends the identity query and "enter editor mode"; reads work without
+    them (PROTOCOL.md §2). The web app does the same, for parity with the
+    tested CLI. Open: does editor mode have any visible effect on the pedal?
+
+- **T1. Background-tab timer throttling.** *Resolved 2026-10-02: a hidden
+  tab doesn't slow the fast restore.* Two full restores on this computer
+  (Edge, live site), each hidden for all but its first second or so: 27.8 s
+  and 27.4 s, writes about 108 ms apart hidden vs about 124 ms visible,
+  511 of 511 verified, both compares MATCH (entry "Hidden-tab round
+  trip"). Not covered: a write needing re-reads while hidden (the 25 ms
+  re-read pause is the one timer left; none was needed), and a hidden tab
+  on laptop battery. The original question:
+
+  Chrome slows timers in hidden tabs (to about once a second as soon as
+  the tab is hidden, and after about 5 minutes hidden it can throttle chained timers to roughly once a
   minute). The write pacing (40 ms chunk gaps, 1 s settle) runs on
   `setTimeout`, so a restore in a hidden tab could slow down drastically.
   Longer gaps are probably harmless to the pedal, but this is untested.
@@ -50,7 +88,24 @@ This journal records only what's new or different for the browser.
   fix the remaining timers (a Web Worker clock, or timestamped
   `MIDIOutput.send(data, timestamp)`). If T2 shows the settle can be
   replaced by read-backs, only the 7 chunk gaps would still need timers.
-## Resolved
+
+- **Q1. Does the browser's MIDI path behave like Python's?** The CLI's
+  read noise (dead bytes `0x43`/`0x9F`, about 10% of reads) is suspected to
+  come from the Windows USB-MIDI driver. The browser reaches the pedal
+  through a different MIDI layer, so it may be cleaner, the same, or
+  different. *Resolved 2026-10-02: it produces the same backups, and
+  cleaner reads.* Full exports matched the CLI's byte for byte on this
+  computer (2026-09-30) and the backup from the hosted site on both
+  computers (2026-10-02 entries); none needed a re-read. The dead bytes
+  are normalized anyway, so this doesn't change any rule.
+
+- **Q2. How long does reading all 256 slots take in the browser?** This
+  decides how much progress/cancel UI is needed. *Resolved 2026-10-02:
+  about 0.3 s (1 ms per slot), 0 re-reads, on this computer from the
+  hosted site in Edge; the export matched the backup byte for byte (entry
+  "Hosted site, this computer"). A full backup is effectively instant, so
+  it needs no cancel button; the progress UI can stay minimal. The laptop
+  log will add a second data point.*
 
 - **T2. Restore speed.** *Resolved 2026-10-02: the fast pacing (no
   pauses, read back until it matches, then the preset change; about 0.11 s
@@ -1497,3 +1552,933 @@ discarded, and every restore relies on that. Changes: the README and page
 footer no longer recommend it as an editor (GP200 Studio only); one
 factual credit line each for the addressing; `DESIGN.md` records the
 rule. Code comments unchanged.
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- The app is live at https://donpark2000.github.io/GP-200-Patch-Manager-Web/
+  (version **d263698 (2026-10-02)**), published from `main` by CI.
+  `read-path` holds the same content plus later journal entries; work
+  continues on it, and each merge to `main` (a publish) needs the
+  developer's OK.
+- Backup: the web export matches the CLI's byte for byte (this computer,
+  via localhost).
+- Restore: fast pacing by default, about 28 s for 256 patches; 1,022 of
+  1,022 full-pedal writes verified, four compares MATCH. The CLI's pacing
+  is a `?dev` fallback.
+- Pedal-managed bytes 0x44e/0x456 change no setting; verify and
+  `compare-zips` report them without failing. A failing read-back gets 3
+  confirmation reads.
+- The pedal holds exactly `GP-200\Backups\2026-09-30_full-backup.zip`.
+- README and page footer updated (site link, no CLI-testing references,
+  RigSheet credited for the upload addressing but not recommended).
+
+**Next steps, in order:**
+1. **Hosted site, this computer** (session folder
+   `GP-200-testing\2026-10-02_hosted-site\`, already created, empty):
+   open the site in Edge, allow MIDI, check the version line, Connect,
+   Export all, Save log. Compare with the backup:
+   `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\compare-zips.js C:\Users\dpark\Documents\GP-200\Backups\2026-09-30_full-backup.zip gp200_all_patches.zip`.
+   Expected: 256 identical, MATCH. Optionally a fast round trip from the
+   hosted site too.
+2. **Laptop** (no Python, no repo; that's why the site is hosted): same
+   steps on the site; copy its export and log to this computer's session
+   folder (renamed `laptop_...`) and compare the same way. Then a fast
+   round trip there (shifted from 1B, back from 1A, export after each;
+   `--shift 1` for the first compare).
+3. T1: a deliberate hidden-tab restore.
+4. Later: the designed UI (work on a branch; publish deliberately).
+   Undecided: backport the fast pacing to the CLI.
+
+`CLAUDE.md` now has a "Starting a session" routine, so a new session can
+begin with just "start".
+
+## 2026-10-02: Hosted site, this computer: export MATCH
+
+The developer opened the live site in Edge on this computer, connected,
+exported all slots and saved the log (session folder
+`GP-200-testing\2026-10-02_hosted-site\`: `gp200_all_patches.zip`,
+`gp200_web_2026-10-02T20-39-47.log`).
+
+- `compare-zips.js` against `GP-200\Backups\2026-09-30_full-backup.zip`
+  (run by the developer, then again by Claude): 256 entries each, 256
+  slots and 313,344 bytes compared, **256 identical, RESULT: MATCH**.
+- Log: version `d263698 (2026-10-02)`, page
+  `https://donpark2000.github.io/GP-200-Patch-Manager-Web/`, Edge 155 on
+  Windows, `sysex=true`, one GP-200 in and out (Microsoft driver), wake
+  lock available, developer tools off. Identity query answered.
+- First read (1A): 7 chunks at offsets 0, 185, ... 1110 (370 nibbles each,
+  132 in the last), 1176 decoded bytes: the same layout as before.
+- **Read 256 of 256 slots in 0.3 s (1 ms per slot), 0 re-reads, 0
+  skipped.** The match with the backup shows the reads were real, so the
+  speed is genuine.
+- The User-IR/NAM warning named 48B and 48D, as on 2026-09-30.
+- The page was hidden for 3.1 s about a minute after the export; nothing
+  was running.
+
+So the hosted site (served from GitHub Pages, not localhost) reads the
+pedal exactly as the local copy and the CLI do. Q2 resolved (below).
+
+Next: the laptop. Its export and log get copied into the same session
+folder as `laptop_...`, so the folder is purged after that, not now.
+
+## 2026-10-02: Hosted site, laptop: export MATCH (phase 1 gate done)
+
+The developer exported all slots from the live site on the laptop (no
+Python, no repo there) and copied the files to this computer's session
+folder `GP-200-testing\2026-10-02_hosted-site\`:
+`laptop_gp200_all_patches.zip` (copied as `Laptop_...`, renamed by
+Claude to match the other names) and
+`laptop_gp200_web_2026-10-02T20-47-38.log`.
+
+- `compare-zips.js` against `GP-200\Backups\2026-09-30_full-backup.zip`:
+  256 entries each, 256 slots and 313,344 bytes compared, **256
+  identical, RESULT: MATCH**.
+- It's really a second export, not a copy of this computer's: the two
+  zips' MD5s differ and their entry timestamps are 13:38:30 (this
+  computer) vs 13:47:02 (laptop).
+- Log: version `d263698`, live site, Edge 155 on Windows, `sysex=true`,
+  one GP-200 in/out (Microsoft driver), wake lock available. The laptop
+  exported **twice** (at +80 s and +213 s); both read **256 of 256 in
+  0.6 s (2 ms per slot), 0 re-reads, 0 skipped**. The copied zip's
+  timestamp fits the second. First-read layout identical to this
+  computer's. Same User-IR/NAM warning (48B, 48D).
+- The laptop reads at half this computer's speed, still effectively
+  instant (Q2).
+
+**Phase 1 gate: done on both computers.** Computer 1: several full
+matches with the CLI (2026-09-30) and with the backup from the hosted
+site (today). Laptop: two clean full reads, one compared, MATCH. Across
+every full export so far the browser needed no re-reads; the CLI's read
+noise (dead bytes, about 10% of reads) hasn't appeared. Q1 resolved
+(below).
+
+Next: the fast round trip on the laptop (phase 2 on the second
+computer).
+
+## 2026-10-02: Laptop round trip, step 1 (shifted from 1B): MATCH
+
+Live site on the laptop (`d263698`, Edge 155, no `?dev`), restoring the
+laptop's own export (`laptop_gp200_all_patches.zip`, which matches the
+backup byte for byte; the backup file isn't on the laptop). Files in
+`GP-200-testing\2026-10-02_hosted-site\`, renamed by Claude to the agreed
+names (the developer had used `shifter_...`/`shifted_upload_...`):
+`laptop_after-shift-upload_gp200_web_2026-10-02T21-02-50.log` (saved
+after the restore), `laptop_after-shift_gp200_web_2026-10-02T21-07-50.log`
+(after the export; contains the first log plus the export),
+`laptop_after-shift_gp200_all_patches.zip`.
+
+- Preview: 64D's file doesn't fit and isn't written; User-IR/NAM
+  warning for 48C and 49A (48B and 48D shifted up one).
+- **Wrote 255 of 255 in 29.9 s, 255 verified, 0 not verified**, no
+  confirmation reads, page visible throughout. The same three patches as
+  on this computer read back with a pedal-managed byte at 0: 2A Hi Sweety
+  0x456, 4C Twiggy Blues 0x44e, 11B Classic 900 0x456 (each 2->0).
+- Export about 4.3 min after the restore: 256 of 256 in 0.8 s, 0
+  re-reads.
+- `compare-zips --shift 1` backup vs `laptop_after-shift_...zip`: **256
+  identical, RESULT: MATCH**, no pedal-managed differences (the three
+  bytes export as 2 again). Unshifted vs the backup: 102 identical, so
+  154 slots really changed, the same count as on this computer.
+
+Next: step 2, restore back from 1A, export, compare unshifted.
+
+## 2026-10-02: Laptop round trip, step 2 (back from 1A): MATCH
+
+Same page and source zip. Files: `laptop_after-restore_gp200_web_2026-10-02T21-12-11.log`,
+`laptop_after-restore_gp200_all_patches.zip`.
+
+- **Wrote 256 of 256 in 29.7 s, 256 verified, 0 not verified**, no
+  confirmation reads, page visible. The same three patches read back with
+  a managed byte at 0 (1D 0x456, 4B 0x44e, 11A 0x456; each 2->0).
+- The log was saved before the export (saved 21:12:11Z; the zip's entries
+  are stamped 14:13:28 local), so it has no export lines. The export
+  itself is checked by the compare.
+- `compare-zips` backup vs `laptop_after-restore_...zip`: 256 entries
+  each, 313,344 bytes compared, **256 identical, RESULT: MATCH**, no
+  pedal-managed differences. After-shift vs after-restore: 102 identical,
+  so step 2 changed 154 slots back. All four zips in the folder are
+  different files (distinct MD5s).
+
+**Phase 2 on the second computer: PASS.** 511 of 511 fast writes
+verified from the hosted site on the laptop, both compares MATCH, the
+same managed-byte read-backs and timings (29.9 s / 29.7 s) as on this
+computer. The pedal is back to `GP-200\Backups\2026-09-30_full-backup.zip`
+exactly. With this, both phase gates have passed on both computers.
+
+**Battery** (developer, afterwards): the laptop ran on battery for all of
+its tests. So the restore runs at full speed on battery with the page
+visible (29.9 s / 29.7 s, same as this computer plugged in). Not
+covered: a hidden page on battery, where browsers slow background tabs
+the most (T1).
+
+**Purged** `GP-200-testing\2026-10-02_hosted-site\` (developer, by hand,
+to the Recycle Bin). Claude's two attempts failed because the folder was
+some program's current folder (all 9 files were free; renaming the folder
+failed). That was a PowerShell window still `cd`'d into it from the
+compares; once closed, the delete worked. Lesson for test instructions:
+end with `cd` back out of the session folder (or close the window), or
+the purge fails.
+
+## 2026-10-02: Hidden-tab round trip (T1): MATCH, no slowdown
+
+Pass criteria set beforehand (developer agreed): every write verified and
+both compares MATCH; the time is recorded, and over about 60 s hidden
+(twice the visible time) would mean removing the one slow-able wait, but
+wouldn't fail the test. Session folder `GP-200-testing\2026-10-02_hidden-tab\`;
+live site (`d263698`), Edge, this computer, restoring
+`GP-200\Backups\2026-09-30_full-backup.zip`. After clicking Write and
+confirming, the developer pressed Ctrl+T and stayed on the new tab until
+the pedal's display stopped changing (it shows every write), then went
+back.
+
+| Step | Hidden | Writes | Time | Spacing hidden / visible | Compare vs backup |
+|---|---|---|---|---|---|
+| Shifted from 1B (`hidden-after-shift_...21-35-47.log`) | 140.8-205.5 s; restore 139.4-167.2 s | 255 of 255 verified | 27.8 s | 108 ms (244) / 125 ms (10) | `--shift 1`: 256 identical, MATCH |
+| Back from 1A (`hidden-after-restore_...21-37-49.log`) | 442.8-475.8 s; restore 441.7-469.1 s | 256 of 256 verified | 27.4 s | 107 ms (247) / 123 ms (8) | 256 identical, MATCH |
+
+- Same three managed-byte read-backs as every fast restore (2A/4C/11B,
+  then 1D/4B/11A); no confirmation reads, no slow-write warnings, no
+  write needed a second read. So the one timer left in the fast path
+  (the 25 ms pause between re-reads) never ran: this shows the normal
+  path isn't slowed, not how a re-read behaves hidden.
+- Hidden writes were slightly *faster* than visible ones, as in the
+  incidental 8 s on 2026-10-01. Expected: the fast pacing waits on the
+  pedal's MIDI replies, which the browser doesn't throttle.
+- Both restores finished while hidden, so the page logged "Page visible
+  again" as INFO and showed **no banner**: the banner appears only when
+  the page comes back while still writing. (Claude's instructions said to
+  expect a banner; wrong.)
+- The restore-back log was saved before its export; the export is
+  checked by the compare. Export after the shift: 256 in 0.4 s, no
+  re-reads. The pedal is back to the backup.
+
+**Result: PASS, well inside the criteria.** T1 resolved (above).
+**For the designed UI:** the banner's advice "Keep this tab in front until
+writing finishes" is stronger than the evidence now supports; soften it.
+
+**Purged** `GP-200-testing\2026-10-02_hidden-tab\` (4 files) to the
+Recycle Bin, with the developer's OK; the backup is untouched.
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- The app is live at https://donpark2000.github.io/GP-200-Patch-Manager-Web/
+  (version `d263698`), published from `main` by CI. `read-path` is ahead
+  of `main` by journal/`CLAUDE.md`/`DESIGN.md` updates only; no publish
+  needed for those.
+- Both gates passed on both computers, from the hosted site: backup
+  matches the backup file (and the CLI) byte for byte; a full fast round
+  trip (511 writes) verifies and compares MATCH. Q1 and Q2 resolved.
+- A hidden tab doesn't slow the restore (27.4-27.8 s hidden, 511 writes
+  verified, MATCH; T1 resolved).
+- Reads: about 1-3 ms per slot (0.3-0.8 s for all 256), never a re-read.
+  Restore: about 30 s for 256 patches.
+- The pedal holds exactly `GP-200\Backups\2026-09-30_full-backup.zip`.
+
+**Next steps, in order:**
+1. The designed UI (on a branch; publish deliberately). Notes so far: the
+   range entry should show its meaning in the grid; a backup is instant,
+   so no cancel button is needed for it; soften the hidden-tab banner.
+2. Optional: a hidden-tab restore on the laptop on battery.
+3. Undecided: backport the fast pacing to the CLI.
+
+## 2026-10-02: Open questions Q3-Q6 closed
+
+The developer didn't recognise Q3-Q6: Claude had added them (Q3/Q4 in the
+first commit, Q5/Q6 with the read-path port) and never brought them up.
+After a plain explanation of each, with the risk of dropping it, the
+developer agreed to close all four as proposed (details under "Resolved").
+The only code change: the fake pedal's read replies now use the real
+layout (185-byte chunks, 1176-byte dump, `tests/helpers/fake-pedal.js`,
+`baseDump()` in `tests/helpers/fixtures.js`). Uploads keep the CLI's
+183-byte chunks. The test "assembleChunks reorders out-of-order chunks"
+now checks the offsets and length; it was run with the old 183 stride
+put back and failed, then passed again with 185. Full suite: 117 of 117
+pass.
+
+On recording questions like these (developer, 2026-10-02): keep doing
+it. Writing them down as they come up guards against assuming too early
+that something doesn't matter, and closing them at the end of testing was
+cheap. Not proposed for the standards skill.
+
+
+## 2026-10-02: iPhone: no Web MIDI (as expected)
+
+The developer opened the live site in Edge on their iPhone, with no pedal
+attached: the page showed the app's "This browser doesn't support Web
+MIDI" message (`navigator.requestMIDIAccess` missing). Every iOS browser
+runs on Apple's WebKit engine, which has no Web MIDI, so iPhone and iPad
+are unsupported whatever the browser. Android (Chrome has Web MIDI) stays
+untested: the developer's tablet has only micro-USB, and an adapter isn't
+worth buying just to find out.
+
+## 2026-10-02: Designed UI: first decisions (discussion, no layout yet)
+
+The developer's thinking had moved on from the kickoff notes; this is what
+was agreed before any layout work. Recorded in `DESIGN.md`, "Designed UI".
+
+- **Header and footer.** The developer asked for both: the name in the
+  header; copyright, the GitHub link and GP200 Studio in the footer.
+- **Screens, not separate pages.** The test page made the developer
+  scroll up and down a lot; they suggested pages linked from the header.
+  Separate HTML pages would drop the MIDI connection, the selection, picked
+  files and any running restore on every click, so the app stays one page
+  whose header links switch screens (each with its own address, so Back
+  and bookmarks work). Agreed once that difference was explained.
+- **Devices.** Desktop/laptop Chrome and Edge. iPhone confirmed
+  unsupported (entry above); Android untested, not worth an adapter.
+- **Logs hidden** from users; still recorded, with "Save log" in Help for
+  support. The on-screen panel stays for `?dev`.
+- **Progress** for anything that takes time, so the user can see it hasn't
+  hung (the developer's point); a backup is under a second, a restore
+  about 30 s.
+- **Help** inside the app.
+
+The developer also fixed the git author name typo ("Donld" -> "Donald",
+global config); earlier commits keep the old spelling.
+
+## 2026-10-02: Designed UI: patch list and screens (mockup)
+
+A throwaway mockup (private Claude artifact, built from the developer's
+real names in `GP-200\Backups\2026-09-30_full-backup.zip`; no app code,
+nothing in the repo) settled the layout questions. Decisions, in order:
+
+- **Ranges, not free selection.** The developer: nobody needs random
+  access across 256 patches; related patches sit in one bank or
+  consecutive banks. Matches the restore (consecutive from a start slot)
+  and the CLI's range file names.
+- **"12-A" labels.** The developer worried that a bank x A-D grid would
+  confuse: Valeton always writes `<bank>-<letter>`. Of three layouts
+  (A: two halves of bank rows, B: 8 x 8 bank blocks, C: one labelled
+  list in 8 columns), C was kept. **Fits a full desktop screen** at 12 px
+  (developer's check); the laptop wasn't checked.
+- **Separate Back up and Restore screens.** With both control sets above
+  one list, the developer pointed out that nothing showed which one the
+  highlight belonged to, both could be filled in at once, and there was no
+  Restore button. Also: controls must not appear and disappear; grey them
+  out until their inputs are ready.
+
+Mockup version 3 has: blue backup range with the CLI file name; restore
+with example files, orange overwrite range, a "Pedal now / After
+restore" switch, counts of real vs default patches replaced, a 64-D
+overflow warning, a confirm dialog and a simulated progress bar; a Help
+draft with browser compatibility. `DESIGN.md`, "Designed UI", updated.
+
+## 2026-10-02: Designed UI: Template screen (mockup v4)
+
+The developer still values the CLI's `apply-template` and asked for it as
+its own screen. Checked against the CLI (`cmd_apply_template`,
+`confirm_overwrite` in `gp200.py`): one `.prst` into every slot of a
+From/To range, write-and-verify per slot, and a per-slot "overwrite? [y/N]"
+showing the current name unless `--force`.
+
+Web version agreed (details in `DESIGN.md`): one confirmation for the
+range instead of per-slot prompts; by default it writes only empty slots
+and old copies of the template, which is the web form of answering "N" at
+your own patches. Developer's rules: only "It's GP-200" counts as empty
+(the mockup had also greyed "Template"; Claude had assumed it was a
+default, but the developer's 45 "Template" slots are their own); slots
+holding an old template must be overwritten too, so an old copy is
+recognised by the same patch name.
+
+Mockup v4's example (the developer's real names, 44-A to 51-D, template
+named "Template"): 32 slots, writes 25 (9 empty, 16 old "Template"),
+keeps 7 (two "Test IR and NAM", Hard Rock, Lead, Special, Mandolin,
+JImi); counts checked against the backup's names.
+
+**Revised the same day (mockup v5): empty slots only by default.** The
+developer: "Template" was only the name of their `.prst` file; different
+ranges can hold different templates with different names, and nothing
+tells a template from a patch made by hand. So matching old copies by
+name is dropped. Default: write only "It's GP-200" slots, keep every
+other patch; "Every slot in the range" is the override. In the example
+range (44-A to 51-D) that now writes 9 and keeps 23.
+
+**Wording (mockup v6).** The developer: choosing "a template" is
+confusing, since the user picks an ordinary `.prst`. The screen keeps the
+name Template, with a fixed intro line, a "Choose a .prst file..." button
+and a "Write to range" action; Help now has three use cases (see
+`DESIGN.md`). The developer confirmed the Template screen otherwise
+matches what they want.
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- Live site unchanged: https://donpark2000.github.io/GP-200-Patch-Manager-Web/
+  (version `d263698`). `read-path` is ahead of `main` by docs and test
+  helpers only (fake pedal now uses the real read layout); no publish
+  needed.
+- Open questions: none (Q3-Q6 closed this session).
+- **The designed UI is agreed**: `DESIGN.md`, "Designed UI", is the spec.
+  Reference mockup (private artifact, the developer can open it):
+  https://claude.ai/artifact/6ygYs7meux9jHsqBFgfFtv (version 6). It is a
+  throwaway; build the real UI on the existing core, not from the
+  mockup's code.
+  - Header: Back up / Restore / Template / Help, connection status.
+    Footer: (c) Donald Parker, GPL-3.0, GitHub, GP200 Studio, credits,
+    version, not affiliated with Valeton.
+  - One page, screens switched by `#backup`/`#restore`/`#template`/
+    `#help`; connection, inputs and a running job survive switching.
+  - The patch list: "12-A Name", 8 columns of 8 banks, faint bank lines,
+    "It's GP-200" greyed; read on connect and after any write.
+  - Ranges only; clicking a patch fills the boxes. Blue = will be saved,
+    orange = will be overwritten; "Pedal now / After" switch.
+  - Buttons always visible, greyed with the reason until ready; the
+    progress line always present ("Ready." when idle).
+  - Template: any `.prst` into a range, empty slots ("It's GP-200")
+    only by default, "Every slot in the range" as override.
+  - Logs hidden; Save log in Help; log panel and timing test with `?dev`.
+  - iPhone/iPad unsupported (confirmed); Android untested.
+
+**Build plan, in order (on a new branch, e.g. `designed-ui`):**
+1. Core, Node-tested first: "12-A" display labels (input already accepts
+   both forms); the template plan (which slots get written in each mode,
+   counts, kept list) and the template write, reusing the restore's
+   write-and-verify and fast pacing; a full name read on connect (reuse
+   the export read).
+2. UI: replace the bare test page's layout with the screens, list,
+   controls, progress line, confirm dialogs and Help; keep every debug
+   log line. Keep the UI thin: anything testable goes in `src/core/`.
+3. Check in the built-in browser (layout, both themes, narrow window),
+   then the developer's hardware checks: backup compare MATCH, a restore
+   round trip, a Template run on scratch slots 64-A to 64-D with
+   confirmation (writes outside the restore feature need the
+   developer's OK; Template is a restore-type write, so confirm the
+   test plan first).
+4. Publish by merging to `main` only with the developer's OK.
+
+## 2026-10-02: Test page kept beside the designed UI
+
+The developer asked whether to start a new repo for the designed UI, so
+the interface that proved Web MIDI on hardware stays available if a
+problem turns up under the hood later. Agreed instead (Claude's
+recommendation, developer's OK): **one repo, both pages on one site.** A
+second repo would mean two copies of `src/core/`, every core fix made
+twice, and the "proven" copy drifting away from what the new UI runs, so
+it would stop telling us anything about the new site.
+
+- Tag **`test-page-proven`** on `d263698`, the published, gate-passing
+  commit (pushed to GitHub).
+- New branch **`designed-ui`**. The test page moved from `index.html` to
+  `test.html` (`src/ui/testpage.js`, `testpage.css`), labelled as the
+  developer test page with a link to the main app. CI publishes both.
+  `index.html` is a placeholder pointing to `test.html` until build step
+  2; this branch isn't published, so nobody sees it.
+- Use: if the designed UI misbehaves, repeat the same job on `test.html`.
+  Fails there too: the core. Works there: the new UI. Drawback: a change
+  to the core's interface must keep the test page working, and the
+  automated suite doesn't load pages, so check `test.html` in the browser
+  whenever the core changes.
+- **Snag:** first named `src/ui/test-page.js`, which broke `npm test`.
+  Node's `node --test` with no arguments runs every file matching
+  `test-*.js` (among other patterns), so it ran the page script as a test
+  (1 of 118 failed). Renamed to `testpage.js`: 117 pass, 0 fail. Checked
+  `test.html` in the built-in browser: loads, version stamp shown, no
+  console errors.
+- `DESIGN.md` "Architecture" and the README updated; the stale "64 × 4
+  slot grid" in Phase 1 now points to the patch list.
+
+## 2026-10-02: Build step 1: core for the designed UI
+
+Added to `src/core/`, all Node-tested (`tests/template.test.js`, 11 tests;
+suite 128 pass, 0 fail):
+
+- **`slotToDisplayLabel`** (`slots.js`): "12-A" for display. All 256
+  labels read back to their slot through `labelToSlot`, in either case.
+  File names and the log keep the CLI's "12A".
+- **`readPatchList`** (`export.js`): all 256 names via the export's read
+  (`readSlots`), `null` for a slot that couldn't be read.
+- **`template.js`**: `planTemplate` (empty-only or every slot; counts,
+  kept list, unread slots), `templateSummary`, `templateWarnings` (nothing
+  to write, unread slots, User-IR/NAM), and `recheckTemplate`. The write
+  is the restore's `writeSlots`, unchanged: same verify, same fast pacing.
+  - Checked against the CLI's `cmd_apply_template`: it writes the `.prst`
+    bytes as they are to every slot, after reading each slot's name and
+    asking y/N (`confirm_overwrite`). Same bytes here (tested: the plan
+    carries the picked file's data unchanged).
+  - **Unread slots** (name `null`): kept in the default mode, since they
+    aren't known to be empty; written in "every slot", as the CLI's
+    `--force` would.
+  - **Re-check before writing (Claude's addition, for the developer to
+    confirm).** The CLI reads each name right before writing it; the web
+    plan comes from names read on connect, so a patch saved on the pedal
+    since could be overwritten as "empty". Reading before each upload
+    would change the fast write sequence that passed the gates, so
+    instead the whole range is re-read once before the first write. Any
+    change (planned name differs, kept slot became empty or readable,
+    slot now unreadable) means nothing is written. Recorded in
+    `DESIGN.md`.
+- **Checks proven to fail** (standards §3): with the re-check's compare
+  disabled, 3 re-check tests failed; with "empty" loosened to any name
+  starting "it", the empty-name test failed. Restored: 11 pass.
+- `test.html` re-checked in the built-in browser after the core change:
+  loads, no console errors.
+
+## 2026-10-02: Re-check agreed; list always matches the pedal; test page unpublished
+
+- **Re-check before a Template write: agreed** by the developer.
+- **The patch list always shows what is on the pedal** (developer):
+  re-read after every restore or Template run, including one that stopped
+  early or had failures, and updated with the names the pre-write
+  re-check reads. `DESIGN.md` "The patch list" updated.
+- **Test page kept, not published** (developer: no need to host it all
+  the time). CI now leaves `test.html` and `src/ui/testpage.*` out of the
+  site. To bring it back: run it on localhost (`npm run serve`, then
+  `http://localhost:8000/test.html`; needs the repo and Python), or, e.g.
+  for the laptop, run the CI workflow by hand on GitHub (Actions, CI,
+  "Run workflow" on `main`) with "Also publish the developer test page"
+  ticked. The next publish without the box ticked takes it down.
+  - Checked: the assemble step, run in a scratch copy of the repo, gives
+    `index.html` only when the box is unticked or absent (a normal publish
+    from a merge) and adds `test.html` plus its script and CSS when ticked.
+    The YAML itself is first checked by GitHub on the PR's CI run, and the
+    checkbox appears only once the workflow is on `main` (GitHub reads
+    `workflow_dispatch` inputs from the default branch).
+
+## 2026-10-02: Build step 2: the designed UI (fake pedal checks)
+
+Built `index.html`, `src/ui/app.js`, `src/ui/app.css` on the core, plus
+`src/core/screens.js` (range boxes, summaries, confirmations, "After"
+names; `tests/screens.test.js`, 6 tests). Suite: 134 pass, 0 fail. Clean
+room (fresh copy of the repo, run twice): 134 pass both times, 71 files
+before and after, no difference.
+
+Decisions taken while building, each with its reason (in `DESIGN.md`):
+- The write-timing test stays on `test.html?dev`; it isn't moved into
+  the new UI, since the test page is kept. (`CLAUDE.md` updated.)
+- No Google Fonts: the computer's own fonts, the list in Arial Narrow
+  where installed. No outside dependency.
+- "Stop after this patch" on the progress line, always visible, greyed
+  unless writing.
+- `?dev&fake`: the fake pedal from `tests/helpers/fake-pedal.js`, for
+  checking the screens without hardware (localhost only).
+- A Template plan needs both From and To (no blank meaning "everything").
+
+**Checked in the built-in browser with `?dev&fake`** (made-up names in
+banks 1-20, "Template" in 21-A to 22-D, the rest "It's GP-200"):
+- Connect: the list fills in, "Ready.", Back up enabled. Before
+  connecting, every button says "Connect the pedal first".
+- Template 21-A to 26-D, empty only: "24 slots, 21-A to 26-D (16 empty, 8
+  of your patches). Writes 16. Keeps 8: ...". Confirmation "Write Clean
+  Start.prst to 16 slots between 21-A and 26-D? 8 kept." "After" shows
+  the new name in italics.
+- **Re-check, live:** after planning, the fake pedal got "New Song" in
+  23-A. Write to range wrote nothing (fake pedal: 0 uploads), said
+  "23-A "It's GP-200" is now "New Song" ... Nothing written", and the
+  list and plan updated (15 to write). Pressed again: 15 written and
+  verified, uploads only to those 15 slots, list re-read.
+- Restore, 3 files from 64-C: "2 files go to 64-C to 64-D" plus "1 file
+  doesn't fit after 64-D". From 19-D, with the fake pedal corrupting the
+  upload to 20-A: "Restored 3 of 3: 2 verified, 1 NOT verified (20-A;
+  marked in red, see Help)", 20-A outlined red with a cross, the list
+  re-read (new names shown), "Download failed read-backs" enabled
+  (`?dev`).
+- Fixed on the way: empty slots now stay grey inside the blue backup
+  range; the failed mark was hard to tell from the orange range (now a
+  red outline and a cross); the result line and the timer disagreed by
+  0.1 s (the timer is cleared at the end).
+- Light and dark themes; a 624-px-wide pane gives 4 columns; Help;
+  without `?dev` the log panel and pacing switch are hidden.
+- **Fit:** with every name set to a 16-character name, the 8 columns need
+  1,130 px (a window about 1,180 px wide). On Back up the footer ends
+  about 810 px down: fits a maximized 1080p browser (about 950 px of
+  page); a 1366 x 768 laptop will scroll a little. Not checked on the
+  developer's screens yet.
+- The fake pedal reads 256 slots in about 4 s (the real one about 0.3 s),
+  so the re-read after a write is slower here than it will be on
+  hardware.
+- Raised **Q7** (cached files after a publish), see "Open questions".
+
+## 2026-10-02: Status (start here next session)
+
+**Known:**
+- Branch `designed-ui` (pushed). Live site unchanged (`d263698`, the test
+  page). Tag `test-page-proven` = that commit.
+- Build steps 1 and 2 done (entries above). The designed UI works against
+  the fake pedal; **nothing has touched real hardware yet**.
+- Test page: `test.html`, not published (CI checkbox to publish it
+  temporarily, available once the workflow is on `main`).
+- Open question: **Q7** (cached files after a publish; fix proposed).
+
+**Next: step 3, the developer's hardware checks.** Confirm this test plan
+with the developer before any write:
+1. Look: `npm run serve`, then `http://localhost:8000/` on this computer
+   (the laptop needs the hosted site, so after the merge, or a clone).
+   Does the list fit; is anything confusing.
+2. Back up all 256 with the new UI; `compare-zips` against a fresh backup
+   from the test page or the CLI: expect MATCH.
+3. Restore round trip as in the phase 2 gate (shifted restore, compare,
+   restore back, compare), with the new UI.
+4. Template on scratch slots 64-A to 64-D (needs the developer's OK): back
+   up 64-A to 64-D first; empty-only with a mix of empty and non-empty
+   slots; then "Every slot"; then restore the backup. Expect the right
+   slots written, all verified, and the list matching a fresh backup.
+5. Decide Q7, then merge to `main` only with the developer's OK.
+
+## 2026-10-02: Connect button made obvious
+
+The developer saw "Connect the pedal first" but couldn't find a control
+to connect: the button was a small grey outline "Connect" at the right
+of the header. Now, while not connected, it's a solid orange "Connect to
+pedal" (the screen's main action) and the greyed-out reason says "Press
+"Connect to pedal" (top right) first"; once connected it becomes a quiet
+"Reconnect". Help and the error messages use the same label. Checked in
+the built-in browser (`?dev&fake`): orange before connecting, quiet
+"Reconnect" after, Back up enabled. Suite 134 pass.
+
+## 2026-10-02: Opening screen and bigger text
+
+The developer found the Connect button and connected (fake pedal), then
+asked for (1) an opening screen with one control, Connect, plus a short
+summary of the app, and (2) bigger text: "very small"; a bit of
+scrolling is acceptable for readability. Window-size behaviour was
+working well. Both in `DESIGN.md`.
+
+- **Welcome panel** (`#scr-connect`): shown on Back up / Restore /
+  Template while not connected. One large "Connect to pedal" button,
+  connect errors under it, port picker inside it. The header button is
+  now a quiet "Reconnect", present only while connected (exception to
+  "controls never appear or disappear", stated in `DESIGN.md`).
+  Checked: the panel on load; after Connect, the Restore screen with the
+  list; Reconnect shown.
+- **Sizes:** were 14 px text, 13 px controls, 12 px list. Now 16 / 15 /
+  14 px. The list size is computed from the window width so 8 columns of
+  worst-case names (16 characters) always fit: a column measured 10.75
+  font-sizes wide (129 px at 12 px, 137 px at 12.79 px).
+  - First try overflowed by 13 px at a 624 px window: `100vw` includes the
+    page's scrollbar (about 17 px). Allowed for it (+18 px, +2 spare).
+  - Second check found 8 columns overflowing between 761 and 1,180 px
+    (the 12 px floor can't fit 8 columns there): the switch to 4 columns
+    moved from 760 px to 1,200 px.
+  - Final, measured with every name set to a 16-character name: 1920 px:
+    14 px, 8 columns; 1300: 13.4 px, 8; 1200: 12.2 px, 8; 1199: 14 px, 4;
+    900: 14 px, 4; 600: 12 px, 4. Sideways scroll 0 at all of them.
+  - Below about 610 px the list scrolls sideways (phones: not supported).
+
+## 2026-10-02: Status (start here next session)
+
+Supersedes the status entry above (adds the welcome screen, text sizes,
+and the open publish question).
+
+**Known:**
+- Branch `designed-ui`, pushed, clean. The live site still has the test
+  page (`d263698`, tag `test-page-proven`): **nothing published**.
+  The developer expected the live site to change; it changes only when
+  `designed-ui` is merged to `main`, which needs their OK.
+- The designed UI is built: welcome panel with one Connect button until
+  connected, Back up / Restore / Template / Help, text 16/15/14 px with
+  the list sized to the window. Checked against the fake pedal only; the
+  developer has looked at it on localhost ("it is working").
+- `test.html`: the test page, unpublished (CI checkbox once on `main`).
+- Open question **Q7** (cached files after a publish; fix proposed:
+  `?v=<commit>` on the published copy's links).
+- Local server: the desktop app's preview server (port 8000) can be
+  stopped by the app. The developer can run their own:
+  `python -m http.server 8001 --bind 127.0.0.1` in the repo folder, then
+  `http://localhost:8001/`.
+
+**Waiting on the developer (ask first thing):**
+1. Publish order: Claude suggested hardware checks on localhost, then the
+   Q7 fix, then merge to `main`. Alternative: publish now so the laptop
+   can see it. Not decided.
+2. Q7: OK to add the `?v=<commit>` stamp in CI?
+
+**Then step 3, hardware checks** (plan in the previous status entry:
+look; backup compare; restore round trip; Template on 64-A to 64-D with
+the developer's OK and a backup of 64-A to 64-D first).
+
+## 2026-10-02: Usability notes; a folder per publish (Q7)
+
+The developer agreed to hardware checks before publishing, asked what Q7
+means in practice (explained: a returning visitor within 10 minutes of a
+publish can get a page that fails to start; in principle a quietly
+mismatched pair; fix approved), and gave usability notes from the
+localhost UI. Decisions in `DESIGN.md`. Built:
+
+- **Back up first after connecting**, with From/To filled in as 1-A and
+  64-D. They were empty boxes whose grey hint text ("1-A", "64-D") read
+  as a greyed-out range; empty still means "all" (core unchanged). After
+  a lost connection, back to the screen the user was on
+  (`screenAfterConnect` in `src/core/screens.js`, Node-tested).
+- **Home page** (`#home`, the title links to it): the welcome panel,
+  with "Connected to the pedal" and links in place of the connect steps
+  while connected (the developer chose this over "title goes to Back up
+  when connected").
+- **Reconnect removed.** The developer pointed out that a lost connection
+  already brings back the welcome panel. One more case used it: the
+  list's re-read failing after a write ("press Reconnect"). That case
+  now drops the connection too and shows the panel, with the write's
+  result and the reason under "Connect to pedal" (`dropConnection`).
+  Only reviewed in the code: the fake pedal can't make that read throw.
+- **Footer:** no credits (README and the source keep them; the copyright
+  and GPL-3.0 notice stays); GP200 Studio links to gp200studio.com
+  (checked: Kabir Tamari's GPL-3.0 editor, linking to
+  `kabir0st/gp200-studio`; the `?fbclid=` tracking tag the developer's
+  link carried was left off). The README's editor link too. Every link
+  to another site opens in a new tab (also Help's README link).
+- **Drawing of the pedal** on the welcome panel: an inline SVG
+  placeholder (body, screen, 4 knobs, 4 footswitches with LEDs,
+  expression pedal), beside the text, below it under 900 px. Not
+  Valeton's photos (copyrighted, and could look official next to "not
+  affiliated"); the developer will take photos of their own pedal later.
+  Stock photos: possible, but check the licence covers this use.
+- **Q7, a folder per publish.** Changed from the `?v=<commit>` proposal,
+  told to the developer before building: with `?v=` the server ignores
+  the tag, so an old cached page that lost part of its cache could still
+  be served a new file. With `v/<commit>/src/`, an old page finds its own
+  cached files or a 404, never a newer file, and only the 4 references in
+  the 2 pages change (no import is rewritten). `tools/stamp-site.js`
+  moves the folder, repoints the pages, and fails the publish unless
+  every relative reference points into the folder at a file that exists;
+  it prints how many it checked. CI runs it after the version stamp.
+
+**Evidence:**
+- Suite: 141 pass (7 new: `stampSite` on the real pages, 4 references
+  and both pages; failing on a reference left outside the folder, a
+  missing file, no `src/`, no pages, nothing to check, a bad stamp;
+  outside links open a new tab; title links home, no Reconnect;
+  `screenAfterConnect`). No `gp200-site-*` temp folders left.
+- Dry run of CI's assemble step in the scratchpad (stamp `abc1234`):
+  "code moved to v/abc1234/; 2 reference(s) in 1 page(s) point there, all
+  present". Served it: all 15 files loaded from `/v/abc1234/`, none from
+  elsewhere, version "abc1234 (dry run)"; the only 404 was `favicon.ico`
+  (there is none; not new).
+- Built-in browser, `?dev&fake`: from `#restore`, Connect went to
+  `#backup` with 1-A / 64-D filled in, summary "All 256 slots ...",
+  "Ready."; the title went to `#home` with the connected note and no
+  screen link lit; light and dark, 700 px wide: no sideways scroll.
+
+## 2026-10-02: "Not made by Valeton" moved; sessions named
+
+- The developer asked whether "Not affiliated with Valeton" belongs in
+  the footer (clean interface, not hiding it). Moved: the welcome page's
+  first sentence now ends "An independent tool, not made by Valeton.",
+  and Help ends with an "About" section (independent, GPL-3.0, not made,
+  endorsed or supported by Valeton; the names only say which pedal it
+  works with). The footer has no Valeton line. Test added (welcome and
+  Help have it, the footer doesn't); it failed first on a line break in
+  the Help text, then passed. Suite 142 pass. Checked in the browser.
+- Sidebar: every session started with "start" was titled "Session
+  start". The four were renamed from their transcripts (`Oct 2 · <topic>`)
+  and this project's 8 sessions grouped as "GP-200 Patch Manager Web".
+  `CLAUDE.md` start step 5: each session names itself. Old sessions kept
+  (transcripts hold detail the journal doesn't); archive if crowded.
+
+## 2026-10-02: Report a problem (Help)
+
+The developer asked about contact/support and suggested GitHub issues,
+maybe automated with the log. Agreed: GitHub issues; a fully automatic
+issue needs the user's GitHub sign-in (a server), so the app does the
+rest and the user posts. Built before the hardware checks so they test
+it too (developer: the UX side is the untested part). Decisions in
+`DESIGN.md` ("Report a problem").
+
+- `src/core/report.js`: `issueText`/`issueUrl` (the filled-in link,
+  shortened under 6,000 characters by cutting the last error), and
+  `browserSummary`. `Logger.lastError`.
+- Help: a "Report a problem" section (steps; what the log holds; public;
+  in memory only, nothing stored or sent) with **Report a problem** and
+  **Save log only**. About now points to it.
+- `.github/ISSUE_TEMPLATE/problem.yml` + `config.yml` (blank issues on).
+  Not checked by a YAML parser (none installed); GitHub uses the form only
+  from `main`.
+
+**Evidence:**
+- Suite 147 pass (5 new). The length test was checked to bite: the
+  20,000-character "é" error makes a 30,517-character link unshortened
+  and 9,566 after the first cut, so the halving loop is what keeps it
+  under the limit.
+- Browser (`?dev&fake`, the two link clicks recorded instead of
+  followed, so no file was saved and GitHub wasn't opened): one download
+  (`gp200_web_..._.log`) and one new-tab link to `.../issues/new`, 641
+  characters, title "Problem: ", body as designed; the message's
+  fallback link is the same URL; log lines "Report a problem...", "Log
+  saved: ...", "Issue link: 641 characters".
+- **Bug found and fixed:** the browser line said "Not?A_Brand 24". The
+  built-in browser lists only the decoy brand and "Chromium"; the code
+  skipped both and fell back to the decoy. Now: real name, else
+  Chromium, never the decoy (`browserSummary`, tested with Chrome, Edge,
+  that case, and no brands). Re-checked: "Chromium 152 on Windows".
+
+**To check in the hardware session:** press Report a problem in Chrome:
+the GitHub tab opens filled in, the log drags in, the developer posts a
+test issue (their Submit), and it's closed afterwards. After the merge:
+the issue form shows on GitHub, and the app's link still opens the
+filled-in blank issue (not the form chooser).
+
+## 2026-10-02: Status (start here next session)
+
+Supersedes the status entries above. The developer starts fresh on
+2026-10-03 with the hardware checks.
+
+**Known:**
+- Branch `designed-ui`, pushed, clean. **Nothing published**: the live
+  site is still the test page (`d263698`, tag `test-page-proven`). It
+  changes only when `designed-ui` is merged to `main`, with the
+  developer's OK.
+- Decided and built today, all checked against the fake pedal only
+  (entries "Usability notes", "Not made by Valeton", "Report a problem"):
+  - welcome page = home (`#home`; the title links to it), with a
+    placeholder drawing of the pedal (the developer's own photos later);
+    "Connected" note there once connected; no header Reconnect;
+  - after connecting: Back up, with 1-A to 64-D filled in; after a lost
+    connection, back to the screen the user was on;
+  - footer: copyright/GPL, GitHub, GP200 Studio (gp200studio.com),
+    version; no credits, no Valeton line; outside links open a new tab;
+    "not made by Valeton" on the welcome page and in Help's About;
+  - Help: "Report a problem" (saves the log, opens a filled-in GitHub
+    issue in a new tab) and "Save log only"; issue form in the repo.
+  - Q7 fix: CI publishes the code in `v/<commit>/src/`
+    (`tools/stamp-site.js`); dry run passed.
+- Suite: 147 pass (`npm test`).
+- Sessions are grouped in the sidebar ("GP-200 Patch Manager Web") and
+  named `<Mon D> · <topic>` (`CLAUDE.md` start step 5).
+- Local server: the desktop app's preview server can hold port 8000. The
+  developer runs their own in the repo folder:
+  `python -m http.server 8001 --bind 127.0.0.1`, then
+  `http://localhost:8001/` in Chrome.
+
+**Settled before leaving:** the Template screen may write to the pedal,
+with the same confirmation in the app (developer, 2026-10-02;
+`CLAUDE.md` project rules updated). Nothing else to ask before starting;
+the developer asked for these next steps as the start-of-session
+summary.
+
+**Next: the hardware checks on localhost** (Chrome, this computer).
+Session folder `C:\Users\dpark\Documents\GP-200-testing\2026-10-03_designed-ui\`;
+point Chrome's downloads there for the session. Confirm the plan with
+the developer before any write.
+1. **Look and connect.** Welcome page, drawing, Connect; lands on Back up
+   with 1-A to 64-D; the list fills in with the real names; the title
+   goes to the welcome page with the "Connected" note. Anything
+   confusing gets noted.
+2. **Back up all 256** (new UI) -> compare with a fresh backup made the
+   proven way (test page `test.html` on localhost, or the CLI):
+   `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\compare-zips.js <proven>.zip <new-ui>.zip`.
+   Expect MATCH. Also back up one slot and a range (file names
+   `12A_Name.prst`, `gp200_12A_to_14D.zip`).
+3. **Restore round trip** with the new UI, as in the phase 2 gate: backup
+   A; restore A starting at 1-B; back up and compare with `--shift 1`;
+   restore A at 1-A; back up and compare: both MATCH, every write
+   verified. Check the preview (orange range, "After restore" view) and
+   the progress line on the way.
+4. **Unplug test:** unplug the USB cable while connected (not during a
+   write): the welcome page comes back with the reason; plug in,
+   Connect: back on the same screen.
+5. **Template on 64-A to 64-D**: back up 64-A to
+   64-D first; make a mix of empty and non-empty slots there; Template
+   with "only empty" (the right slots written, the others kept), then
+   "Every slot"; then restore the 64-A to 64-D backup and compare.
+6. **Report a problem** in Chrome: the GitHub tab opens filled in (real
+   browser name, version "dev"), the saved log drags in. The developer
+   posts one test issue themselves; label/close it afterwards. Also
+   **Save log only** (developer, 2026-10-03: test both): one log file
+   saved, no GitHub tab.
+7. Record results in this journal, then ask to purge the session folder.
+
+**Then publishing** (with the developer's OK): merge `designed-ui` to
+`main`. After the publish:
+- Q7: the live page loads from `v/<commit>/` (check the page source or
+  `curl -s https://donpark2000.github.io/GP-200-Patch-Manager-Web/ | grep v/`);
+  then close Q7.
+- GitHub shows the "Problem report" issue form, and the app's Report a
+  problem link still opens the filled-in issue (not the template
+  chooser).
+- The laptop: look at the hosted site, one backup compare.
+
+## 2026-10-03: Help: the editor may stay open; why use a template
+
+Two Help changes from the developer before the hardware checks.
+Decisions in `DESIGN.md`.
+
+- **Valeton's editor open.** Help said to close Valeton's editor
+  because "only one program can use the pedal at a time". That was an
+  inference from older Windows MIDI drivers (one program per port),
+  never tested with the GP-200. **Evidence against it:** the developer
+  often left Valeton's desktop software open during their own testing,
+  and the tests passed. The real risks: (1) both programs talking to
+  the pedal at once (the pedal's replies reach every program with the
+  port open; our checks would most likely catch it as a failed read or
+  an unverified write); (2) the editor showing patches loaded before a
+  restore and saving an old copy over a restored one (not checked
+  whether the editor re-reads on its own). New text: the welcome page
+  and Quick start say it can stay open but not be used while this app
+  reads or writes, and to reload its patches after a restore; "Pedal
+  not found" keeps "close it" as a step ("on some computers only one
+  program can use the pedal's connection at a time").
+  **To check in today's hardware session:** keep the editor open
+  throughout; after the restore, does it show the new patches or the
+  old ones?
+- **Templates: why before how.** The developer wanted Help to sell the
+  idea, from their own experience: patches that each work differently
+  are hard to use live; shared standards (preferred wah, noise gate and
+  its place in the chain, effects loop send/return placement, CTRL 1 on
+  the distortion and CTRL 2 on the modulation) help, and different
+  banks can have different templates (clean, metal). Help's Templates
+  section now starts with that, then "How it works" (an `h3`, styled in
+  `app.css`) with the use cases. The Template screen's intro line names
+  the same standards.
+
+**Evidence:** suite 149 pass (2 new in `site.test.js`: editor wording
+in the welcome page, Quick start and troubleshooting, and no "only one
+program can use the pedal at a time"; the Templates section has the
+why before "How it works"). Both new tests failed against the previous
+`index.html`. Help looked at in the built-in browser.
+
+## 2026-10-05: Final localhost look; pedal drawing; Help wording
+
+The developer ran the designed UI on localhost before publishing, mainly
+for the interface ("very confident in the pedal control"). Claude had
+pointed out first that no hardware run of the designed UI is recorded
+(the last real compares are the test page's and the live site's, Oct
+1-2); the developer chose a localhost check rather than a full repeat
+of the 2026-10-02 plan. Their verdict: "Almost perfect", two changes.
+
+- **Help, Templates:** the CTRL example now reads "what the switches do
+  (for example, you could assign CTRL 1 to the distortion module and
+  CTRL 2 to the modulation module, and choose the initial state of each
+  as "on" or "off")" (developer's wording, typo and spacing fixed).
+- **Pedal drawing** (`src/ui/pedal.svg`) replaces the placeholder on the
+  welcome page. Drawn by hand as SVG from the developer's photo
+  (`Downloads\GP-200.JPG`, taken at an angle), not a filtered photo: no
+  image tools are installed, and the developer asked for "a drawing
+  instead of a bad photo". Photo positions were mapped onto a
+  straightened outline (inverse bilinear from the body's four corners),
+  then adjusted by eye. Only the pedal; no Valeton name or logo, and no
+  "X" after GP-200 (the app isn't Valeton's). Developer's correction:
+  the footswitches are equally spaced and the expression pedal's top is
+  about as wide as that spacing; the angle had squeezed both. Now 124
+  apart, pedal stretched to match (`matrix(1.326 ...)`, lines kept at
+  their width with `non-scaling-stroke`).
+  An `<img>` under `src/`, so the publish stamp moves it with the code.
+
+**Evidence:** suite 150 pass. New test in `site.test.js`: the welcome
+page shows the drawing with alt text, from under `src/`; the file has
+the expected `viewBox`, no "Valeton", and no outside references. It
+failed on a broken `viewBox` and on "VALETON" put into the drawing. The
+stamp test failed as it should when the drawing added a fifth reference
+(4 expected); it now expects 5 and checks the drawing's new path.
+Looked at in the built-in browser at 1,300 px, dark theme.
+
+## 2026-10-05: Watermark tried and left out
+
+The developer suggested the pedal drawing as a faint, angled watermark
+behind the other screens. Tried on localhost, three versions:
+
+1. The colour drawing, grey (`grayscale`), 7% then 12%, turned 30 then
+   20 degrees, fixed behind the page. Light theme: visible. Dark theme:
+   "a very light grey box, no details" (developer), even inverted: the
+   drawing is mostly dark blue, so in grey it has little contrast.
+2. Fixed below the headers (top 210 px): the list starts at a different
+   height on each screen (Back up 193 px, Restore 234, Template 288 at
+   1,300 px), so it ran into the Template controls; and the blue "will
+   be saved" cells cover the whole Back up list, hiding anything behind.
+3. **Outlines only** (`pedal-outline.svg`, turned 20 degrees in the file),
+   used as a CSS `mask` painted with `var(--fg)` at 16%, as `.list::after`
+   (absolutely placed, so not a grid item): exactly the list's area, over
+   the cells, light lines in the dark theme. Developer: "Much better".
+
+**Decision (developer):** leave it out for now; the colour drawing stays
+on the welcome page only. Nothing of it is committed. To bring it back,
+version 3 is the one to rebuild.

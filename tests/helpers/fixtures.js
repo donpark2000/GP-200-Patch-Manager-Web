@@ -13,9 +13,9 @@ export function goldenManifest() {
   return JSON.parse(readFileSync(new URL("golden/golden.json", FIXTURES), "utf8"));
 }
 
-/** A plausible 1182-byte dump: the skeleton's content region, as the CLI's tests use. */
+/** A plausible dump: the skeleton's content region, 1176 bytes like the real pedal's (journal 2026-10-02). */
 export function baseDump() {
-  return fixtureBytes("skeleton.prst").slice(0x28, 0x4c6);
+  return fixtureBytes("skeleton.prst").slice(0x28, 0x28 + 1176);
 }
 
 export function dumpWithName(name, dump = baseDump()) {
