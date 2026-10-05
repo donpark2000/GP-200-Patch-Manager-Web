@@ -165,7 +165,12 @@ to be designed.
 - **Slots are chosen as ranges**, not by clicking around the list
   (developer: patches live together in a bank or consecutive banks).
   Back up: From/To; Restore: a start slot. Clicking a patch fills in the
-  boxes. The app shows labels as "12-A" and accepts "12A"/"12-a"; file
+  boxes: first click both ends, second click the other end. **Dragging**
+  across the list from one patch to another sets From/To too (developer,
+  2026-10-05: it felt natural); on Restore a drag does nothing. The list
+  can't be text-selected, so a drag never leaves a browser highlight that
+  looks like a range. Each screen keeps its own range. Help's "Choosing
+  slots" explains drag, click and typing. The app shows labels as "12-A" and accepts "12A"/"12-a"; file
   names keep the CLI's style (`12A_Name.prst`).
 - **The list shows the range before anything runs:** blue for "will be
   saved"; orange for "will be overwritten", with a switch to show the
@@ -257,7 +262,7 @@ to be designed.
   patch"** button sits on the progress line, always visible, greyed out
   unless a restore or Template write is running (the test page had one;
   a restore takes about 30 s).
-- **Help screen:** quick start, what a restore overwrites, the
+- **Help screen:** quick start, choosing slots, what a restore overwrites, the
   User-IR/NAM limitation, browser compatibility, troubleshooting
   (permission prompt, pedal not found), Report a problem, About; links
   to the README.

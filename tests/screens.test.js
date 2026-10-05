@@ -8,6 +8,8 @@ import {
   afterNames,
   backupFileName,
   backupSummary,
+  clickRange,
+  dragRange,
   parseRange,
   parseStart,
   replaceCounts,
@@ -107,4 +109,22 @@ test("after connecting: Back up first; after a lost connection, back where the u
   // The home page and Help aren't pedal screens: go to Back up.
   assert.equal(screenAfterConnect("home", true), "backup");
   assert.equal(screenAfterConnect("help", true), "backup");
+});
+
+// ---- Picking a range on the list (developer, 2026-10-05) --------------------
+
+test("clickRange: first click sets both ends, second sets the other end in either direction", () => {
+  assert.deepEqual(clickRange(undefined, "from", 40), { from: 40, to: 40, next: "to" });
+  assert.deepEqual(clickRange(40, "to", 47), { from: 40, to: 47, next: "from" });
+  assert.deepEqual(clickRange(40, "to", 33), { from: 33, to: 40, next: "from" }, "clicked above From");
+  assert.deepEqual(clickRange(40, "to", 40), { from: 40, to: 40, next: "from" }, "same patch twice: one slot");
+  assert.deepEqual(clickRange(40, "from", 12), { from: 12, to: 12, next: "to" }, "a third click starts again");
+  assert.deepEqual(clickRange(undefined, "to", 9), { from: 9, to: 9, next: "to" }, "From empty or invalid: start there");
+});
+
+test("dragRange: from where the drag started to the pointer, either direction, ends included", () => {
+  assert.deepEqual(dragRange(10, 25), { from: 10, to: 25 });
+  assert.deepEqual(dragRange(25, 10), { from: 10, to: 25 }, "dragged upwards");
+  assert.deepEqual(dragRange(0, 255), { from: 0, to: 255 }, "1-A to 64-D");
+  assert.deepEqual(dragRange(7, 7), { from: 7, to: 7 }, "back on the start patch: one slot");
 });

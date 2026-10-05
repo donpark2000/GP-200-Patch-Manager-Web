@@ -153,3 +153,25 @@ const PEDAL_SCREENS = ["backup", "restore", "template"];
 export function screenAfterConnect(current, wasConnected) {
   return wasConnected && PEDAL_SCREENS.includes(current) ? current : "backup";
 }
+
+/**
+ * A click on the patch list for a From/To range: the first click sets both
+ * ends to that patch, the second sets the other end, in either direction.
+ * @param {number|undefined} from the slot now in From (undefined if none)
+ * @param {"from"|"to"} next which end this click sets
+ * @param {number} slot the patch clicked
+ * @returns {{from: number, to: number, next: "from"|"to"}}
+ */
+export function clickRange(from, next, slot) {
+  if (next === "from" || from === undefined) return { from: slot, to: slot, next: "to" };
+  return { from: Math.min(from, slot), to: Math.max(from, slot), next: "from" };
+}
+
+/**
+ * Dragging across the patch list (developer, 2026-10-05): the range runs
+ * from the patch where the drag started to the one under the pointer, in
+ * either direction.
+ */
+export function dragRange(anchor, slot) {
+  return { from: Math.min(anchor, slot), to: Math.max(anchor, slot) };
+}

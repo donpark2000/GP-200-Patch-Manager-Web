@@ -12,22 +12,30 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q7. Mixed old and new files for 10 minutes after a publish.** *Raised
-  2026-10-02 (entry "Build step 2").* GitHub Pages sends
-  `Cache-Control: max-age=600` (checked with `curl -I` on the live
-  `src/core/slots.js`), so a browser may reuse cached modules for up to 10
-  minutes. Right after a publish, a returning visitor can get the new
-  `app.js` with an old cached `slots.js`; the page then fails to start
-  ("does not provide an export named ..."). Seen locally during the
-  build (Python's server, same effect). Proposed fix: CI adds `?v=<commit>`
-  to every relative import and to the CSS/JS links in the published copy
-  (a `sed` in the assemble step, like the version stamp), so each publish
-  is a fresh set of URLs. Nothing changes in the repo files or locally.
-  **Fix built** (developer's OK, 2026-10-02; entry "Usability notes"), as
-  a folder per publish instead of `?v=`: dry run passes. Close it once the
-  first publish shows the live page loading from `v/<commit>/`.
+(none)
 
 ## Resolved
+
+- **Q7. Mixed old and new files after a publish: closed 2026-10-05**
+  (entry "Published: the designed UI is live"). The first publish with the
+  fix (`1ae5165`) loads everything from `v/1ae5165/src/` (`app.css`,
+  `app.js`, `pedal.svg`; checked with `curl` on the live page).
+  The original question, for the record:
+
+  - **Q7. Mixed old and new files for 10 minutes after a publish.** *Raised
+    2026-10-02 (entry "Build step 2").* GitHub Pages sends
+    `Cache-Control: max-age=600` (checked with `curl -I` on the live
+    `src/core/slots.js`), so a browser may reuse cached modules for up to 10
+    minutes. Right after a publish, a returning visitor can get the new
+    `app.js` with an old cached `slots.js`; the page then fails to start
+    ("does not provide an export named ..."). Seen locally during the
+    build (Python's server, same effect). Proposed fix: CI adds `?v=<commit>`
+    to every relative import and to the CSS/JS links in the published copy
+    (a `sed` in the assemble step, like the version stamp), so each publish
+    is a fresh set of URLs. Nothing changes in the repo files or locally.
+    **Fix built** (developer's OK, 2026-10-02; entry "Usability notes"), as
+    a folder per publish instead of `?v=`: dry run passes. Close it once the
+    first publish shows the live page loading from `v/<commit>/`.
 
 - **Q3-Q6.** *Closed 2026-10-02 with the developer (entry "Open questions
   Q3-Q6 closed").* Claude had raised them while setting up and porting;
@@ -2482,3 +2490,49 @@ behind the other screens. Tried on localhost, three versions:
 **Decision (developer):** leave it out for now; the colour drawing stays
 on the welcome page only. Nothing of it is committed. To bring it back,
 version 3 is the one to rebuild.
+
+## 2026-10-05: Published: the designed UI is live
+
+- PR [#4](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/4)
+  (`designed-ui` into `main`). Claude's `gh pr merge` was refused by the
+  session's permission check ("merge without review"); the developer
+  merged it. Merge commit `1ae5165`; CI run 37381666205: tests passed,
+  deployed (42 s).
+- **Q7 closed:** the live page loads `v/1ae5165/src/ui/app.css`,
+  `app.js` and `pedal.svg`; `test.html` is 404 (not published, as
+  intended).
+- **Developer's check on the live site:** Report a problem opened the
+  filled-in GitHub new-issue page and the log downloaded. Still to look
+  at: GitHub's own "New issue" page offering the "Problem report" form;
+  the laptop.
+
+## 2026-10-05: Dragging across the list picks a range
+
+From the developer's test on the live site: dragging the mouse across the
+patch list highlighted the patches it passed, but From/To didn't change;
+and the same highlight showed on Back up and Template, "which makes no
+sense". **Cause:** the browser's own text selection, not the app's range.
+All screens share one list element, so the highlight stayed when the
+screen changed. The app's ranges were already separate per screen
+(`from`/`to` vs `tfrom`/`tto`).
+
+**Fix** (decisions in `DESIGN.md`, "Slots are chosen as ranges"):
+- The list can't be text-selected (`user-select: none`).
+- A drag sets From/To on Back up and Template, live as the pointer moves,
+  either direction (`dragRange` in `src/core/screens.js`). A press and
+  release on one patch stays a click; the click logic moved to
+  `clickRange` (same behaviour as before). On Restore a drag does nothing.
+  Logged: "Range dragged on backup: 2-A to 11-A".
+- Help: "Choosing slots" after Quick start (developer's suggestion:
+  they found the drag by accident because it felt natural).
+
+**Evidence:** suite 154 pass (4 new: `clickRange`, `dragRange`, the CSS
+rule, the Help section). Each of the first three failed alone when its
+code was broken (drag ends unordered, click ends unordered, the CSS rule
+removed). In the built-in browser with `?dev&fake`, real mouse drags:
+2-A to 11-A downwards and upwards (37 slots marked, no text selection),
+a click after a drag starts a new range (6-B), a second click above it
+gives 2-A to 6-B; Template then shows its own empty boxes, nothing marked.
+One flaw found and fixed there: a drag that reproduced the range already
+in the boxes wasn't counted as a drag (not logged, and releasing on the
+start patch would have acted as a click).

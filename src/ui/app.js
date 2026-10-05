@@ -9,7 +9,7 @@ import { exportWarnings, packageExport, readPatchList, readSlots } from "../core
 import { Logger } from "../core/log.js";
 import { browserSummary, issueUrl } from "../core/report.js";
 import {
-  afterNames, backupSummary, parseRange, parseStart, restoreConfirmText, restoreSummary,
+  afterNames, backupSummary, clickRange, dragRange, parseRange, parseStart, restoreConfirmText, restoreSummary,
   screenAfterConnect, templateConfirmText, templateScreenSummary,
 } from "../core/screens.js";
 import { skeletonBytes } from "../core/skeleton.js";
@@ -42,6 +42,8 @@ const state = {
   failedSlots: new Set(), // slots whose last write wasn't verified; marked in the list
   failedReadbacks: [],
   clickNext: { backup: "from", template: "from" },
+  drag: null, // { anchor, moved } while the mouse is held down on the list
+  dragEnded: false, // a drag just ended: ignore the click the browser may send
   restore: { picked: null, error: null, showAfter: false, label: "" },
   template: { file: null, error: null, showAfter: false },
   hiddenAt: null,
@@ -172,33 +174,75 @@ function buildList() {
     list.append(d);
   }
   list.addEventListener("click", onListClick);
+  list.addEventListener("pointerdown", onListPointerDown);
+  addEventListener("pointermove", onListPointerMove);
+  addEventListener("pointerup", onListPointerUp);
+  addEventListener("pointercancel", onListPointerUp);
 }
 
+/** The From/To boxes the list fills on this screen, or null (Restore, Help). */
+function rangeBoxes() {
+  if (state.screen === "backup") return ["from", "to"];
+  if (state.screen === "template") return ["tfrom", "tto"];
+  return null;
+}
+
+const cellSlot = (el) => {
+  const c = el?.closest?.(".cell");
+  return c ? Number(c.dataset.s) : undefined;
+};
+
 function onListClick(e) {
-  const c = e.target.closest(".cell");
-  if (!c || state.busy) return;
-  const s = Number(c.dataset.s);
+  if (state.dragEnded) { state.dragEnded = false; return; } // the drag already set the range
+  const s = cellSlot(e.target);
+  if (s === undefined || state.busy) return;
+  const boxes = rangeBoxes();
   if (state.screen === "restore") {
     $("start").value = lab(s);
-  } else if (state.screen === "backup" || state.screen === "template") {
-    const [fromId, toId] = state.screen === "backup" ? ["from", "to"] : ["tfrom", "tto"];
-    const key = state.screen;
-    if (state.clickNext[key] === "from") {
-      $(fromId).value = lab(s);
-      $(toId).value = lab(s);
-      state.clickNext[key] = "to";
-    } else {
-      const a = parseStart($(fromId).value).slot;
-      if (a !== undefined && s < a) {
-        $(toId).value = $(fromId).value;
-        $(fromId).value = lab(s);
-      } else {
-        $(toId).value = lab(s);
-      }
-      state.clickNext[key] = "from";
-    }
+  } else if (boxes) {
+    const r = clickRange(parseStart($(boxes[0]).value).slot, state.clickNext[state.screen], s);
+    $(boxes[0]).value = lab(r.from);
+    $(boxes[1]).value = lab(r.to);
+    state.clickNext[state.screen] = r.next;
   }
   paint();
+}
+
+// Dragging across the list sets a From/To range (developer, 2026-10-05). A
+// press and release on one patch stays a click; only reaching a second
+// patch turns it into a drag.
+function onListPointerDown(e) {
+  state.dragEnded = false;
+  const s = cellSlot(e.target);
+  if (s === undefined || state.busy || e.button !== 0 || !rangeBoxes()) return;
+  state.drag = { anchor: s, moved: false };
+}
+
+function onListPointerMove(e) {
+  const d = state.drag;
+  if (!d) return;
+  const s = cellSlot(document.elementFromPoint(e.clientX, e.clientY));
+  if (s === undefined || (!d.moved && s === d.anchor)) return;
+  const boxes = rangeBoxes();
+  if (!boxes) return;
+  d.moved = true;
+  const r = dragRange(d.anchor, s);
+  if ($(boxes[0]).value === lab(r.from) && $(boxes[1]).value === lab(r.to)) return; // nothing new to paint
+  $(boxes[0]).value = lab(r.from);
+  $(boxes[1]).value = lab(r.to);
+  paint();
+}
+
+function onListPointerUp() {
+  const d = state.drag;
+  state.drag = null;
+  if (!d?.moved) return;
+  const boxes = rangeBoxes();
+  if (boxes) {
+    state.clickNext[state.screen] = "from";
+    log.info(`Range dragged on ${state.screen}: ${$(boxes[0]).value} to ${$(boxes[1]).value}`);
+  }
+  state.dragEnded = true;
 }
 
 /** Paint the list as the pedal is now, then let the screen add its range. */

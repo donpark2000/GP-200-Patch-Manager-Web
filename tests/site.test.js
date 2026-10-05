@@ -135,6 +135,22 @@ test("index.html: the welcome page's pedal drawing exists, loads nothing from ou
   assert.deepEqual(outside, [], "only references inside the file");
 });
 
+test("app.css: the patch list can't be text-selected (a drag picks a range instead)", () => {
+  const css = readFileSync(join(REPO, "src/ui/app.css"), "utf8");
+  const rules = [...css.matchAll(/^\.list \{([^}]*)\}/gm)].map((m) => m[1]).join(";");
+  assert.match(rules, /(^|;)\s*user-select: none/);
+});
+
+test("index.html: Help explains choosing slots: drag, click, type, Restore's start, per screen", () => {
+  const html = readFileSync(join(REPO, "index.html"), "utf8");
+  const help = html.slice(html.indexOf('id="scr-help"'), html.indexOf("</section>", html.indexOf('id="scr-help"')));
+  const i = help.indexOf("<h2>Choosing slots</h2>");
+  assert.ok(i > help.indexOf("Quick start"), "after Quick start");
+  const t = help.slice(i, help.indexOf("<h2>", i + 1));
+  for (const want of [/<b>drag<\/b>/, /<b>click<\/b> the first patch, then the last/, /From and To/, /On <b>Restore<\/b>, click/, /Each screen keeps its own choice/])
+    assert.match(t, want);
+});
+
 test("index.html: Help explains why a template is useful, then how", () => {
   const html = readFileSync(join(REPO, "index.html"), "utf8");
   const help = html.slice(html.indexOf('id="scr-help"'), html.indexOf("</section>", html.indexOf('id="scr-help"')));
