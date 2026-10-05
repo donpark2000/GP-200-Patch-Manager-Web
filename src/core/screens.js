@@ -175,3 +175,17 @@ export function clickRange(from, next, slot) {
 export function dragRange(anchor, slot) {
   return { from: Math.min(anchor, slot), to: Math.max(anchor, slot) };
 }
+
+/**
+ * How the Template screen marks the list (developer, 2026-10-05): the range
+ * as on Back up ("sel"); once there is a plan, the slots it will write are
+ * "over" (orange, as on Restore) and the kept ones stay "sel".
+ * @param {number[]|undefined} slots the range in the From/To boxes
+ * @param {{items: {slot: number}[]}|undefined} plan
+ * @returns {Map<number, "sel"|"over">}
+ */
+export function templateMarks(slots, plan) {
+  const marks = new Map((slots ?? []).map((s) => [s, "sel"]));
+  for (const it of plan?.items ?? []) marks.set(it.slot, "over");
+  return marks;
+}
