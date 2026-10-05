@@ -6,6 +6,9 @@
   --accent: #c2410c; --on-accent: #ffffff;
   --save: #1f6f8b; --save-soft: #d6eaf1;
   --warn: #c2410c; --warn-soft: #fde3d3;
+  /* The list's range: chosen (blue) and to be overwritten (orange), brighter
+     than the -soft tints so a range stands out (developer, 2026-10-05). */
+  --sel-fill: #a8d5ea; --over-fill: #fbc49f;
   --ok: #2f7d4f; --bad: #b42318; --bad-soft: #fde2df;
   --off: #c9cdca; --off-fg: #6f7773;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -28,6 +31,7 @@
     --bg: #161a19; --panel: #1f2422; --fg: #e4e8e5; --muted: #a0aaa5; --line: #323a37; --dim: #6c7671;
     --accent: #f0884e; --on-accent: #1b120c;
     --save: #6cb8d3; --save-soft: #173440; --warn: #f0884e; --warn-soft: #4a2a18;
+    --sel-fill: #1d5a74; --over-fill: #7a3d1c;
     --ok: #6cc08f; --bad: #ff8a80; --bad-soft: #4a1c18;
     --off: #2c3331; --off-fg: #7a8480;
     color-scheme: dark;
@@ -37,6 +41,7 @@
   --bg: #161a19; --panel: #1f2422; --fg: #e4e8e5; --muted: #a0aaa5; --line: #323a37; --dim: #6c7671;
   --accent: #f0884e; --on-accent: #1b120c;
   --save: #6cb8d3; --save-soft: #173440; --warn: #f0884e; --warn-soft: #4a2a18;
+  --sel-fill: #1d5a74; --over-fill: #7a3d1c;
   --ok: #6cc08f; --bad: #ff8a80; --bad-soft: #4a1c18;
   --off: #2c3331; --off-fg: #7a8480;
   color-scheme: dark;
@@ -114,13 +119,16 @@ button.quiet:disabled { background: transparent; border-color: var(--line); }
 .cell .lab { font-family: var(--mono); color: var(--muted); font-size: .9em; min-width: 3.4em; font-variant-numeric: tabular-nums; }
 .cell.def, .cell.def .lab, .cell.unread { color: var(--dim); }
 .cell.unread .nm { font-style: italic; }
-.cell.save { background: var(--save-soft); color: var(--fg); }
-.cell.save.end { box-shadow: inset 0 0 0 1px var(--save); }
-.cell.save.def, .cell.save.def .lab { color: var(--muted); }
-.cell.over { background: var(--warn-soft); color: var(--fg); }
-.cell.over.end { box-shadow: inset 0 0 0 1px var(--warn); }
+/* The chosen range, the same on Back up and Template; on Template the
+   slots that will be written are orange instead. */
+.cell.sel { background: var(--sel-fill); color: var(--fg); }
+.cell.sel .lab { color: var(--fg); }
+.cell.sel.end { box-shadow: inset 0 0 0 1.5px var(--save); }
+.cell.sel.def, .cell.sel.def .lab { color: var(--muted); }
+.cell.over { background: var(--over-fill); color: var(--fg); }
+.cell.over .lab { color: var(--fg); }
+.cell.over.end { box-shadow: inset 0 0 0 1.5px var(--warn); }
 .cell.new .nm { font-style: italic; }
-.cell.kept { box-shadow: inset 0 0 0 1px var(--line); }
 .cell.start { box-shadow: inset 0 0 0 1px var(--warn); }
 .cell.bad, .cell.bad.over { background: var(--bad-soft); box-shadow: inset 0 0 0 1px var(--bad); }
 .cell.bad .nm::after { content: " \2717"; color: var(--bad); }

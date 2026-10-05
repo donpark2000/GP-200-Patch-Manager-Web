@@ -10,7 +10,7 @@ import { Logger } from "../core/log.js";
 import { browserSummary, issueUrl } from "../core/report.js";
 import {
   afterNames, backupSummary, clickRange, dragRange, parseRange, parseStart, restoreConfirmText, restoreSummary,
-  screenAfterConnect, templateConfirmText, templateScreenSummary,
+  screenAfterConnect, templateConfirmText, templateMarks, templateScreenSummary,
 } from "../core/screens.js";
 import { skeletonBytes } from "../core/skeleton.js";
 import { slotToDisplayLabel, TOTAL_SLOTS } from "../core/slots.js";
@@ -301,7 +301,7 @@ function paintBackup() {
   $("go-backup").disabled = Boolean(why);
   $("why-backup").textContent = why;
   $("sum-backup").textContent = r.slots ? backupSummary(r.slots, nameOf) : "";
-  paintList((cells) => r.slots && markRange(cells, r.slots, "save"));
+  paintList((cells) => r.slots && markRange(cells, r.slots, "sel"));
 }
 
 function restorePlan() {
@@ -367,14 +367,14 @@ function paintTemplate() {
   $("sum-template").textContent = plan ? templateScreenSummary(plan).text : "";
   showList($("warn-template"), plan ? templateWarnings(plan).filter((w) => !w.startsWith("Nothing to write")) : []);
   paintList((cells) => {
-    if (!plan) {
-      if (slots) markRange(cells, slots, "kept");
-      return;
+    for (const [s, kind] of templateMarks(slots, plan)) {
+      cells[s].classList.add(kind);
+      if (kind === "over") cells[s].classList.remove("def"); // shown as about to be replaced
     }
+    if (slots) for (const s of [slots[0], slots[slots.length - 1]]) cells[s].classList.add("end");
+    if (!plan) return;
     for (const it of plan.items) {
       const c = cells[it.slot];
-      c.classList.add("over");
-      c.classList.remove("def");
       c.title = `${lab(it.slot)}: ${plan.fileName} replaces "${it.replaces ?? "(not read)"}"`;
       if (state.template.showAfter) {
         c.querySelector(".nm").textContent = plan.patchName;
@@ -382,7 +382,6 @@ function paintTemplate() {
       }
     }
     for (const k of plan.kept) {
-      cells[k.slot].classList.add("kept");
       cells[k.slot].title = `${lab(k.slot)}: kept (${k.name === null ? "couldn't be read" : `"${k.name}" is one of your patches`})`;
     }
   });

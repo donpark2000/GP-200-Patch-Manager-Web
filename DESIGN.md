@@ -172,9 +172,13 @@ to be designed.
   looks like a range. Each screen keeps its own range. Help's "Choosing
   slots" explains drag, click and typing. The app shows labels as "12-A" and accepts "12A"/"12-a"; file
   names keep the CLI's style (`12A_Name.prst`).
-- **The list shows the range before anything runs:** blue for "will be
-  saved"; orange for "will be overwritten", with a switch to show the
-  list as it is now or after the restore (that is the restore preview).
+- **The list shows the range before anything runs:** blue for the chosen
+  range, the same on Back up and Template (developer, 2026-10-05: Template
+  had only a faint outline until a file was chosen); orange for "will be
+  overwritten" (Restore; Template's slots to write once a file is chosen,
+  its kept slots stay blue), with a switch to show the list as it is now
+  or after the write (that is the preview). Range colours are brighter
+  than the panels' tints (`--sel-fill`, `--over-fill`) so they stand out.
 - **Template screen** (the CLI's `apply-template`, developer
   2026-10-02): one `.prst` into a From/To range, one confirmation for the
   range, then the restore's write, verify and progress. **By default it

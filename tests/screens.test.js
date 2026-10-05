@@ -17,6 +17,7 @@ import {
   restoreSummary,
   screenAfterConnect,
   templateConfirmText,
+  templateMarks,
   templateScreenSummary,
 } from "../src/core/screens.js";
 import { skeletonBytes } from "../src/core/skeleton.js";
@@ -127,4 +128,13 @@ test("dragRange: from where the drag started to the pointer, either direction, e
   assert.deepEqual(dragRange(25, 10), { from: 10, to: 25 }, "dragged upwards");
   assert.deepEqual(dragRange(0, 255), { from: 0, to: 255 }, "1-A to 64-D");
   assert.deepEqual(dragRange(7, 7), { from: 7, to: 7 }, "back on the start patch: one slot");
+});
+
+test("templateMarks: the range as on Back up; with a plan, written slots orange, kept ones stay in the range", () => {
+  const range = [252, 253, 254, 255];
+  assert.deepEqual([...templateMarks(range, undefined)], [[252, "sel"], [253, "sel"], [254, "sel"], [255, "sel"]],
+    "no file chosen yet: the whole range is marked, not left blank");
+  const plan = { items: [{ slot: 252 }, { slot: 255 }] }; // 253 and 254 kept
+  assert.deepEqual([...templateMarks(range, plan)], [[252, "over"], [253, "sel"], [254, "sel"], [255, "over"]]);
+  assert.equal(templateMarks(undefined, undefined).size, 0, "no valid range: nothing marked");
 });

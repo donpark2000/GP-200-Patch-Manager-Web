@@ -2536,3 +2536,38 @@ gives 2-A to 6-B; Template then shows its own empty boxes, nothing marked.
 One flaw found and fixed there: a drag that reproduced the range already
 in the boxes wasn't counted as a drag (not logged, and releasing on the
 start patch would have acted as a click).
+
+## 2026-10-05: Range highlight: brighter, the same on Back up and Template
+
+Published `426cd26` (PR [#6](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/6),
+merged by the developer; CI 37386926817 passed, 48 s; live page loads
+`v/426cd26/`). The developer's check of it: Help good, Back up's range
+works "although the selected range is hard to see"; on Template,
+choosing works by mouse and typing "but there is no highlighting at
+all"; asked for the same highlighting on both.
+
+**Cause:** the range used the pale `--save-soft` tint (light `#d6eaf1`,
+dark `#173440`, little contrast with the page). Template, until a
+`.prst` was chosen, marked its range only with a 1 px outline in the
+divider colour (`.kept`), practically invisible; with a file, only the
+slots to write were coloured.
+
+**Change** (decisions in `DESIGN.md`):
+- New list tokens `--sel-fill` (light `#a8d5ea`, dark `#1d5a74`) and
+  `--over-fill` (light `#fbc49f`, dark `#7a3d1c`); range ends outlined
+  1.5 px; the slot labels in a range take the text colour. Panels and
+  banners keep the `-soft` tints. Restore's orange is brighter too.
+- Template marks its range like Back up (`sel`, blue); once there is a
+  plan, the slots it writes are `over` (orange), kept ones stay blue
+  (`templateMarks` in `src/core/screens.js`). `.kept` removed.
+- Help's "Choosing slots": blue is your range, orange is what will be
+  overwritten.
+
+**Evidence:** suite 155 pass (1 new: `templateMarks`; it failed when the
+helper was made to mark nothing without a plan, the old behaviour). In
+the built-in browser with `?dev&fake`: Back up 2-A to 11-A clearly blue
+in the dark theme; Template 20-A to 24-D: 20 blue with no file; with a
+`.prst` loaded, 8 empty slots orange and 12 kept blue (light theme).
+Merge permission: the developer chose to allow `Bash(gh pr merge:*)` in
+`.claude/settings.local.json`; Claude's attempt to add it was refused as
+self-modification, so the developer adds it by hand.
