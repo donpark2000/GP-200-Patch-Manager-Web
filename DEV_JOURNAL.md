@@ -2571,3 +2571,41 @@ in the dark theme; Template 20-A to 24-D: 20 blue with no file; with a
 Merge permission: the developer chose to allow `Bash(gh pr merge:*)` in
 `.claude/settings.local.json`; Claude's attempt to add it was refused as
 self-modification, so the developer adds it by hand.
+
+## 2026-10-05: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- **The designed UI is live**: https://donpark2000.github.io/GP-200-Patch-Manager-Web/,
+  `a1fbfb3` (PR [#7](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/7),
+  CI 37388078223 passed, page loads `v/a1fbfb3/`). Published today in
+  three steps: #4 (designed UI), #6 (drag to pick a range, Help "Choosing
+  slots"), #7 (brighter range, same on Back up and Template). `main` and
+  `designed-ui` hold the same code.
+- Checked by the developer on localhost (UX, real pedal) and on the live
+  site: Help, Report a problem (GitHub issue page and log download), Back
+  up range selection. Pedal control itself wasn't re-run end to end with
+  the new UI (the developer is confident in it; the core is the proven
+  one).
+- Pedal drawing on the welcome page; the watermark was tried and left
+  out (entry "Watermark tried and left out").
+- No open questions (Q7 closed today).
+- Suite: 155 pass (`npm test`).
+- Merges: the session's permission check refuses `gh pr merge` in auto
+  mode. The developer will add `Bash(gh pr merge:*)` to
+  `.claude/settings.local.json` (git-ignored) themselves; until then they
+  merge. Claude merges only when asked in chat.
+- Local server: the developer's own on 8001 (`python -m http.server 8001
+  --bind 127.0.0.1` in the repo folder); Claude's preview uses 8000.
+
+**Not yet checked on the live site:**
+1. The new range colours (#7), both themes; Template's blue range before
+   a file is chosen, orange/blue once one is.
+2. GitHub's own "New issue" page offers the "Problem report" form.
+3. The laptop: look at the site, one backup compare.
+
+**Next:** those checks, then anything the developer wants next (e.g. the
+pedal photo variants, the CLI speed-up backport idea, journal 2026-10-02).
+Session folder `GP-200-testing\2026-10-05_designed-ui\` is empty: OK to
+purge (ask).
