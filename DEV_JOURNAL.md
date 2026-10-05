@@ -2665,3 +2665,9 @@ welcome/Help statement and the works-on link (its URL decoded: GitHub's
 new-issue page, title "Works on: ", body starting with the model and
 firmware heading). Looked at in the built-in browser: welcome note and
 Help text as intended, link opens a new tab, no console errors.
+
+**Model wording (developer, 2026-10-05):** the developer's pedal is a
+GP-200X (the red "X" in the photo the drawing came from). Kept as
+"GP-200" in the tested-with text: the X is a cosmetic hardware change
+plus more factory patches, and Valeton doesn't distinguish it for
+manuals, firmware or desktop software.
