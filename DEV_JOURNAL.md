@@ -2665,3 +2665,35 @@ welcome/Help statement and the works-on link (its URL decoded: GitHub's
 new-issue page, title "Works on: ", body starting with the model and
 firmware heading). Looked at in the built-in browser: welcome note and
 Help text as intended, link opens a new tab, no console errors.
+
+**Model wording (developer, 2026-10-05):** the developer's pedal is a
+GP-200X (the red "X" in the photo the drawing came from). Kept as
+"GP-200" in the tested-with text: the X is a cosmetic hardware change
+plus more factory patches, and Valeton doesn't distinguish it for
+manuals, firmware or desktop software.
+
+## 2026-10-05: Published #8; "keep this tab in front" dropped
+
+- PR [#8](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/8)
+  merged by Claude (`gh pr merge 8 --merge`) at the developer's request,
+  after they added `Bash(gh pr merge:*)` to `.claude/settings.local.json`
+  (git-ignored): merge `1df09c8`, CI 37391478008 passed (41 s), live page
+  loads `v/1df09c8/` and shows the tested-with line. Pushing the branch
+  failed three times with GitHub's "Internal Server Error" around
+  23:58 UTC while the API (merge, PR view) worked; the GP-200X journal note
+  stayed local until pushes worked again.
+- **Developer:** Help doesn't need "Keep this tab in front while writing";
+  hidden tabs were tested with no slowdown or issues, and at about 0.11 s
+  per patch it no longer matters (it did at over 2 s per patch). Evidence
+  on record: T1 (Resolved), two full restores hidden almost throughout,
+  27.8 s and 27.4 s, 511 of 511 verified, both compares MATCH.
+  Removed: the Help line and, by the same reasoning, the orange banner
+  shown after a write if the tab had been hidden ("Keep this tab in front
+  until writing finishes"). Kept: the log lines (page hidden/visible, a
+  warning mid-write) and the slow-write log note, for support; T1 didn't
+  cover a laptop on battery. The test page (`test.html`, not published)
+  is unchanged.
+
+**Evidence:** suite 157 pass; the new test (no "in front" text, no
+banner element or code, the log line still there) failed against the
+previous `index.html`/`app.js`.
