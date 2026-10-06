@@ -2777,3 +2777,28 @@ down" the strip/decode details (the journal doesn't record them catching
 a bug); the CLI's settle sweep went up to 1.3 s; the wake lock isn't
 listed among the hidden-tab measures that were removed (it stays).
 Waiting for the developer to read it before the PR to `main`.
+
+## 2026-10-06: LESSONS.md published; CLI README updated (steps 2-3)
+
+- The developer read `LESSONS.md` and liked it. PR
+  [#10](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/10)
+  merged by Claude at the developer's request once CI passed (merge
+  `ff618e7`). No app code changed. The developer noted that many of the
+  lessons apply to software work in general, but doesn't want to write
+  that up as a book now; step 4 (proposals for the standards skill) is
+  the small version of that.
+- **CLI README** (`GP-200-Patch-Manager`, `02c7231`, straight to `main`):
+  a paragraph after the intro recommends the web version (site and
+  source), says it restores all 256 slots in about 30 s against about
+  8 min, from lessons not back-ported (link to `LESSONS.md`), and says to
+  use the CLI when a command line is needed (e.g. backups from a script).
+  "Download" now starts "If you need the command line". "Why this exists"
+  names GP200 Studio (gp200studio.com, plus its source) as the editor and
+  no longer recommends RigSheet; RigSheet's credit for the upload
+  addressing stays under "Protocol notes". Links checked (HTTP 200). CLI
+  suite: 27 of 27 pass under `py -3.12` (plain `python` on this computer
+  has no `mido`). The push rebuilds the CLI's "Latest build" exes, as
+  expected.
+- Not changed, noticed: the CLI README's "Status" and "Roadmap" still say
+  the flash upload hasn't been re-confirmed on hardware since the
+  addressing fix. Left for the developer to decide.
