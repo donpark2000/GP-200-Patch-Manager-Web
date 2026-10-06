@@ -2802,3 +2802,14 @@ Waiting for the developer to read it before the PR to `main`.
 - Not changed, noticed: the CLI README's "Status" and "Roadmap" still say
   the flash upload hasn't been re-confirmed on hardware since the
   addressing fix. Left for the developer to decide.
+
+**Update, same day: CLI status brought up to date** (developer's OK and
+review; CLI `c3fe41f`). The README's "Status" now says the flash upload
+is confirmed on real hardware since the addressing fix, with the
+evidence (upload round trip, three 20-cycle soak runs with no write lost,
+the 48-slot apply-template run; the web version sends the same upload
+bytes and its ten full-pedal restores with before/after compares
+matched). "Roadmap" drops "re-confirm the flash path" and says the speed
+backport isn't planned ("ask in an issue"). The same correction in
+`gp200.py`'s STATUS comment. Checked first: `soak` writes with the flash
+upload (`write_slot`). CLI suite 27 of 27 (`py -3.12`).
