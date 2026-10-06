@@ -2697,3 +2697,35 @@ manuals, firmware or desktop software.
 **Evidence:** suite 157 pass; the new test (no "in front" text, no
 banner element or code, the log line still there) failed against the
 previous `index.html`/`app.js`.
+
+## 2026-10-05: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- **Live and ready to share**: https://donpark2000.github.io/GP-200-Patch-Manager-Web/,
+  PR [#9](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/9)
+  (merge `ad401aa`). Published today: #4 designed UI, #6 drag to pick a
+  range, #7 brighter range on Back up and Template, #8 tested-with
+  statement (GP-200, firmware 1.8.0; others at own risk), backup reminder,
+  identity reply logged, README refresh, #9 no "keep this tab in front".
+- The developer checked the live site: backups and writes work, Help,
+  Report a problem, range selection and colours.
+- The developer is about to share the site with the GP-200 Facebook
+  group, saying it was tested only with their pedal (a GP-200X; the text
+  says GP-200, see "Model wording") and that writes should follow a
+  backup.
+- No open questions. Suite 157 pass (`npm test`).
+- Merges: Claude may run `gh pr merge` (rule in the developer's
+  `.claude/settings.local.json`), only when the developer asks.
+- Not wanted for now: the CLI speed-up backport; the watermark.
+
+**Next:**
+1. Watch for issues from the group: "Problem:" reports and "Works on:"
+   reports. Note each model/firmware that works (with its identity reply
+   from the log) in this journal; a GP-200LT/JR identity reply would show
+   whether the models can be told apart (byte 18).
+2. Still unchecked: GitHub's own "New issue" page offering the "Problem
+   report" form; the laptop.
+3. Purge `GP-200-testing\2026-10-05_designed-ui\` (empty) once the
+   developer says OK.
