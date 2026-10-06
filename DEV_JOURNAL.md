@@ -2757,5 +2757,5 @@ The site is live (`ad401aa`), no problems reported yet. Start fresh, then:
    not recommended as a tool, as in the web repo (developer agreed).
 4. Propose "classify differences before fighting them" (and any other
    generalizable lesson) as an addition to the standards skill.
-Still open from today: OK to purge the empty
-`GP-200-testing\2026-10-05_designed-ui\`? (not answered yet).
+**Purged** `GP-200-testing\2026-10-05_designed-ui\` (0 items) to the
+Recycle Bin (developer's OK, 2026-10-06). `GP-200-testing\` is now empty.
