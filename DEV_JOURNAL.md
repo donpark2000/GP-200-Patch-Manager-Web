@@ -2697,3 +2697,83 @@ manuals, firmware or desktop software.
 **Evidence:** suite 157 pass; the new test (no "in front" text, no
 banner element or code, the log line still there) failed against the
 previous `index.html`/`app.js`.
+
+## 2026-10-05: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- **Live and ready to share**: https://donpark2000.github.io/GP-200-Patch-Manager-Web/,
+  PR [#9](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/9)
+  (merge `ad401aa`). Published today: #4 designed UI, #6 drag to pick a
+  range, #7 brighter range on Back up and Template, #8 tested-with
+  statement (GP-200, firmware 1.8.0; others at own risk), backup reminder,
+  identity reply logged, README refresh, #9 no "keep this tab in front".
+- The developer checked the live site: backups and writes work, Help,
+  Report a problem, range selection and colours.
+- The developer is about to share the site with the GP-200 Facebook
+  group, saying it was tested only with their pedal (a GP-200X; the text
+  says GP-200, see "Model wording") and that writes should follow a
+  backup.
+- No open questions. Suite 157 pass (`npm test`).
+- Merges: Claude may run `gh pr merge` (rule in the developer's
+  `.claude/settings.local.json`), only when the developer asks.
+- Not wanted for now: the CLI speed-up backport; the watermark.
+
+**Next:**
+1. Watch for issues from the group: "Problem:" reports and "Works on:"
+   reports. Note each model/firmware that works (with its identity reply
+   from the log) in this journal; a GP-200LT/JR identity reply would show
+   whether the models can be told apart (byte 18).
+2. Still unchecked: GitHub's own "New issue" page offering the "Problem
+   report" form; the laptop.
+3. Purge `GP-200-testing\2026-10-05_designed-ui\` (empty) once the
+   developer says OK.
+
+**Plan agreed for the next session (developer, 2026-10-06): lessons learned.**
+The site is live (`ad401aa`), no problems reported yet. Start fresh, then:
+1. **`LESSONS.md` in this repo**, covering the CLI and the web work in one
+   document, linked from the README's "For contributors". One to two
+   pages: the story in one paragraph (writes seemed flaky, then reads,
+   then parameter tuning and retry protocols, until the finding that a few
+   pedal-managed bytes change and don't matter); the lessons, each with
+   its evidence and a pointer to the journal or the CLI's
+   `PROTOCOL_NOTES.md`; and "if you start again tomorrow", a short
+   checklist. Candidate lessons (check each against the records before
+   writing it): classify a difference before fighting it; re-read before
+   deciding a write failed; define damage by what affects playing and
+   check it in Valeton's editor; check the end state after the whole
+   operation; measure worries first (hidden tabs); set pass criteria
+   before tuning; build the fake device from real captures. Read the
+   whole journal and the CLI's `PROTOCOL_NOTES.md` first.
+2. Publish it (PR to `main`; Claude merges when asked).
+3. **CLI README** (`C:\Users\dpark\Documents\GP-200-Patch-Manager`,
+   commits straight to `main` as usual; each push rebuilds its "Latest
+   build" exes, harmless): (a) point to the web version, site and repo;
+   (b) link `LESSONS.md`; (c) say the lessons made the web version much
+   faster (full restore about 30 s vs about 8 min), not back-ported;
+   recommend the web version unless a command line is needed (e.g. a
+   wrapper script). Also: RigSheet credited for the upload addressing but
+   not recommended as a tool, as in the web repo (developer agreed).
+4. Propose "classify differences before fighting them" (and any other
+   generalizable lesson) as an addition to the standards skill.
+**Purged** `GP-200-testing\2026-10-05_designed-ui\` (0 items) to the
+Recycle Bin (developer's OK, 2026-10-06). `GP-200-testing\` is now empty.
+
+## 2026-10-06: LESSONS.md drafted (step 1 of the plan)
+
+`LESSONS.md` (new), linked from the README's "For contributors": the
+story in one paragraph, nine lessons each with its evidence and a pointer
+to this journal or the CLI's `PROTOCOL_NOTES.md` (CLI at `9a6cc68`), and
+an "if you start again tomorrow" checklist. Written after reading this
+whole journal and the CLI's notes. Each candidate lesson in the plan was
+checked against those records; all seven held, and two were added:
+"re-read before deciding a write failed" was widened to "suspect your own
+side" (the CLI's noise came from the computer's MIDI path; the browser
+never showed it), and "another tool's clean result is evidence only if it
+checks" (GP200 Studio, CLI findings 14-15). Wording fixed on the way, so
+the text claims no more than the records do: the golden fixtures "pin
+down" the strip/decode details (the journal doesn't record them catching
+a bug); the CLI's settle sweep went up to 1.3 s; the wake lock isn't
+listed among the hidden-tab measures that were removed (it stays).
+Waiting for the developer to read it before the PR to `main`.
