@@ -2729,3 +2729,33 @@ Supersedes the status entries above.
    report" form; the laptop.
 3. Purge `GP-200-testing\2026-10-05_designed-ui\` (empty) once the
    developer says OK.
+
+**Plan agreed for the next session (developer, 2026-10-06): lessons learned.**
+The site is live (`ad401aa`), no problems reported yet. Start fresh, then:
+1. **`LESSONS.md` in this repo**, covering the CLI and the web work in one
+   document, linked from the README's "For contributors". One to two
+   pages: the story in one paragraph (writes seemed flaky, then reads,
+   then parameter tuning and retry protocols, until the finding that a few
+   pedal-managed bytes change and don't matter); the lessons, each with
+   its evidence and a pointer to the journal or the CLI's
+   `PROTOCOL_NOTES.md`; and "if you start again tomorrow", a short
+   checklist. Candidate lessons (check each against the records before
+   writing it): classify a difference before fighting it; re-read before
+   deciding a write failed; define damage by what affects playing and
+   check it in Valeton's editor; check the end state after the whole
+   operation; measure worries first (hidden tabs); set pass criteria
+   before tuning; build the fake device from real captures. Read the
+   whole journal and the CLI's `PROTOCOL_NOTES.md` first.
+2. Publish it (PR to `main`; Claude merges when asked).
+3. **CLI README** (`C:\Users\dpark\Documents\GP-200-Patch-Manager`,
+   commits straight to `main` as usual; each push rebuilds its "Latest
+   build" exes, harmless): (a) point to the web version, site and repo;
+   (b) link `LESSONS.md`; (c) say the lessons made the web version much
+   faster (full restore about 30 s vs about 8 min), not back-ported;
+   recommend the web version unless a command line is needed (e.g. a
+   wrapper script). Also: RigSheet credited for the upload addressing but
+   not recommended as a tool, as in the web repo (developer agreed).
+4. Propose "classify differences before fighting them" (and any other
+   generalizable lesson) as an addition to the standards skill.
+Still open from today: OK to purge the empty
+`GP-200-testing\2026-10-05_designed-ui\`? (not answered yet).
