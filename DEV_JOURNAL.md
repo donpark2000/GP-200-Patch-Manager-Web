@@ -831,6 +831,10 @@ working standard 5). Project-specific details stay in `CLAUDE.md`.
 
 *All three are now in the skill (checked 2026-10-01): item 1 as section 5,
 item 2 as "Check the end state" in section 3, item 3 as section 6.*
+*Item 4 and the general lessons from `LESSONS.md` went into the skill's
+rewrite of 2026-10-06 (section 4, "When a result surprises you"; see the
+entry of that date). The skill's source now lives in the private repo
+`donpark2000/ai-dev-practices`. Add new proposals below as before.*
 
 1. **Keep disposable test artifacts out of the repo.** Hardware or manual
    test runs write their outputs (exports, logs, CSVs, fixtures made for
@@ -2813,3 +2817,58 @@ matched). "Roadmap" drops "re-confirm the flash path" and says the speed
 backport isn't planned ("ask in an issue"). The same correction in
 `gp200.py`'s STATUS comment. Checked first: `soak` writes with the flash
 upload (`write_slot`). CLI suite 27 of 27 (`py -3.12`).
+
+## 2026-10-06: Standards skill rewritten; new repo `ai-dev-practices` (step 4)
+
+- **Skill rewrite** (developer's idea, after five additions were
+  proposed): the whole `software-project-standards` skill in one compact
+  format (rule, reason, at most one line of evidence), repeats merged,
+  2,157 -> 1,658 words, 220 -> 183 lines, with the new points. New:
+  section 4 "When a result surprises you" (classify a difference; check
+  whether it matters; suspect the check; goal and pass criteria first;
+  measure a worry; plus two moved rules, "trust running the real thing"
+  and "check every path to a symptom"); section 2 "fakes and expected
+  outputs from the real thing"; section 8 on lessons, with the
+  developer's meta rule: log lessons in each project's notes at once,
+  review at checkpoints, and prune the skill freely, since the notes keep
+  the record and a lesson that matters comes back. The developer read the
+  draft and the old-to-new mapping and approved it.
+- Length was weighed first: the whole skill loads every time it's used,
+  and many rules dilute each one; about 3,000 tokens was judged fine.
+- **New private repo**
+  [`donpark2000/ai-dev-practices`](https://github.com/donpark2000/ai-dev-practices)
+  (`C:\Users\dpark\Documents\ai-dev-practices`): the skill's source
+  (first commit the 2026-10-01 version, second the rewrite, so the rewrite
+  is a diff), `templates/CLAUDE.md` (this project's start routine,
+  standards and files table, with placeholders), a README (how lessons
+  arrive, how to rebuild and upload the zip) and a short `CLAUDE.md`.
+  Private on Claude's recommendation (private -> public is easy, the
+  reverse doesn't take back copies); the developer may make it public
+  once the content settles. The temporary `Documents\Skills` folder
+  (draft, zip, backup) was sent to the Recycle Bin; the repo replaces it.
+- **Not yet done:** the developer uploads
+  `ai-dev-practices\software-project-standards.zip` (git-ignored, built
+  with the README's command; holds `software-project-standards/SKILL.md`)
+  in the skills settings, replacing the old skill.
+
+## 2026-10-06: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- Site live and unchanged since #9 (`ad401aa` code; `main` now
+  `ff618e7` with `LESSONS.md`). No problem reports from the GP-200 group
+  yet (only the developer's closed test issue #5).
+- `LESSONS.md` published; CLI README points to the web version and
+  `LESSONS.md`, and its Status/Roadmap and `gp200.py`'s STATUS comment
+  say the flash upload is confirmed (CLI `02c7231`, `c3fe41f`).
+- The standards skill's source is in `ai-dev-practices` (above).
+- No open questions. Suite 157 pass.
+
+**Next:**
+1. The developer uploads the rewritten skill (zip above); the next
+   session that loads it uses the new version.
+2. Watch for "Problem:" and "Works on:" issues from the group; record
+   each model/firmware that works, with its identity reply.
+3. Still unchecked: GitHub's "New issue" page offering the "Problem
+   report" form; the laptop.
