@@ -169,6 +169,15 @@ test("index.html: tested model and firmware stated on the welcome page and in He
   assert.match(u.searchParams.get("body"), /^### Pedal model and firmware\n/);
 });
 
+test("index.html: no 'keep this tab in front' advice or banner (hidden tabs proved as fast, journal T1)", () => {
+  const html = readFileSync(join(REPO, "index.html"), "utf8");
+  assert.doesNotMatch(html, /in front/i);
+  assert.doesNotMatch(html, /hidden-banner/);
+  const app = readFileSync(join(REPO, "src/ui/app.js"), "utf8");
+  assert.doesNotMatch(app, /hidden-banner|Keep this tab in front/);
+  assert.match(app, /Page hidden while writing/, "still logged for support");
+});
+
 test("index.html: Help explains why a template is useful, then how", () => {
   const html = readFileSync(join(REPO, "index.html"), "utf8");
   const help = html.slice(html.indexOf('id="scr-help"'), html.indexOf("</section>", html.indexOf('id="scr-help"')));

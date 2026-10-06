@@ -734,7 +734,6 @@ function setBusy(what) {
   state.busy = what;
   if (what) {
     state.cancelRequested = false;
-    $("hidden-banner").hidden = true;
   }
   const writing = what === "restore" || what === "template";
   $("stop").disabled = !writing;
@@ -792,9 +791,10 @@ function confirmDialog(text, okLabel) {
 }
 
 // ---- Hidden tabs and screen sleep (DEV_JOURNAL.md T1) -----------------------
-// Chrome slows timers in background tabs, and the write pacing runs on
-// timers. Log every change, warn when it happens mid-write, and keep the
-// screen awake during jobs. Same behaviour as the test page.
+// Chrome slows timers in background tabs, but hidden full restores ran as
+// fast as visible ones (T1), so the page no longer asks to keep the tab in
+// front (developer, 2026-10-05). Every change is still logged, with a
+// warning mid-write, for support; the screen is kept awake during jobs.
 
 const writing = () => state.busy === "restore" || state.busy === "template";
 const wasHidden = (since) => document.hidden || state.lastVisibleAgainAt >= since;
@@ -811,10 +811,6 @@ function onVisibilityChange() {
   state.lastVisibleAgainAt = performance.now();
   if (writing()) {
     log.warn(`Page visible again after ${secs.toFixed(1)} s hidden during the write`);
-    $("hidden-banner").textContent = `This page was in the background for ${secs.toFixed(0)} s while writing. ` +
-      "Browsers slow down background pages, so the writes may have taken longer. " +
-      "Keep this tab in front until writing finishes.";
-    $("hidden-banner").hidden = false;
   } else {
     log.info(`Page visible again after ${secs.toFixed(1)} s hidden`);
   }
