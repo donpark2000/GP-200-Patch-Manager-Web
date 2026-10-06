@@ -62,6 +62,8 @@ text is copied here.
 - [`DESIGN.md`](DESIGN.md): what we're building and the decisions behind it.
 - [`DEV_JOURNAL.md`](DEV_JOURNAL.md): running notes, findings, and open
   questions.
+- [`LESSONS.md`](LESSONS.md): what building this and the CLI taught us,
+  in two pages.
 - The protocol itself is documented in the CLI repo's `PROTOCOL.md` and
   `PROTOCOL_NOTES.md`.
 

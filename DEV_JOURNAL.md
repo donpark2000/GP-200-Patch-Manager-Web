@@ -2759,3 +2759,21 @@ The site is live (`ad401aa`), no problems reported yet. Start fresh, then:
    generalizable lesson) as an addition to the standards skill.
 **Purged** `GP-200-testing\2026-10-05_designed-ui\` (0 items) to the
 Recycle Bin (developer's OK, 2026-10-06). `GP-200-testing\` is now empty.
+
+## 2026-10-06: LESSONS.md drafted (step 1 of the plan)
+
+`LESSONS.md` (new), linked from the README's "For contributors": the
+story in one paragraph, nine lessons each with its evidence and a pointer
+to this journal or the CLI's `PROTOCOL_NOTES.md` (CLI at `9a6cc68`), and
+an "if you start again tomorrow" checklist. Written after reading this
+whole journal and the CLI's notes. Each candidate lesson in the plan was
+checked against those records; all seven held, and two were added:
+"re-read before deciding a write failed" was widened to "suspect your own
+side" (the CLI's noise came from the computer's MIDI path; the browser
+never showed it), and "another tool's clean result is evidence only if it
+checks" (GP200 Studio, CLI findings 14-15). Wording fixed on the way, so
+the text claims no more than the records do: the golden fixtures "pin
+down" the strip/decode details (the journal doesn't record them catching
+a bug); the CLI's settle sweep went up to 1.3 s; the wake lock isn't
+listed among the hidden-tab measures that were removed (it stays).
+Waiting for the developer to read it before the PR to `main`.
