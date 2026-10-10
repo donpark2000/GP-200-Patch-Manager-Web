@@ -2872,3 +2872,61 @@ Supersedes the status entries above.
    each model/firmware that works, with its identity reply.
 3. Still unchecked: GitHub's "New issue" page offering the "Problem
    report" form; the laptop.
+
+## 2026-10-10: Usage stats with GoatCounter (built, not yet published)
+
+**Developer:** add usage stats like Web-Games: an anonymous GoatCounter
+counter, public dashboard, "Stats" in the footer; site code
+`donpark-gp200` (set up, "Dashboard viewable by: Anyone"; checked: the
+dashboard answers 200 without a login). Same approach as Web-Games: our
+own few lines send the counts, only the live site counts, each count in
+the debug log. Claude first proposed 14 events (backup kinds, failures,
+Help, Report, Save log); the developer cut it to **a landing per screen
+and one action per screen**: "I'm mostly interested in just seeing what
+is used rather than debug info."
+
+**Built** (DESIGN.md "Stats"): `src/core/stats.js` (no DOM; from
+Web-Games' file: live host only, also not with `?dev`; landings as page
+paths with the screen after `#`, so the dashboard's link opens that
+screen; the four actions as a fixed list, anything else refused) and
+`src/ui/stats.js` (`makeStats(log, {dev})`: `landing(screen)`,
+`action(name)`, an image request each, logged as "Stats: counted ...",
+"Stats: not counted (<why>): ...", or "count not sent (blocked or
+offline)"). `app.js`: `show()` counts the screen actually shown when it
+changes (a pedal screen before connecting shows the welcome panel, so
+home); `connect` after connecting, `backup` when a file is saved,
+`restore`/`template` in `runWrite` when at least one patch was written.
+`SCREENS` moved to `src/core/screens.js` so the app and the stats share
+it. Footer "GitHub project · Stats"; Help's "About" says what is counted
+and links the stats. **Corrected two claims the counter made untrue:**
+Help said the app "stores nothing and sends nothing anywhere" (about the
+log; now "never sends it anywhere") and the README said "nothing is sent
+anywhere" (now says what is counted). CLAUDE.md project rule: nothing
+loaded from other sites; the one thing sent is the counts.
+
+**Tests:** `npm test` 165 of 165 (157 before). New `tests/stats.test.js`
+(8): live host only (localhost, 127.0.0.1, a file, a look-alike host,
+webdriver, `?dev`: not), landing paths (index.html is its folder, an
+unknown screen refused), the four actions (others refused), the referrer,
+both count addresses, bad counts refused, footer and Help link the
+dashboard in a new tab and Help no longer says "sends nothing", and
+`app.js` counts landings in `show()` and each action once (the test page
+has no counter). **Shown to fail**, one at a time: counting under `?dev`,
+home as `#home`, the backup count removed, the landing count removed,
+the footer without Stats, Help's old "sends nothing"; each reported by
+its check; restored.
+
+**Checked in the built-in browser** (localhost:8000, `?dev&fake`):
+landings for home, backup (after connect), help, backup, restore,
+template; actions `connect`, `backup` (1-A to 1-B saved), `restore`
+(`skeleton.prst` to 64-D on the fake pedal), `template` (64-C to 64-D,
+every slot); a restore cancelled at the confirmation counted nothing.
+All logged "not counted (?dev)". Without `?dev`: no request to
+goatcounter.com, no console errors (`navigator.webdriver` false in this
+pane). Footer one line (38 px) at 1280 px, two lines at 480 px, no
+sideways scroll. Server stopped.
+
+**Not yet:** publishing, then a count from the live site on the
+dashboard (Web-Games' lesson: GoatCounter drops a trailing slash, so
+home shows as `/GP-200-Patch-Manager-Web`; still to see whether it
+keeps the `#screen` part of a landing).

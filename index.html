@@ -237,8 +237,8 @@
       <li>Drag the log file into the form's text box, check what it shows, then press Create.</li>
     </ol>
     <p>The log records what the app did, your browser, the pedal's MIDI ports and the names of the patches it
-      read or wrote. It stays on your computer until you save it: the app stores nothing and sends nothing
-      anywhere, and closing or reloading the page clears the log.</p>
+      read or wrote. It stays on your computer until you save it: the app never sends it anywhere, and closing or
+      reloading the page clears the log.</p>
     <p class="grp"><button type="button" id="report">Report a problem</button>
       <button type="button" class="quiet" id="save-log">Save log only</button></p>
     <p class="report-msg" id="report-msg" role="status"></p>
@@ -248,6 +248,9 @@
     <p>GP-200 Patch Manager is an independent, free, open-source tool (GPL-3.0) made by a GP-200 owner. It is not
       made, endorsed or supported by Valeton; "Valeton" and "GP-200" are used only to say which pedal it works
       with. For problems with this tool, see &ldquo;Report a problem&rdquo; above, not Valeton's support.</p>
+    <p>To see which parts of the app are used, it counts each screen opened and each connect, backup, restore
+      and template write, anonymously: no cookies, and nothing about you, your pedal or your patches. The counts
+      are public: <a href="https://donpark-gp200.goatcounter.com/" target="_blank" rel="noopener">Stats</a>.</p>
   </section>
 
   <section id="dev-log" class="devlog" aria-label="Developer log" hidden>
@@ -263,7 +266,8 @@
 
   <footer>
     <span>&copy; 2026 Donald Parker &middot; <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web/blob/main/LICENSE" target="_blank" rel="noopener">GPL-3.0</a></span>
-    <a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web" target="_blank" rel="noopener">GitHub project</a>
+    <span><a href="https://github.com/donpark2000/GP-200-Patch-Manager-Web" target="_blank" rel="noopener">GitHub project</a>
+      &middot; <a href="https://donpark-gp200.goatcounter.com/" target="_blank" rel="noopener">Stats</a></span>
     <span>Build and edit patches with <a href="https://gp200studio.com/" target="_blank" rel="noopener">GP200 Studio</a></span>
     <span id="version">Version</span>
   </footer>

@@ -20,9 +20,12 @@ and a full restore of all 256 slots takes about 30 seconds.
 
 - Runs in **Chrome or Edge** on a Windows, macOS, or Linux computer.
   Firefox, Safari and phones/tablets can't reach the pedal (no Web MIDI).
-- Nothing to install, and nothing is sent anywhere: your patches stay on
-  your computer. Connect the GP-200 by USB, open the page, and allow MIDI
-  access when the browser asks.
+- Nothing to install, and your patches stay on your computer. Connect the
+  GP-200 by USB, open the page, and allow MIDI access when the browser asks.
+- The page counts, anonymously, which screens are opened and each connect,
+  backup, restore and template write (no cookies, nothing about you or your
+  patches). The counts are public:
+  [Stats](https://donpark-gp200.goatcounter.com/).
 - The list shows all 256 patches on the pedal. Choose slots by dragging
   across the list, clicking the first and last, or typing them in.
 - **Back up** saves one slot as a `.prst` or several as a `.zip`, each file

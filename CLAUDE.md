@@ -46,6 +46,8 @@ this is the short version:
   unless `DESIGN.md` says otherwise.
 - Keep `src/core/` free of DOM/UI code.
 - Plain JavaScript ES modules, no build step.
+- Nothing loaded from other sites. The one thing sent: the anonymous
+  usage counts (DESIGN.md "Stats").
 - Never write to the pedal outside the phase 2 restore feature and the
   Template screen (developer, 2026-10-02), and never without the user's
   confirmation in the app. One exception: the

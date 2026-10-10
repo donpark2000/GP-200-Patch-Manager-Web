@@ -249,8 +249,8 @@ to be designed.
   1,200 px window the list has 4 columns (14 px down to 12 px). No
   sideways scrolling from 600 px up (measured, journal 2026-10-02).
 - **Footer:** "© Donald Parker", GPL-3.0, link to the GitHub project,
-  GP200 Studio (its site, gp200studio.com) as the place to build and edit
-  patches, and the app version. No credits (see "Credit and licensing").
+  "Stats" (see "Stats"), GP200 Studio (its site, gp200studio.com) as the
+  place to build and edit patches, and the app version. No credits (see "Credit and licensing").
 - **Not Valeton's** (developer, 2026-10-02: kept out of the footer for a
   clean interface): the welcome page's first sentence ends "An
   independent tool, not made by Valeton.", and Help has an "About"
@@ -268,7 +268,8 @@ to be designed.
   MIDI, to check the screens without hardware. It loads `tests/`, which
   is never published, so it works only on localhost.
 - **Fonts:** the computer's own (the list in Arial Narrow where
-  installed); nothing is loaded from other sites. The mockup's IBM Plex
+  installed); nothing is loaded from other sites (the stats counter sends
+  a count but loads nothing). The mockup's IBM Plex
   from Google Fonts was dropped so the app has no outside dependency.
 - **Progress** for anything that takes time: a restore shows a progress
   bar, the slot and patch being written, and the elapsed time; a backup
@@ -296,6 +297,34 @@ to be designed.
   (Chrome, Edge on a computer) and that don't (Firefox, Safari, any
   browser on iPhone/iPad), and says how to tell: the app checks on
   opening and says plainly if this browser can't reach the pedal.
+
+## Stats
+
+Which screens and actions are used, from where, over time (developer,
+2026-10-10: "mostly interested in just seeing what is used rather than
+debug info"). Same approach as the developer's Web-Games site.
+
+- **GoatCounter** (goatcounter.com, free, donation-supported): no
+  cookies, nothing personal kept; country from the visitor's address,
+  which isn't stored. The site `donpark-gp200` (`GOATCOUNTER` in
+  `src/core/stats.js`).
+- **Our own few lines send the counts** (`src/ui/stats.js`), one small
+  request each, no script from another site:
+  - a **landing** each time a screen is shown, as a page:
+    `/GP-200-Patch-Manager-Web/` (home), `.../#backup`, `#restore`,
+    `#template`, `#help`. A pedal screen shows the welcome panel until
+    connected, so that counts as home. The first landing also carries
+    the screen size and the referrer when another site sent the visitor.
+  - an **action** per screen, as an event: `connect` (connected),
+    `backup` (a file saved), `restore` and `template` (at least one patch
+    written; a cancelled confirmation counts nothing).
+  - Nothing else: no patch or file names, slots, counts or errors.
+- **Only the live site counts** (donpark2000.github.io), not localhost,
+  an automated browser or `?dev` (the developer's own testing on the live
+  site); the test page has no counter. Each count (sent or not) goes in
+  the debug log ("Stats: ...").
+- **The dashboard is public**, linked as "Stats" in the footer and from
+  Help's "About", which says what is counted (a new tab).
 
 ## Phases
 
