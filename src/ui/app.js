@@ -10,17 +10,17 @@ import { Logger } from "../core/log.js";
 import { browserSummary, issueUrl } from "../core/report.js";
 import {
   afterNames, backupSummary, clickRange, dragRange, parseRange, parseStart, restoreConfirmText, restoreSummary,
-  screenAfterConnect, templateConfirmText, templateMarks, templateScreenSummary,
+  screenAfterConnect, SCREENS, templateConfirmText, templateMarks, templateScreenSummary,
 } from "../core/screens.js";
 import { skeletonBytes } from "../core/skeleton.js";
 import { slotToDisplayLabel, TOTAL_SLOTS } from "../core/slots.js";
 import { isEmptyPatchName, planTemplate, recheckTemplate, templateSummary, templateWarnings } from "../core/template.js";
 import { expandSources, orderEntries, planUpload, planWarnings, writeSlots } from "../core/upload.js";
 import { createZip } from "../core/zip.js";
+import { makeStats } from "./stats.js";
 import { VERSION } from "../version.js";
 
 const $ = (id) => document.getElementById(id);
-const SCREENS = ["home", "backup", "restore", "template", "help"]; // home: the welcome panel
 const PARAMS = new URLSearchParams(location.search);
 const DEV = PARAMS.has("dev");
 const FAKE = DEV && PARAMS.has("fake"); // the test suite's fake pedal, localhost only (fake-dev.js)
@@ -29,9 +29,11 @@ const NOT_CONNECTED = "Connect the pedal first"; // rarely seen: these screens s
 const PEDAL_SCREENS = ["backup", "restore", "template"];
 
 const log = new Logger({ onLine: appendLogLine });
+const stats = makeStats(log, { dev: DEV }); // usage counts, live site only (DESIGN.md "Stats")
 
 const state = {
   screen: "home",
+  shown: null, // the screen last shown (a pedal screen shows the welcome panel until connected): its landing is counted
   midi: null,
   device: null,
   wasConnected: false, // connected earlier this visit (screenAfterConnect)
@@ -132,6 +134,9 @@ function show(name) {
   // pedal is connected, the pedal screens show it too, with its one
   // control, Connect (developer, 2026-10-02).
   const welcome = name === "home" || (PEDAL_SCREENS.includes(name) && !state.device);
+  const shown = welcome ? "home" : name;
+  if (shown !== state.shown) stats.landing(shown);
+  state.shown = shown;
   $("scr-connect").hidden = !welcome;
   for (const n of SCREENS) {
     if (n === "home") continue;
@@ -454,6 +459,7 @@ async function afterConnect() {
   const target = screenAfterConnect(state.screen, state.wasConnected);
   state.wasConnected = true;
   log.info(`Connected; showing ${target}`);
+  stats.action("connect");
   if (location.hash.slice(1) !== target) location.hash = target; // its hashchange shows it again: harmless
   show(target); // the list fills in as it's read
   await refreshList("Reading the patches on the pedal");
@@ -554,6 +560,7 @@ async function onBackup() {
     if (pkg) {
       download(pkg.fileName, pkg.bytes, pkg.fileName.endsWith(".zip") ? "application/zip" : "application/octet-stream");
       log.info(`Saved ${pkg.fileName} (${result.entries.length} patch(es))`);
+      stats.action("backup");
       setProgress(`Saved ${pkg.fileName}: ${result.entries.length} patch(es) in ${(result.elapsedMs / 1000).toFixed(1)} s.`,
         result.skipped.length ? "failed" : "done");
     } else {
@@ -699,6 +706,7 @@ async function runWrite(kind, items, what, doneText) {
   stopTimer();
   $("prog-time").textContent = ""; // the result line carries the time
   const secs = ((performance.now() - started) / 1000).toFixed(1);
+  if (out?.results.length) stats.action(kind); // "restore" or "template": at least one patch written
   if (out) {
     for (const r of out.failed) state.failedSlots.add(r.slot);
     state.failedReadbacks = out.failed.filter((r) => r.roundtrip);

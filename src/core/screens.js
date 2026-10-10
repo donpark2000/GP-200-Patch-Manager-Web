@@ -145,6 +145,8 @@ export function afterNames(items) {
   return new Map(items.map((it) => [it.slot, it.patchName]));
 }
 
+/** The designed UI's screens, by their #address; home is the welcome panel. */
+export const SCREENS = ["home", "backup", "restore", "template", "help"];
 const PEDAL_SCREENS = ["backup", "restore", "template"];
 
 /**

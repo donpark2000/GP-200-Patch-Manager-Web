@@ -831,6 +831,10 @@ working standard 5). Project-specific details stay in `CLAUDE.md`.
 
 *All three are now in the skill (checked 2026-10-01): item 1 as section 5,
 item 2 as "Check the end state" in section 3, item 3 as section 6.*
+*Item 4 and the general lessons from `LESSONS.md` went into the skill's
+rewrite of 2026-10-06 (section 4, "When a result surprises you"; see the
+entry of that date). The skill's source now lives in the private repo
+`donpark2000/ai-dev-practices`. Add new proposals below as before.*
 
 1. **Keep disposable test artifacts out of the repo.** Hardware or manual
    test runs write their outputs (exports, logs, CSVs, fixtures made for
@@ -2777,3 +2781,152 @@ down" the strip/decode details (the journal doesn't record them catching
 a bug); the CLI's settle sweep went up to 1.3 s; the wake lock isn't
 listed among the hidden-tab measures that were removed (it stays).
 Waiting for the developer to read it before the PR to `main`.
+
+## 2026-10-06: LESSONS.md published; CLI README updated (steps 2-3)
+
+- The developer read `LESSONS.md` and liked it. PR
+  [#10](https://github.com/donpark2000/GP-200-Patch-Manager-Web/pull/10)
+  merged by Claude at the developer's request once CI passed (merge
+  `ff618e7`). No app code changed. The developer noted that many of the
+  lessons apply to software work in general, but doesn't want to write
+  that up as a book now; step 4 (proposals for the standards skill) is
+  the small version of that.
+- **CLI README** (`GP-200-Patch-Manager`, `02c7231`, straight to `main`):
+  a paragraph after the intro recommends the web version (site and
+  source), says it restores all 256 slots in about 30 s against about
+  8 min, from lessons not back-ported (link to `LESSONS.md`), and says to
+  use the CLI when a command line is needed (e.g. backups from a script).
+  "Download" now starts "If you need the command line". "Why this exists"
+  names GP200 Studio (gp200studio.com, plus its source) as the editor and
+  no longer recommends RigSheet; RigSheet's credit for the upload
+  addressing stays under "Protocol notes". Links checked (HTTP 200). CLI
+  suite: 27 of 27 pass under `py -3.12` (plain `python` on this computer
+  has no `mido`). The push rebuilds the CLI's "Latest build" exes, as
+  expected.
+- Not changed, noticed: the CLI README's "Status" and "Roadmap" still say
+  the flash upload hasn't been re-confirmed on hardware since the
+  addressing fix. Left for the developer to decide.
+
+**Update, same day: CLI status brought up to date** (developer's OK and
+review; CLI `c3fe41f`). The README's "Status" now says the flash upload
+is confirmed on real hardware since the addressing fix, with the
+evidence (upload round trip, three 20-cycle soak runs with no write lost,
+the 48-slot apply-template run; the web version sends the same upload
+bytes and its ten full-pedal restores with before/after compares
+matched). "Roadmap" drops "re-confirm the flash path" and says the speed
+backport isn't planned ("ask in an issue"). The same correction in
+`gp200.py`'s STATUS comment. Checked first: `soak` writes with the flash
+upload (`write_slot`). CLI suite 27 of 27 (`py -3.12`).
+
+## 2026-10-06: Standards skill rewritten; new repo `ai-dev-practices` (step 4)
+
+- **Skill rewrite** (developer's idea, after five additions were
+  proposed): the whole `software-project-standards` skill in one compact
+  format (rule, reason, at most one line of evidence), repeats merged,
+  2,157 -> 1,658 words, 220 -> 183 lines, with the new points. New:
+  section 4 "When a result surprises you" (classify a difference; check
+  whether it matters; suspect the check; goal and pass criteria first;
+  measure a worry; plus two moved rules, "trust running the real thing"
+  and "check every path to a symptom"); section 2 "fakes and expected
+  outputs from the real thing"; section 8 on lessons, with the
+  developer's meta rule: log lessons in each project's notes at once,
+  review at checkpoints, and prune the skill freely, since the notes keep
+  the record and a lesson that matters comes back. The developer read the
+  draft and the old-to-new mapping and approved it.
+- Length was weighed first: the whole skill loads every time it's used,
+  and many rules dilute each one; about 3,000 tokens was judged fine.
+- **New private repo**
+  [`donpark2000/ai-dev-practices`](https://github.com/donpark2000/ai-dev-practices)
+  (`C:\Users\dpark\Documents\ai-dev-practices`): the skill's source
+  (first commit the 2026-10-01 version, second the rewrite, so the rewrite
+  is a diff), `templates/CLAUDE.md` (this project's start routine,
+  standards and files table, with placeholders), a README (how lessons
+  arrive, how to rebuild and upload the zip) and a short `CLAUDE.md`.
+  Private on Claude's recommendation (private -> public is easy, the
+  reverse doesn't take back copies); the developer may make it public
+  once the content settles. The temporary `Documents\Skills` folder
+  (draft, zip, backup) was sent to the Recycle Bin; the repo replaces it.
+- **Not yet done:** the developer uploads
+  `ai-dev-practices\software-project-standards.zip` (git-ignored, built
+  with the README's command; holds `software-project-standards/SKILL.md`)
+  in the skills settings, replacing the old skill.
+
+## 2026-10-06: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- Site live and unchanged since #9 (`ad401aa` code; `main` now
+  `ff618e7` with `LESSONS.md`). No problem reports from the GP-200 group
+  yet (only the developer's closed test issue #5).
+- `LESSONS.md` published; CLI README points to the web version and
+  `LESSONS.md`, and its Status/Roadmap and `gp200.py`'s STATUS comment
+  say the flash upload is confirmed (CLI `02c7231`, `c3fe41f`).
+- The standards skill's source is in `ai-dev-practices` (above).
+- No open questions. Suite 157 pass.
+
+**Next:**
+1. The developer uploads the rewritten skill (zip above); the next
+   session that loads it uses the new version.
+2. Watch for "Problem:" and "Works on:" issues from the group; record
+   each model/firmware that works, with its identity reply.
+3. Still unchecked: GitHub's "New issue" page offering the "Problem
+   report" form; the laptop.
+
+## 2026-10-10: Usage stats with GoatCounter (built, not yet published)
+
+**Developer:** add usage stats like Web-Games: an anonymous GoatCounter
+counter, public dashboard, "Stats" in the footer; site code
+`donpark-gp200` (set up, "Dashboard viewable by: Anyone"; checked: the
+dashboard answers 200 without a login). Same approach as Web-Games: our
+own few lines send the counts, only the live site counts, each count in
+the debug log. Claude first proposed 14 events (backup kinds, failures,
+Help, Report, Save log); the developer cut it to **a landing per screen
+and one action per screen**: "I'm mostly interested in just seeing what
+is used rather than debug info."
+
+**Built** (DESIGN.md "Stats"): `src/core/stats.js` (no DOM; from
+Web-Games' file: live host only, also not with `?dev`; landings as page
+paths with the screen after `#`, so the dashboard's link opens that
+screen; the four actions as a fixed list, anything else refused) and
+`src/ui/stats.js` (`makeStats(log, {dev})`: `landing(screen)`,
+`action(name)`, an image request each, logged as "Stats: counted ...",
+"Stats: not counted (<why>): ...", or "count not sent (blocked or
+offline)"). `app.js`: `show()` counts the screen actually shown when it
+changes (a pedal screen before connecting shows the welcome panel, so
+home); `connect` after connecting, `backup` when a file is saved,
+`restore`/`template` in `runWrite` when at least one patch was written.
+`SCREENS` moved to `src/core/screens.js` so the app and the stats share
+it. Footer "GitHub project · Stats"; Help's "About" says what is counted
+and links the stats. **Corrected two claims the counter made untrue:**
+Help said the app "stores nothing and sends nothing anywhere" (about the
+log; now "never sends it anywhere") and the README said "nothing is sent
+anywhere" (now says what is counted). CLAUDE.md project rule: nothing
+loaded from other sites; the one thing sent is the counts.
+
+**Tests:** `npm test` 165 of 165 (157 before). New `tests/stats.test.js`
+(8): live host only (localhost, 127.0.0.1, a file, a look-alike host,
+webdriver, `?dev`: not), landing paths (index.html is its folder, an
+unknown screen refused), the four actions (others refused), the referrer,
+both count addresses, bad counts refused, footer and Help link the
+dashboard in a new tab and Help no longer says "sends nothing", and
+`app.js` counts landings in `show()` and each action once (the test page
+has no counter). **Shown to fail**, one at a time: counting under `?dev`,
+home as `#home`, the backup count removed, the landing count removed,
+the footer without Stats, Help's old "sends nothing"; each reported by
+its check; restored.
+
+**Checked in the built-in browser** (localhost:8000, `?dev&fake`):
+landings for home, backup (after connect), help, backup, restore,
+template; actions `connect`, `backup` (1-A to 1-B saved), `restore`
+(`skeleton.prst` to 64-D on the fake pedal), `template` (64-C to 64-D,
+every slot); a restore cancelled at the confirmation counted nothing.
+All logged "not counted (?dev)". Without `?dev`: no request to
+goatcounter.com, no console errors (`navigator.webdriver` false in this
+pane). Footer one line (38 px) at 1280 px, two lines at 480 px, no
+sideways scroll. Server stopped.
+
+**Not yet:** publishing, then a count from the live site on the
+dashboard (Web-Games' lesson: GoatCounter drops a trailing slash, so
+home shows as `/GP-200-Patch-Manager-Web`; still to see whether it
+keeps the `#screen` part of a landing).
