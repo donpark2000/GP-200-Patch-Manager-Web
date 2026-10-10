@@ -2930,3 +2930,26 @@ sideways scroll. Server stopped.
 dashboard (Web-Games' lesson: GoatCounter drops a trailing slash, so
 home shows as `/GP-200-Patch-Manager-Web`; still to see whether it
 keeps the `#screen` part of a landing).
+
+## 2026-10-10: Stats published (#11)
+
+**Published** (developer: "Yes, publish it", then "Go ahead and merge and
+publish. You have been given that authority" after the merge was first
+held back for the developer's own hand): PR #11's tests passed, merged as
+`58c0117`; live about 40 s later (the page loads from `v/58c0117/`, and
+the served `stats.js` has `donpark-gp200`). **Checked on the live site**
+(built-in browser, `navigator.webdriver` false, so it counts): the
+footer reads "GitHub project · Stats"; the home page and Help sent
+`/GP-200-Patch-Manager-Web/` and `/GP-200-Patch-Manager-Web/#help`
+to `donpark-gp200.goatcounter.com/count` (655 ms and 324 ms, from the
+page's resource timing; the pane's network list didn't show image
+requests). The pane reports its screen as 0 x 0 (`s=0,0,1`), as on
+Web-Games. So the `#` reaches GoatCounter in the request.
+
+**Not yet seen on the dashboard:** the public view says it "is updated
+once an hour", and showed 0 visits right after. Still to check there:
+the two landings, and whether the `#help` part is kept (if GoatCounter
+drops it, all landings would show as the home page: then switch
+landings to events, `open-<screen>`). Actions can't be checked on the
+live site without a pedal; they were checked on localhost with the fake
+pedal. These two visits of Claude's are in the counts.
