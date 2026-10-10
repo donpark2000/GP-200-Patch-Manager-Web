@@ -2953,3 +2953,34 @@ drops it, all landings would show as the home page: then switch
 landings to events, `open-<screen>`). Actions can't be checked on the
 live site without a pedal; they were checked on localhost with the fake
 pedal. These two visits of Claude's are in the counts.
+
+**Dashboard confirmed** (developer, 2026-10-10: "It is working"): the
+dashboard shows the visits to the home page and to Help as separate
+pages, so GoatCounter keeps the `#screen` part; no switch to events
+needed. The actions weren't checked live (they need the pedal
+connected); they show up the first time anyone connects.
+
+## 2026-10-10: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- Site live at `58c0117` (#11): the designed UI plus anonymous usage
+  stats (DESIGN.md "Stats"; dashboard https://donpark-gp200.goatcounter.com/,
+  public, updates hourly). Landings confirmed on the dashboard; actions
+  checked only on localhost with the fake pedal.
+- The developer's own use of the live site counts too, unless the address
+  has `?dev`.
+- `ai-dev-practices` now matches the installed skill (`94b70a9`: the two
+  measurement lessons from Web-Games, uploaded 2026-10-08 but not
+  committed then). The "commit skill changes there" memory now exists in
+  the Web-Games project too.
+- No open questions. Suite 165 pass. No problem reports from the group.
+
+**Next:**
+1. The first time the pedal is connected on the live site (without
+   `?dev`), check the dashboard shows `connect` (and `backup` etc. as used).
+2. Watch for "Problem:" and "Works on:" issues and the stats; record each
+   model/firmware that works, with its identity reply.
+3. Still unchecked: GitHub's "New issue" page offering the "Problem
+   report" form; the laptop.
