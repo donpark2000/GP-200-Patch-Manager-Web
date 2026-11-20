@@ -12,7 +12,15 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-(none)
+- **Q8. Do the GP-50's effect codes match the GP-200's everywhere?**
+  *Raised 2026-11-20 (entry "GP-50 .prst files: same effect codes,
+  different file").* All 10 codes in one GP-50 preset match a GP-200
+  effect whose controls fit the stored values. That is one file and 10
+  effects, mostly from the start of each module's list. To settle it: GP-50
+  presets that use effects late in each list (amps and cabs especially),
+  or the code list from Valeton's GP-50 editor if it ships one, as the
+  GP-200 desktop app did (CLI `PROTOCOL_NOTES.md`, the SnapTone/CAB
+  listing). Matters only if a GP-50 to GP-200 converter is built.
 
 ## Resolved
 
@@ -2976,6 +2984,8 @@ Supersedes the status entries above.
   committed then). The "commit skill changes there" memory now exists in
   the Web-Games project too.
 - No open questions. Suite 165 pass. No problem reports from the group.
+  (Added 2026-11-20: Q8, GP-50 effect codes, from the GP-50 entry below;
+  it matters only if a converter is wanted.)
 
 **Next:**
 1. The first time the pedal is connected on the live site (without
@@ -2984,3 +2994,69 @@ Supersedes the status entries above.
    model/firmware that works, with its identity reply.
 3. Still unchecked: GitHub's "New issue" page offering the "Problem
    report" form; the laptop.
+
+## 2026-11-20: GP-50 .prst files: same effect codes, different file
+
+**Question** (developer): can a GP-50 preset work on a GP-200 (or the
+other way round) if it only uses effects both pedals have? That depends
+on whether a preset names its effects or numbers them, and whether the
+numbers agree.
+
+**Evidence:** one GP-50 preset the developer downloaded,
+`Downloads\55-CGRocksYT1.prst` (552 bytes, someone else's preset, not
+copied into the repo). Decoded with a scratchpad script and looked up in
+`Documents\GP-200\gp200_catalog.csv`.
+
+**The file layout is completely different from the GP-200's:**
+
+| | GP-200 | GP-50 |
+|---|---|---|
+| Size | 1224 bytes, fixed offsets | 552 bytes |
+| Start | `TSRP` | `GP-50` |
+| Structure | fixed blocks | records of u16 tag, u16 length, value |
+| Modules | 11, 15 float settings each | 10, 8 float settings each |
+| Checksum | sum at 0x4C6 | none found |
+
+GP-50 layout as read: name at 0x19 (16 bytes); record `0x00FF` (0x1 = 1,
+0x2 = "GP50"); record `0x0000` (0x1001 = 10, 0x1002 = 8: perhaps module
+count and settings per module); record `0x0001` with patch-wide values
+0x2001-0x200A (0x2002 = 120, maybe tempo); record `0x0002` with the
+effects: 0x3001 = 0x138 (one bit per module; bits 3, 4, 5, 8 set),
+0x3002 = order `0 2 9 3 4 5 6 7 8 1`, 0x3003 = 10 u32 effect codes,
+0x3004 = 10 x 8 float32 settings; record `0x0003` (10 bytes, unknown).
+
+**The effect codes are numbers, and they are the GP-200's numbers.** All
+10 are in the GP-200 catalog, and the stored settings fit each effect's
+GP-200 controls (count, ranges, often exactly the defaults):
+
+| Module | Code | GP-200 effect | Stored settings |
+|---|---|---|---|
+| 0 | 0x0000001B | NR Gate 1 | 50 |
+| 1 | 0x00000001 | PRE COMP4 | 20, 40, 90, 10 (4 controls) |
+| 2 | 0x03000000 | DST Green OD | 40, 70, 50 (the GP-200 defaults) |
+| 3 | 0x0800007B | AMP AC Pre 2 | 50, 70, 60, 50, 50, 50 (6 controls) |
+| 4 | 0x0A000019 | CAB SUP Star | 50, then 0, 0 (see below) |
+| 5 | 0x01000036 | EQ Guitar EQ 2 | 0, 10, 20, 15, 10 (±50 bands), 50 |
+| 6 | 0x04000000 | MOD A-Chorus | 50, 0.5 (range 0.1-10), 50 |
+| 7 | 0x0B000000 | DLY Pure | 20, 500 (time), 30 |
+| 8 | 0x0C000002 | RVB Church | 20, 50, 50 |
+| 9 | 0x0F000000 | SnapTone 1 | 50 x 5 |
+
+The modules that are on (amp, cab, EQ, reverb) make a plausible acoustic
+patch, which also fits the codes meaning the same effects.
+
+**What it proves and doesn't:**
+- A file can't be swapped as is: the app would reject a GP-50 file, and
+  the pedals' layouts don't line up. A converter is possible: copy each
+  code and its settings into the matching GP-200 module, then set order
+  and on/off.
+- The same code can have different controls. SUP Star on the GP-200 has
+  Volume, Low Cut (19-2000) and High Cut (2000-20001); the GP-50 file
+  stores 0 for both cuts, outside the GP-200 ranges. A converter would
+  have to fill GP-200 defaults for controls the GP-50 doesn't store, not
+  copy blindly.
+- One file, 10 effects: it doesn't prove the whole code list matches (Q8).
+- The order and on/off fields are a reading, not confirmed: the order
+  puts the compressor (module 1) last, which is odd.
+
+No code changed; no converter planned.
