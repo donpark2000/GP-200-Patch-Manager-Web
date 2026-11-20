@@ -3141,3 +3141,30 @@ code bases on both families (0x0F000000, 0x0A100000).
 **What it proves and doesn't:** a GP-50 could be supported over Web MIDI,
 and converting looks possible but not confirmed. Neither is tested by us;
 all of the GP-50 evidence is other people's.
+
+## 2026-11-20: Valeton Suite doesn't recognise the GP-200
+
+**Background:** Valeton's desktop download for the GP-5 and GP-50 is one
+program, Valeton Suite, which also handles some of their other newer
+pedals (developer). The GP-200 is the oldest of the range and has its own
+editor. If Suite connected, the newer pedals and the GP-200 might share a
+protocol.
+
+**Test** (developer, this computer, Valeton Suite V2.1.1):
+1. First try: Suite said "no device connected". The GP-200 app was still
+   open, so a held MIDI port could explain it. The GP-200 app then
+   connected fine with nothing replugged, which rules out the cable and
+   USB socket.
+2. Re-run: GP-200 app and every tab of our site closed, pedal unplugged
+   and plugged back in, then Suite started. Still "no device connected";
+   it doesn't recognise the pedal at all.
+
+No firmware update was offered or taken, and nothing was written to the
+pedal (Suite never saw it), so no before/after backup compare was needed.
+
+**What it shows:** Suite V2.1.1 doesn't support the GP-200. That fits the
+GP-200 being on a separate, older protocol (header `F0 21 25 7E 47 50 2D
+32`, vs. the GP-50's nibble-encoded messages with a CRC-8; entry above) and
+VLTN-Tone-Studio treating the GP-200 family apart from the GP-5 family. It
+doesn't show how Suite identifies pedals (by USB ID or by asking over
+MIDI), only that a GP-200 isn't one of them.
