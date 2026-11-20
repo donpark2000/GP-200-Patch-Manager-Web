@@ -3168,3 +3168,63 @@ GP-200 being on a separate, older protocol (header `F0 21 25 7E 47 50 2D
 VLTN-Tone-Studio treating the GP-200 family apart from the GP-5 family. It
 doesn't show how Suite identifies pedals (by USB ID or by asking over
 MIDI), only that a GP-200 isn't one of them.
+
+## 2026-11-20: GP-50 plan: a test page first (on hold for the pedal)
+
+**Decision** (developer): order a GP-50, and before touching the GP-200
+app, prove the GP-50's technical details in a small test app. Only once
+that is solid, consider one app for both pedals; a converter comes after
+that, if at all. Same path as the GP-200: bare test page first, designed UI
+later.
+
+**Where:** a new page in this repo (e.g. `gp50-test.html`, its code in
+`src/gp50/`), on its own branch, not linked from the live site, so it can
+use the debug log, the test suite and the fake-pedal approach. The GP-200
+code stays unchanged.
+
+**Steps:**
+1. Before the pedal (developer: "sure"): GP-50 message encoding (nibbles,
+   CRC-8), the `.prst` reader/writer and a fake GP-50, from
+   drewmerc302/valeton-gp50's notes (MIT), with tests against their
+   examples. No hardware needed.
+2. When it arrives: note the firmware version; install Valeton Suite and
+   export every patch, as Valeton-made files to compare against.
+3. Read only: names (all 100), one patch, then all 100, each compared byte
+   for byte with Suite's export.
+4. Writing: one GP-50 scratch slot only, from the test page, after
+   confirmation in the app, checked by reading back, then restored and
+   checked again. **Needs a new exception in the `CLAUDE.md` write rule
+   first**, with the developer's OK (not given yet; needed by step 4).
+5. Then decide about one app for both pedals.
+
+**Browser:** the developer uses Edge, currently 159.0.4402.13, and the
+GP-200 app works in it. Edge is built on Chromium and its version numbers
+track Chrome's, so it should be past the Chrome 152 SysEx bug the GP-50
+project reports (fixed by 153). Check on the pedal anyway.
+
+**On hold** (developer): steps 2-5 wait for the pedal. Step 1 can be done
+before it arrives.
+
+## 2026-11-20: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- Site live at `58c0117` (#11): the designed UI plus anonymous usage
+  stats. Landings confirmed on the dashboard; actions checked only on
+  localhost with the fake pedal. Suite 165 pass. No open questions.
+- GP-50 research today (journal-only commits `6f34924`, `46c7c13`,
+  `39c1de8`, plus this one; no code changed): its `.prst` files and MIDI
+  messages differ from the GP-200's; effect codes mostly match (Q8,
+  closed); open-source GP-50 projects exist; Valeton Suite V2.1.1 doesn't
+  recognise the GP-200.
+- The developer is ordering a GP-50. Plan in the entry above.
+
+**Next:**
+1. GP-50 step 1 (codec, file reader/writer, fake GP-50, tests) can start
+   any time, on a new branch.
+2. When the GP-50 arrives: steps 2-5 of the plan; agree the `CLAUDE.md`
+   write exception before step 4.
+3. Still from before: check the dashboard shows `connect` the first time
+   the pedal is used on the live site; watch for "Problem:" and "Works
+   on:" issues; GitHub's "New issue" page; the laptop.
