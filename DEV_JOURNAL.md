@@ -12,17 +12,26 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q8. Do the GP-50's effect codes match the GP-200's everywhere?**
-  *Raised 2026-11-20 (entry "GP-50 .prst files: same effect codes,
-  different file").* All 10 codes in one GP-50 preset match a GP-200
-  effect whose controls fit the stored values. That is one file and 10
-  effects, mostly from the start of each module's list. To settle it: GP-50
-  presets that use effects late in each list (amps and cabs especially),
-  or the code list from Valeton's GP-50 editor if it ships one, as the
-  GP-200 desktop app did (CLI `PROTOCOL_NOTES.md`, the SnapTone/CAB
-  listing). Matters only if a GP-50 to GP-200 converter is built.
+(none)
 
 ## Resolved
+
+- **Q8. GP-50 effect codes vs. the GP-200's: closed 2026-11-20, mostly
+  yes but not everywhere** (entry "GP-50: open-source projects; protocol
+  and effect list"). Of the GP-50's 212 effects, 118 have the same code
+  and name as in `gp200_catalog.csv`, 10 are the NAM slots, 10 share a
+  code under a different name (some look like renames, some like different
+  effects, e.g. 0x03000022: Tone Bender-based on the GP-50, Big Muff-based
+  on the GP-200), and 74 aren't on the GP-200. So a converter must check
+  each code against both lists. Which of the 10 are renames is left for a
+  converter, if one is built. The original question, for the record:
+
+  - **Q8. Do the GP-50's effect codes match the GP-200's everywhere?**
+    *Raised 2026-11-20 (entry "GP-50 .prst files: same effect codes,
+    different file").* All 10 codes in one GP-50 preset match a GP-200
+    effect whose controls fit the stored values. That is one file and 10
+    effects, mostly from the start of each module's list. Matters only if
+    a GP-50 to GP-200 converter is built.
 
 - **Q7. Mixed old and new files after a publish: closed 2026-10-05**
   (entry "Published: the designed UI is live"). The first publish with the
@@ -2984,8 +2993,8 @@ Supersedes the status entries above.
   committed then). The "commit skill changes there" memory now exists in
   the Web-Games project too.
 - No open questions. Suite 165 pass. No problem reports from the group.
-  (Added 2026-11-20: Q8, GP-50 effect codes, from the GP-50 entry below;
-  it matters only if a converter is wanted.)
+  (Added 2026-11-20: Q8, GP-50 effect codes, raised and closed the same
+  day; see the two GP-50 entries below.)
 
 **Next:**
 1. The first time the pedal is connected on the live site (without
@@ -3060,3 +3069,75 @@ patch, which also fits the codes meaning the same effects.
   puts the compressor (module 1) last, which is odd.
 
 No code changed; no converter planned.
+
+## 2026-11-20: GP-50: open-source projects; protocol and effect list
+
+**Why:** the developer is thinking of buying a GP-50 as a backup and asked
+whether it talks the same protocol, and whether open-source projects for it
+could tell us. Exploring feasibility only; nothing is planned.
+
+**Sources** (read only, cloned into Claude's scratchpad, nothing run or
+copied into the repo):
+- [drewmerc302/valeton-gp50](https://github.com/drewmerc302/valeton-gp50)
+  at `47b2b58` (MIT): browser editor for the GP-50 and GP-5 over Web MIDI.
+  Its notes `re/DEVICE_READ.md` and `re/DEVICE_WRITE.md` record reads and
+  writes tested on a real GP-50 (the author has since sold the pedal).
+- [grzmol/VLTN-Tone-Studio](https://github.com/grzmol/VLTN-Tone-Studio)
+  at `1eb3fac` (GPL-3.0): desktop editor for the GP-5/50/150/180 and the
+  GP-200 family. GPL: read it for facts only; copying its code would put
+  its licence on ours.
+
+**The GP-50 connection (from drewmerc302's notes):**
+- Web MIDI works: `requestMIDIAccess({sysex:true})`, the pedal appears as
+  an input and an output, and Chrome read and wrote whole patches.
+- The messages differ from the GP-200's (CLI `PROTOCOL.md`: header
+  `F0 21 25 7E 47 50 2D 32`): a GP-50 message is `F0`, then the whole
+  message split into nibbles, then `F7`, with a CRC-8 (poly 0x07). Names
+  of all 100 patches come in one read (selector `0x40`); a patch body
+  (`0x41`, 511 bytes) is the **currently selected** patch only, so a slot
+  is chosen with Program Change first (0.30 s settle; 0.15 s corrupted
+  replies). Writes are command `0x1D`, 29 packets each acknowledged.
+- They warn Chrome 152 corrupts SysEx (the pedal gets `F0 F0 ... F7 F7`);
+  153 and later work.
+- So supporting a GP-50 here would need a second protocol layer, built
+  along the same lines as the GP-200 one.
+
+**The GP-50 file, now fully known** (their `DEVICE_READ.md`; fits the
+file decoded in the entry above): `GP-50` header at 0x00-0x13, a CRC-8
+over `prst[0x15:]` at 0x14, `FF FF FF FF` at 0x15, name at 0x19 (16
+bytes), then the 511-byte body exactly as the pedal sends it. Rebuilt
+byte-for-byte for 100 of 100 of their exports.
+
+**Effect codes (Q8):** their `app/static/data/fxid_ring.json` lists all
+212 GP-50 effects with codes, names and controls. Matched by code against
+`Documents\GP-200\gp200_catalog.csv` (301 entries), names compared ignoring
+case and punctuation:
+
+| | Effects |
+|---|---|
+| Same code, same name | 118 |
+| NAM slots (0x0F000000-09): same codes, listed as "Empty" on the GP-50 | 10 |
+| Same code, different name | 10 |
+| GP-50 code not on the GP-200 | 74 |
+
+The 10 with different names: Toucher / T-Wah (0x0100000F), Crier / A-WAH
+(0x01000015), Sora Fuzz (Tone Bender) / Lazaro (Big Muff) (0x03000022),
+cabs L-Star 1x12 / D STAR, UK GRN 2x12 / UK GRN 1, Bellman 2x12 /
+Bellman 1, EV 4x12 (Peavey 6505) / UK TD, UK GRN 4x12 / UK GRN 2,
+AMPG 4x10 / AMPG 1 (0x0A000009, 13, 16, 20, 22, 38), and Air / Studio
+(0x0C00000B). Some look like renames, some like different effects. The two
+lists come from different sources (theirs from their reverse engineering,
+ours from the manual), so a mismatch may also be a list error.
+
+**How VLTN converts** (`components/write/conversion.ts`): between the GP-5
+and GP-50 it rewrites the file, leaves a block empty when its effect is
+missing on the target pedal, and says so in plain words ("... has no GP-5
+equivalent, so that block is left empty"); it also reports dropped
+expression-pedal settings and tempo sync. That is the developer's "leave it
+off and flag it" idea. It refuses GP-200 family <-> GP-5 family presets
+outright; the code gives no reason. It also uses the same NAM and user IR
+code bases on both families (0x0F000000, 0x0A100000).
+
+**What it proves and doesn't:** a GP-50 could be supported over Web MIDI,
+and converting looks possible but not confirmed. Neither is tested by us;
+all of the GP-50 evidence is other people's.
