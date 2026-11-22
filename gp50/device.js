@@ -3,8 +3,8 @@
 // report that the pedal locks up if requests outrun it.
 
 import {
-  assertReadOnly, BODY_LEN, buildRead, decodeNames, decodeSettings, decodeSlot, KIND_READ, parseFrame, READS,
-  ReplyAssembler, toHex,
+  assertReadOnly, BODY_LEN, buildRead, buildSlotRead, decodeNames, decodeSettings, decodeSlot, decodeSlotPatch, KIND_READ,
+  parseFrame, READ_SLOT_PATCH, READS, ReplyAssembler, toHex,
 } from "./protocol.js";
 
 export const READ_TIMEOUT_MS = 2500;
@@ -35,15 +35,23 @@ export class Gp50Reader {
     return body;
   }
 
+  /** Any slot, without selecting it. Unproven on hardware when added (protocol.js). */
+  async readSlotPatch(slot) {
+    const msg = buildSlotRead(slot);
+    return decodeSlotPatch(await this._queued(() => this._exchange(`slot ${slot}'s patch`, READ_SLOT_PATCH, msg)));
+  }
+
   _read(what) {
-    const run = this.queue.then(() => this._exchange(what));
+    return this._queued(() => this._exchange(what, READS[what], buildRead(READS[what])));
+  }
+
+  _queued(exchange) {
+    const run = this.queue.then(exchange);
     this.queue = run.catch(() => {}).then(() => new Promise((r) => setTimeout(r, this.settleMs)));
     return run;
   }
 
-  _exchange(what) {
-    const fn = READS[what];
-    const msg = buildRead(fn);
+  _exchange(what, fn, msg) {
     const t0 = performance.now();
     return new Promise((resolve, reject) => {
       const asm = new ReplyAssembler(fn);

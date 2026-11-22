@@ -10,8 +10,15 @@
 
 export const KIND_READ = 0x12;
 
-/** The only functions this experiment may ask for. All are plain reads with no arguments. */
+/** The plain reads, with no arguments. With the slot read below, all this experiment may ask for. */
 export const READS = Object.freeze({ settings: 0x10, names: 0x40, patch: 0x41, slot: 0x43 });
+
+/**
+ * Reads any slot without selecting it: [0x12, 0x4f, u32 slot]. From VLTN,
+ * by static analysis; unproven on hardware when added. [0x11, 0x4f] is the
+ * patch WRITE.
+ */
+export const READ_SLOT_PATCH = 0x4f;
 
 export const BODY_LEN = 511;
 export const PRST_LEN = 552;
@@ -61,17 +68,26 @@ export function buildRead(fn) {
   return msg;
 }
 
+export function buildSlotRead(slot) {
+  if (!Number.isInteger(slot) || slot < 0 || slot >= NAME_COUNT) throw new Error(`Refused: slot ${slot} isn't a whole number from 0 to ${NAME_COUNT - 1}`);
+  const msg = frameToWire(1, 0, [KIND_READ, READ_SLOT_PATCH, slot, 0, 0, 0]);
+  assertReadOnly(msg);
+  return msg;
+}
+
 /**
  * The safety gate: every message goes through this before it is sent.
  * Reads and writes differ by one byte (0x12 / 0x11), so anything that isn't
- * exactly one of READS is refused, including Program Change (which would
+ * exactly one of READS, or a slot read for slot 0-99, is refused, including Program Change (which would
  * switch the pedal's patch and could lose an unsaved edit).
  */
 export function assertReadOnly(msg) {
   const f = parseFrame(msg);
-  const ok = f.ok && f.total === 1 && f.index === 0 && f.payload.length === 2 &&
-    f.payload[0] === KIND_READ && Object.values(READS).includes(f.payload[1]);
-  if (!ok) throw new Error(`Refused to send (not on the read-only list): ${toHex(msg)}`);
+  const single = f.ok && f.total === 1 && f.index === 0 && f.payload[0] === KIND_READ;
+  const plain = single && f.payload.length === 2 && Object.values(READS).includes(f.payload[1]);
+  const slotRead = single && f.payload.length === 6 && f.payload[1] === READ_SLOT_PATCH &&
+    f.payload[2] < NAME_COUNT && f.payload.slice(3).every((b) => b === 0);
+  if (!plain && !slotRead) throw new Error(`Refused to send (not on the read-only list): ${toHex(msg)}`);
 }
 
 /** Collects the frames of one reply; the total says how many to expect. */
@@ -146,6 +162,20 @@ export function decodeSettings(data) {
 export function buildPrst(name, body) {
   if (body.length !== BODY_LEN) throw new Error(`Patch is ${body.length} bytes, expected ${BODY_LEN}`);
   const nameBytes = Array.from({ length: NAME_LEN }, (_, i) => (i < name.length ? name.charCodeAt(i) & 0xff : 0));
-  const tail = [0xff, 0xff, 0xff, 0xff, ...nameBytes, ...body];
-  return Uint8Array.from([...PRST_HEAD, crc8(tail), ...tail]);
+  return prstFromTail([0xff, 0xff, 0xff, 0xff, ...nameBytes, ...body]);
+}
+
+const prstFromTail = (tail) => Uint8Array.from([...PRST_HEAD, crc8(tail), ...tail]);
+
+/** A slot read's reply: FF FF FF FF, name, body, i.e. a .prst from 0x15 on. */
+export function decodeSlotPatch(data) {
+  const want = PRST_LEN - 0x15;
+  if (data.length !== want) throw new Error(`Slot patch is ${data.length} bytes, expected ${want}`);
+  if (data.slice(0, 4).some((b) => b !== 0xff)) throw new Error(`Slot patch starts ${toHex(data.slice(0, 4))}, expected ff ff ff ff`);
+  return { name: text(data.slice(4, 4 + NAME_LEN)), prst: prstFromTail(data) };
+}
+
+/** Offsets where two files differ; one past the shorter one's end counts as different. */
+export function diffOffsets(a, b) {
+  return Array.from({ length: Math.max(a.length, b.length) }, (_, i) => i).filter((i) => a[i] !== b[i]);
 }

@@ -3,10 +3,10 @@
 
 import { Logger } from "../src/core/log.js";
 import { Gp50Reader, isGp50Name } from "./device.js";
-import { buildPrst, toHex } from "./protocol.js";
+import { buildPrst, diffOffsets, toHex } from "./protocol.js";
 
 const $ = (id) => document.getElementById(id);
-const readButtons = ["read-settings", "read-slot", "read-names", "read-patch"];
+const readButtons = ["read-settings", "read-slot", "read-names", "read-patch", "read-slot-patch"];
 const log = new Logger({
   onLine: (line) => {
     $("log").textContent += `${line}\n`;
@@ -52,20 +52,49 @@ action("read-names", async () => {
   return `${names.length} names read.`;
 });
 action("read-patch", async () => {
+  forgetPatch();
   // The patch reply has no name or slot in it. Read the slot on both sides,
   // so switching patches on the pedal meanwhile can't mislabel it.
-  lastPatch = null;
-  $("save-patch").disabled = true;
   names = await reader.readNames();
   const slot = await reader.readSlot();
   const body = await reader.readPatchBody();
   const after = await reader.readSlot();
   if (after !== slot) throw new Error(`The pedal's patch changed from slot ${slot} to ${after} during the read; try again`);
-  lastPatch = { name: names[slot], slot, prst: buildPrst(names[slot], body) };
-  $("save-patch").disabled = false;
-  log.info(`Patch as .prst: ${toHex(lastPatch.prst)}`);
-  return `Slot ${slot} "${names[slot]}": ${body.length} bytes read.`;
+  keepPatch({ name: names[slot], slot, prst: buildPrst(names[slot], body) });
+  return `Slot ${slot} "${names[slot]}": ${body.length} bytes read.${await comparison()}`;
 });
+action("read-slot-patch", async () => {
+  forgetPatch();
+  const slot = $("slot").valueAsNumber;
+  if (!Number.isInteger(slot) || slot < 0 || slot > 99) throw new Error("Slot must be a whole number from 0 to 99");
+  const before = await reader.readSlot();
+  const { name, prst } = await reader.readSlotPatch(slot);
+  const after = await reader.readSlot();
+  keepPatch({ name, slot, prst });
+  const selected = before === after
+    ? `The pedal stayed on slot ${before}${before === slot ? ", the slot read, so this doesn't show that it works for others" : ""}.`
+    : `The pedal went from slot ${before} to ${after}.`;
+  return `Slot ${slot} "${name}" read. ${selected}${await comparison()}`;
+});
+
+function forgetPatch() {
+  lastPatch = null;
+  $("save-patch").disabled = true;
+}
+
+function keepPatch(patch) {
+  lastPatch = patch;
+  $("save-patch").disabled = false;
+  log.info(`Patch as .prst: ${toHex(patch.prst)}`);
+}
+
+async function comparison() {
+  const file = $("compare").files[0];
+  if (!file) return "";
+  const diff = diffOffsets(lastPatch.prst, new Uint8Array(await file.arrayBuffer()));
+  if (!diff.length) return ` Identical to ${file.name}.`;
+  return ` DIFFERENT from ${file.name}: ${diff.length} bytes, at ${diff.slice(0, 20).map((i) => `0x${i.toString(16)}`).join(", ")}${diff.length > 20 ? ", ..." : ""}.`;
+}
 
 async function connect() {
   $("connect").disabled = true;

@@ -5,7 +5,8 @@ import test from "node:test";
 import { Gp50Reader, isGp50Name } from "../gp50/device.js";
 import { FakeGp50 } from "../gp50/fake-gp50.js";
 import {
-  assertReadOnly, buildPrst, buildRead, crc8, decodeNames, decodeSettings, decodeSlot, frameToWire, parseFrame, READS, toHex,
+  assertReadOnly, buildPrst, buildRead, buildSlotRead, crc8, decodeNames, decodeSettings, decodeSlot, decodeSlotPatch, diffOffsets,
+  frameToWire, parseFrame, READS, toHex,
 } from "../gp50/protocol.js";
 import { Logger } from "../src/core/log.js";
 
@@ -45,7 +46,7 @@ test("gp50 frames: damaged messages are refused, with the reason", () => {
   assert.equal(parseFrame([]).ok, false);
 });
 
-test("gp50 safety: only the four plain reads may be sent", () => {
+test("gp50 safety: of the plain reads, only the four may be sent", () => {
   for (const fn of Object.values(READS)) assert.doesNotThrow(() => assertReadOnly(buildRead(fn)));
   const refuse = (msg, why) => assert.throws(() => assertReadOnly(msg), /Refused/, why);
   refuse(SUITE_WRITE, "a patch write");
@@ -57,6 +58,23 @@ test("gp50 safety: only the four plain reads may be sent", () => {
   refuse([0xb0, 0, 5], "Control Change");
   refuse([], "nothing");
   assert.throws(() => buildRead(0x3f), /Refused/);
+});
+
+test("gp50 safety: a slot read for slots 0-99 only, and never its write twin", () => {
+  for (let s = 0; s < 100; s++) assert.doesNotThrow(() => assertReadOnly(buildSlotRead(s)));
+  // VLTN's own test vector for slot 55.
+  assert.equal(toHex(buildSlotRead(55)), "f0 04 0a 00 01 00 00 00 06 01 02 04 0f 03 07 00 00 00 00 00 00 f7");
+  for (const s of [100, 255, -1, 256, 1.5, NaN, "x", undefined]) assert.throws(() => buildSlotRead(s), `slot ${s}`);
+  const refuse = (payload, total = 1) => assert.throws(() => assertReadOnly(frameToWire(total, 0, payload)), /Refused/, toHex(payload));
+  refuse([0x11, 0x4f, 51, 0, 0, 0]); // the patch write
+  refuse([0x11, 0x4f]);
+  refuse([0x12, 0x4f]); // no slot
+  refuse([0x12, 0x4f, 51, 0, 0]);
+  refuse([0x12, 0x4f, 51, 0, 0, 0, 0]);
+  refuse([0x12, 0x4f, 51, 1, 0, 0]);
+  refuse([0x12, 0x4f, 51, 0, 0, 1]);
+  refuse([0x12, 0x46, 51, 0, 0, 0]); // same shape, another function
+  refuse([0x12, 0x4f, 51, 0, 0, 0], 29);
 });
 
 test("gp50 safety: one send() in the experiment, right after the gate; none in the page", () => {
@@ -81,6 +99,38 @@ test("gp50 reading: firmware, slot, names and patch", async () => {
   assert.equal(names[99], "Fake 99");
   assert.deepEqual(await reader.readPatchBody(), pedal.body);
   assert.deepEqual(pedal.refused, []);
+});
+
+test("gp50 reading: any slot without selecting it, the same file as reading it selected", async () => {
+  const { pedal, reader } = setup();
+  const { name, prst } = await reader.readSlotPatch(51);
+  assert.equal(name, "Fake 51");
+  assert.deepEqual([...prst.slice(0x29)], pedal.bodies[51]);
+  assert.equal(await reader.readSlot(), 2, "still on the slot it was on");
+  pedal.slot = 51;
+  assert.deepEqual(diffOffsets(prst, buildPrst("Fake 51", await reader.readPatchBody())), []);
+  assert.deepEqual(pedal.refused, []);
+});
+
+test("gp50 reading: a slot read that isn't answered, or in an unexpected form, fails saying so; a bad slot is never sent", async () => {
+  let faults = () => [];
+  const { pedal, reader } = setup({ faults: (f, fn) => faults(f, fn) });
+  await assert.rejects(reader.readSlotPatch(51), /slot 51's patch: no reply at all/);
+  faults = (f) => f.filter((_, i) => i !== 28);
+  await assert.rejects(reader.readSlotPatch(51), /got 28 of 29 frames, missing 28/);
+  faults = (f) => f;
+  pedal.bodies[51] = pedal.bodies[51].slice(1);
+  await assert.rejects(reader.readSlotPatch(51), /530 bytes, expected 531/);
+  assert.throws(() => decodeSlotPatch(new Array(531).fill(0)), /expected ff ff ff ff/);
+  const sent = pedal.sent.length;
+  await assert.rejects(reader.readSlotPatch(100), /Refused/);
+  assert.equal(pedal.sent.length, sent);
+});
+
+test("gp50 compare: equal, changed and shorter files", () => {
+  assert.deepEqual(diffOffsets([1, 2, 3], [1, 2, 3]), []);
+  assert.deepEqual(diffOffsets([1, 2, 3], [1, 9, 3]), [1]);
+  assert.deepEqual(diffOffsets([1, 2, 3], [1, 2]), [2]);
 });
 
 test("gp50 reading: requests asked for together go out one at a time", async () => {

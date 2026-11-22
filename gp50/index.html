@@ -12,7 +12,7 @@
   <main>
     <header>
       <h1>GP-50 read-only test</h1>
-      <p class="sub">An experiment, separate from the GP-200 app. It can only send four read requests; it can't
+      <p class="sub">An experiment, separate from the GP-200 app. It can only send read requests; it can't
         change, save or switch anything on the pedal. Chrome or Edge on a computer. Close Valeton Suite first.</p>
     </header>
 
@@ -37,7 +37,14 @@
         <button id="read-patch" disabled>Selected patch</button>
         <button id="save-patch" class="secondary" disabled>Save that patch (.prst)</button>
       </div>
-      <p id="result" role="status" class="muted">Nothing read yet.</p>
+      <div class="row">
+        <label>Slot <input id="slot" class="num" type="number" min="0" max="99" value="51"></label>
+        <button id="read-slot-patch" disabled>Read that slot without selecting it</button>
+        <label>Compare with <input id="compare" type="file" accept=".prst"></label>
+      </div>
+      <p class="muted">Unproven request. Put the pedal on a different patch first. If the pedal stops responding,
+        unplug it and plug it back in.</p>
+      <p id="result" role="status">Nothing read yet.</p>
       <ol id="names" start="0" style="columns: 4 150px" hidden></ol>
     </section>
 

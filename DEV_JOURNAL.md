@@ -3387,12 +3387,34 @@ Claude from its parent folder).
 **What it doesn't show:** one patch compared, read while selected. Not
 tried: reading a slot that isn't selected, any write.
 
+## 2026-11-22: GP-50 slot read added (not yet tried on the pedal)
+
+**Go-ahead** (developer: "Yes, add it"), after being told it is unproven
+and one byte from the patch write.
+
+- `[0x12, 0x4F, slot, 0, 0, 0]`: from VLTN (static analysis); its tests use
+  a simulated pedal, so no hardware evidence was seen. Our message for slot
+  55 equals VLTN's test vector.
+- The gate now allows the four plain reads plus exactly this form for slots
+  0-99; tests refuse its write twin (`0x11 0x4F`), other lengths, other
+  functions of the same shape and multi-frame forms.
+- The page reads the selected slot before and after and says if the pedal
+  moved, and can compare the result with a chosen `.prst`.
+- **Found by its test before any use:** a slot of 1.5 was rounded instead of
+  refused; `buildSlotRead` now insists on a whole number 0-99.
+- 18 GP-50 tests, suite 183 pass; page checked with the fake pedal (equal,
+  one byte different, the selected slot itself, slot 100 and empty).
+
+**Hardware test to do:** pedal on another patch, read slot 51, compare with
+`51-STD AC.prst`. A match with the pedal unmoved would show it works for
+that slot.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
 
 **Known:**
-- GP-200 site unchanged, live at `58c0117`. Suite 179 pass on
+- GP-200 site unchanged, live at `58c0117`. Suite 183 pass on
   `gp50-experiments` (165 without the GP-50 tests).
 - GP-50 (firmware 1.1.0): our page reads it over USB in Edge 159; one
   patch matches Suite's export byte for byte.
@@ -3400,8 +3422,8 @@ Supersedes the status entries above.
   (2026-11-20).
 
 **Next:**
-1. Read a slot that isn't selected (`[0x12, 0x4F, slot]`, unproven; ask
-   the developer first), starting with slot 51 against the saved file.
+1. Hardware test of the slot read (added, entry above): slot 51 against
+   the saved file, pedal on another patch.
 2. Then all 100 against Suite exports.
 3. Writing needs a `CLAUDE.md` exception first (developer's OK).
 4. Still from before: the dashboard's `connect` count, "Problem:" and
