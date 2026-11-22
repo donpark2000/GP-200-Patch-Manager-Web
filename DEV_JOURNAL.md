@@ -3273,3 +3273,78 @@ opened from a browser. Firmware version not noted yet.
 **Cable:** the GP-50 comes with a USB-A to USB-C cable; asked whether USB-C
 to USB-C is a problem. No source found for the GP-50 either way. Not
 tested.
+
+## 2026-11-22: GP-50 read-only test page built (not yet tried on the pedal)
+
+**Decision** (developer): first establish read-only connectivity, without
+touching the working GP-200 app; consider one app for both only once we
+know what the GP-50 can do. No backup of the GP-50 needed: it holds only
+factory presets.
+
+**Reported** (developer): the connectivity problem is solved (what it was
+isn't recorded); Valeton Suite connects over Bluetooth from an iPhone and
+an Android tablet. Two open-source web apps found: one online, which didn't
+connect (name and error not recorded), and one retired because its author
+no longer has a GP-50 (Claude takes this to be drewmerc302/valeton-gp50).
+
+**Built**, branch `gp50-experiments`, no GP-200 file changed:
+- `gp50/protocol.js` (messages, file layout, safety gate), `device.js`
+  (reader), `index.html` + `page.js` (test page, debug log, save log),
+  `fake-gp50.js` (`gp50/?fake`), `tests/gp50.test.js`. It uses the app's
+  `src/core/log.js` and `src/ui/testpage.css` as they are.
+- In `gp50/`, not `src/gp50/` as planned: the publish step copies all of
+  `src/`, so a later merge would have put it on the live site.
+- **Read only, enforced:** every message passes `assertReadOnly`, which
+  allows exactly four requests (settings 0x10, names 0x40, selected patch
+  0x41, selected slot 0x43), no arguments. Reads and writes differ by one
+  byte (0x12 / 0x11). No Program Change, so no switching of patches.
+- Not included: `[0x12, 0x4F, slot]`, said (VLTN, from static analysis of
+  Suite and firmware 1.1.0) to read any slot without switching to it. The
+  natural next step; 0x11 0x4F is the patch write.
+
+**New facts from the sources** (not yet confirmed here):
+- Byte 1 of a frame is the total number of frames, not a command as the
+  2026-11-20 entry had it ("command `0x1D`, 29 packets": 0x1D is 29). So
+  the reader knows when a reply is complete.
+- Settings record (1,1) holds the firmware version.
+- VLTN's connection notes: on Windows only one app can use the pedal;
+  Windows 11 can give it the "USB MIDI 2.0" driver, and then the port shows
+  but nothing answers. **Here** the MIDI interface (MI_03) has Microsoft's
+  "USB Audio Device" (`usbaudio`), the one VLTN switches to.
+- The chain order record (0x3002) is confirmed by drewmerc302's
+  before/after test: each position holds the module number there. So the
+  downloaded preset does have its compressor last.
+
+**Evidence:** 14 new tests, suite 179 pass. A real Suite-to-GP-50 message
+and a real pedal answer (captured by drewmerc302, MIT) decode with correct
+CRCs. `buildPrst` reproduces three GP-50 presets from VLTN's fixtures byte
+for byte (read from the scratchpad, not copied). The page was run against
+the fake pedal in the built-in browser; no console errors. Nothing has
+been sent to the real GP-50.
+
+**Correction:** the 2026-11-20 entry warned that copying VLTN's GPL-3.0
+code would put its licence on ours. This repo is already GPL-3.0, so that
+is no obstacle. What does need care: VLTN's notes say the GP-50 effect
+list (`fxid_ring.json`) is derived from Valeton's own data and shouldn't
+be redistributed.
+
+## 2026-11-22: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- GP-200 site unchanged, live at `58c0117`. Suite 179 pass on
+  `gp50-experiments` (165 without the GP-50 tests).
+- GP-50 connected to this computer; test page ready, above. Edge
+  159.0.4402.13.
+- Not confirmed: whether the GP-200 app was open on Suite's first try
+  (2026-11-20).
+
+**Next:**
+1. Run `http://localhost:8000/gp50/` in Edge with the GP-50 (Suite closed);
+   save the log into `GP-200-testing\2026-11-22_gp50-first`.
+2. If reading works: compare a saved patch with Suite's export of the same
+   patch, byte for byte; then try 0x4F reads.
+3. Writing needs a `CLAUDE.md` exception first (developer's OK).
+4. Still from before: the dashboard's `connect` count, "Problem:" and
+   "Works on:" issues, GitHub's "New issue" page, the laptop.

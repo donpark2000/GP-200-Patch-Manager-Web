@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GP-50 read-only test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../src/ui/testpage.css">
+  <script type="module" src="page.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>GP-50 read-only test</h1>
+      <p class="sub">An experiment, separate from the GP-200 app. It can only send four read requests; it can't
+        change, save or switch anything on the pedal. Chrome or Edge on a computer. Close Valeton Suite first.</p>
+    </header>
+
+    <section aria-labelledby="h-connect">
+      <h2 id="h-connect">1. Connect</h2>
+      <div class="row">
+        <button id="connect">Connect</button>
+        <span id="status" role="status">Not connected.</span>
+      </div>
+      <div class="row">
+        <label>Input <select id="in-port" disabled></select></label>
+        <label>Output <select id="out-port" disabled></select></label>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-read">
+      <h2 id="h-read">2. Read</h2>
+      <div class="row">
+        <button id="read-settings" disabled>Firmware and settings</button>
+        <button id="read-slot" disabled>Selected slot</button>
+        <button id="read-names" disabled>All patch names</button>
+        <button id="read-patch" disabled>Selected patch</button>
+        <button id="save-patch" class="secondary" disabled>Save that patch (.prst)</button>
+      </div>
+      <p id="result" role="status" class="muted">Nothing read yet.</p>
+      <ol id="names" start="0" style="columns: 4 150px" hidden></ol>
+    </section>
+
+    <section aria-labelledby="h-log">
+      <h2 id="h-log">Log</h2>
+      <div class="row">
+        <label><input type="checkbox" id="debug" checked> Debug (log every MIDI message)</label>
+        <button id="save-log" class="secondary">Save log</button>
+        <button id="clear-log" class="secondary">Clear</button>
+      </div>
+      <pre id="log" tabindex="0" aria-live="off"></pre>
+    </section>
+
+    <footer>
+      <p>Protocol facts from <a href="https://github.com/drewmerc302/valeton-gp50">drewmerc302/valeton-gp50</a> (MIT)
+        and <a href="https://github.com/grzmol/VLTN-Tone-Studio">VLTN Tone Studio</a> (GPL-3.0).
+        Not affiliated with Valeton.</p>
+    </footer>
+  </main>
+</body>
+</html>
