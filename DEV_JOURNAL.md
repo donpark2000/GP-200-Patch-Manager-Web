@@ -3502,7 +3502,10 @@ Supersedes the status entries above.
 1. Stability test, read only: read all 100 again after switching through
    patches, and once more after a power cycle; compare the zips (save the
    log each time).
-2. Compare the first zip with Suite's export of all patches.
+2. Compare a sample with Suite's exports: slots 02, 08, 21, 35, 47, 54 (51
+   done). Suite exports one patch at a time (developer), so not all 55;
+   chosen from the zip for the widest coverage. No factory patch uses a
+   user IR cab or a SnapTone other than the first, so those stay untested.
 3. Writing needs a `CLAUDE.md` exception first (developer's OK).
 4. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
