@@ -9,13 +9,18 @@ import {
 
 export const READ_TIMEOUT_MS = 2500;
 export const SETTLE_MS = 200;
+/** After a failed read, wait until the pedal has sent nothing for this long. */
+export const QUIET_MS = 1000;
 
 /** "GP-50", "GP-50 MIDI 1"; never GP-5, GP-500 or GP-200. */
 export const isGp50Name = (name) => /GP-50(?!\d)/i.test(name ?? "");
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export class Gp50Reader {
-  constructor(input, output, log, { timeoutMs = READ_TIMEOUT_MS, settleMs = SETTLE_MS } = {}) {
-    Object.assign(this, { input, output, log, timeoutMs, settleMs });
+  constructor(input, output, log, { timeoutMs = READ_TIMEOUT_MS, settleMs = SETTLE_MS, quietMs = QUIET_MS } = {}) {
+    Object.assign(this, { input, output, log, timeoutMs, settleMs, quietMs });
+    this.lastRx = 0;
     this.pending = null; // the read in progress: {fn, frame(parsedFrame)}
     this.queue = Promise.resolve();
     input.onmidimessage = (e) => this._onMessage(Array.from(e.data));
@@ -35,7 +40,7 @@ export class Gp50Reader {
     return body;
   }
 
-  /** Any slot, without selecting it. Unproven on hardware when added (protocol.js). */
+  /** Any slot, without selecting it. */
   async readSlotPatch(slot) {
     const msg = buildSlotRead(slot);
     return decodeSlotPatch(await this._queued(() => this._exchange(`slot ${slot}'s patch`, READ_SLOT_PATCH, msg)));
@@ -47,8 +52,19 @@ export class Gp50Reader {
 
   _queued(exchange) {
     const run = this.queue.then(exchange);
-    this.queue = run.catch(() => {}).then(() => new Promise((r) => setTimeout(r, this.settleMs)));
+    this.queue = run.then(() => sleep(this.settleMs), () => this._untilQuiet());
     return run;
+  }
+
+  // A slot's reply doesn't say which slot it is. If the rest of a failed
+  // reply came in late it could pass for the next slot's, so let it finish.
+  async _untilQuiet() {
+    const since = performance.now();
+    for (;;) {
+      const wait = Math.max(this.lastRx, since) + this.quietMs - performance.now();
+      if (wait <= 0) return;
+      await sleep(wait);
+    }
   }
 
   _exchange(what, fn, msg) {
@@ -90,6 +106,7 @@ export class Gp50Reader {
   }
 
   _onMessage(msg) {
+    this.lastRx = performance.now();
     this.log.debug(`RX ${toHex(msg)}`);
     const f = parseFrame(msg);
     if (!f.ok) {

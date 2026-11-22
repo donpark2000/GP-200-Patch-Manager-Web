@@ -14,8 +14,8 @@ export const KIND_READ = 0x12;
 export const READS = Object.freeze({ settings: 0x10, names: 0x40, patch: 0x41, slot: 0x43 });
 
 /**
- * Reads any slot without selecting it: [0x12, 0x4f, u32 slot]. From VLTN,
- * by static analysis; unproven on hardware when added. [0x11, 0x4f] is the
+ * Reads any slot without selecting it: [0x12, 0x4f, u32 slot]. From VLTN;
+ * worked on our pedal for slot 51 (journal 2026-11-22). [0x11, 0x4f] is the
  * patch WRITE.
  */
 export const READ_SLOT_PATCH = 0x4f;
@@ -102,6 +102,8 @@ export class ReplyAssembler {
   push({ total, index, payload }) {
     if (this.total === null) this.total = total;
     if (total !== this.total) throw new Error(`a frame says ${total} in all, earlier ones ${this.total}`);
+    const had = this.parts[index];
+    if (had && toHex(had) !== toHex(payload)) throw new Error(`frame ${index} came twice, with different contents`);
     this.parts[index] = payload;
     if (this.missing().length) return null;
     const all = this.parts.flat();

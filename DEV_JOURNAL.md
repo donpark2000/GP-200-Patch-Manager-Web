@@ -3429,12 +3429,37 @@ with the pedal on slot 52.
 **What it doesn't show:** one slot, one read. Not tried: the other 99,
 repeated reads, SnapTone or user IR patches, any write.
 
+## 2026-11-22: GP-50 "Read all 100 slots" added (not yet tried on the pedal)
+
+**Go-ahead** (developer: "You can"). Only the first 55 patches are factory
+presets (slots 0-54 by our count); the other 45 haven't been programmed, and
+the developer agreed reading all 100 is still a worthwhile test. It fits
+the names read so far: slots 55 and 99 are both named "GP-50".
+
+- `gp50/backup.js`: reads every slot with the slot read, up to 3 attempts
+  each, lists slots that failed, can be stopped, reports the selected slot
+  before and after, saves a zip (`gp50_all_...` or `gp50_INCOMPLETE_...`;
+  files named as Suite named its export, `51-STD AC.prst`) and logs which
+  slots hold identical patches.
+- **A slot's reply doesn't say which slot it is**, so a late reply could be
+  taken for the next slot's. Three guards: after a failed read, wait until
+  the pedal has been quiet for 1 s; a frame that comes twice with different
+  contents fails the read; the name must match the pedal's name list
+  (re-read, then flagged). The name check is weak for the 45 slots that
+  probably share a name. The first version of the late-reply test passed
+  without the guard; rewritten, and shown to fail with the guard off.
+- 26 GP-50 tests, suite 191 pass. Page run with the fake pedal: 100 of 100
+  in 23.2 s, zip with 100 entries; stopping after 12 keeps 12.
+
+**Hardware test to do:** read all, save the zip and log; compare with
+Suite's export of all patches.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
 
 **Known:**
-- GP-200 site unchanged, live at `58c0117`. Suite 183 pass on
+- GP-200 site unchanged, live at `58c0117`. Suite 191 pass on
   `gp50-experiments` (165 without the GP-50 tests).
 - GP-50 (firmware 1.1.0): our page reads it over USB in Edge 159; slot 51
   matches Suite's export byte for byte, read both selected and unselected
@@ -3443,8 +3468,8 @@ Supersedes the status entries above.
   (2026-11-20).
 
 **Next:**
-1. Read all 100 slots on the test page into a zip (not built; ask first).
-2. Compare them with Suite's export of all patches.
+1. Hardware test of "Read all 100 slots" (added, entry above).
+2. Compare the zip with Suite's export of all patches.
 3. Writing needs a `CLAUDE.md` exception first (developer's OK).
 4. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.

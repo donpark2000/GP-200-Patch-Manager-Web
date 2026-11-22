@@ -2,11 +2,13 @@
 // device.js. gp50/?fake uses the fake pedal.
 
 import { Logger } from "../src/core/log.js";
+import { createZip } from "../src/core/zip.js";
+import { identicalGroups, readAllSlots, slotFileName, slotRanges } from "./backup.js";
 import { Gp50Reader, isGp50Name } from "./device.js";
 import { buildPrst, diffOffsets, toHex } from "./protocol.js";
 
 const $ = (id) => document.getElementById(id);
-const readButtons = ["read-settings", "read-slot", "read-names", "read-patch", "read-slot-patch"];
+const readButtons = ["read-settings", "read-slot", "read-names", "read-patch", "read-slot-patch", "read-all"];
 const log = new Logger({
   onLine: (line) => {
     $("log").textContent += `${line}\n`;
@@ -19,6 +21,8 @@ let access = null;
 let reader = null;
 let names = null;
 let lastPatch = null; // {name, slot, prst}
+let lastAll = null; // readAllSlots result
+let stopRequested = false;
 
 log.info(`GP-50 read-only test. ${navigator.userAgent}`);
 
@@ -75,6 +79,51 @@ action("read-slot-patch", async () => {
     ? `The pedal stayed on slot ${before}${before === slot ? ", the slot read, so this doesn't show that it works for others" : ""}.`
     : `The pedal went from slot ${before} to ${after}.`;
   return `Slot ${slot} "${name}" read. ${selected}${await comparison()}`;
+});
+
+action("read-all", async () => {
+  lastAll = null;
+  $("save-zip").disabled = true;
+  stopRequested = false;
+  $("stop").disabled = false;
+  $("progress").hidden = false;
+  const t0 = performance.now();
+  let r;
+  try {
+    r = await readAllSlots(reader, {
+      log,
+      isCancelled: () => stopRequested || !reader,
+      onProgress: (done, total) => {
+        $("progress").value = done / total;
+        $("result").textContent = `Reading... ${done} of ${total}`;
+      },
+    });
+  } finally {
+    $("stop").disabled = true;
+    $("progress").hidden = true;
+  }
+  lastAll = r;
+  $("save-zip").disabled = r.entries.length === 0;
+  for (const g of identicalGroups(r.entries)) log.info(`Identical patches: slots ${slotRanges(g)}`);
+  const parts = [`${r.entries.length} of 100 slots read in ${((performance.now() - t0) / 1000).toFixed(1)} s, ${r.retries} retries.`];
+  if (r.cancelled) parts.push("Stopped.");
+  if (r.failed.length) parts.push(`FAILED: slots ${slotRanges(r.failed)}.`);
+  if (r.wrongName.length) parts.push(`NAME DIFFERS from the pedal's list: slots ${slotRanges(r.wrongName)}.`);
+  if (r.selectedAfter === null) parts.push("The pedal didn't say which slot it's on afterwards.");
+  else parts.push(r.selectedBefore === r.selectedAfter ? `The pedal stayed on slot ${r.selectedBefore}.` : `The pedal went from slot ${r.selectedBefore} to ${r.selectedAfter}.`);
+  const biggest = identicalGroups(r.entries).sort((a, b) => b.length - a.length)[0];
+  if (biggest) parts.push(`Largest set of identical patches: slots ${slotRanges(biggest)}.`);
+  return parts.join(" ");
+});
+$("stop").addEventListener("click", () => {
+  stopRequested = true;
+  $("stop").disabled = true;
+});
+$("save-zip").addEventListener("click", () => {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const complete = lastAll.entries.length === 100 && !lastAll.wrongName.length;
+  const zip = createZip(lastAll.entries.map((e) => ({ name: slotFileName(e.slot, e.name), data: e.prst })));
+  download(`gp50_${complete ? "all" : "INCOMPLETE"}_${stamp}.zip`, zip, "application/zip");
 });
 
 function forgetPatch() {

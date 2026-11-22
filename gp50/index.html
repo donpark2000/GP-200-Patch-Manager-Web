@@ -42,8 +42,13 @@
         <button id="read-slot-patch" disabled>Read that slot without selecting it</button>
         <label>Compare with <input id="compare" type="file" accept=".prst"></label>
       </div>
-      <p class="muted">Unproven request. Put the pedal on a different patch first. If the pedal stops responding,
-        unplug it and plug it back in.</p>
+      <div class="row">
+        <button id="read-all" disabled>Read all 100 slots</button>
+        <button id="stop" class="secondary" disabled>Stop</button>
+        <button id="save-zip" class="secondary" disabled>Save them (zip)</button>
+        <progress id="progress" max="1" value="0" hidden></progress>
+      </div>
+      <p class="muted">Neither selects a slot on the pedal. If the pedal stops responding, unplug it and plug it back in.</p>
       <p id="result" role="status">Nothing read yet.</p>
       <ol id="names" start="0" style="columns: 4 150px" hidden></ol>
     </section>

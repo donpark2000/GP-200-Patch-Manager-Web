@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { identicalGroups, readAllSlots, slotFileName, slotRanges } from "../gp50/backup.js";
 import { Gp50Reader, isGp50Name } from "../gp50/device.js";
 import { FakeGp50 } from "../gp50/fake-gp50.js";
 import {
@@ -16,7 +17,7 @@ function setup(opts) {
   const pedal = new FakeGp50(opts);
   const log = new Logger();
   log.debugEnabled = true;
-  return { pedal, log, reader: new Gp50Reader(pedal.input, pedal.output, log, { timeoutMs: 100, settleMs: 0 }) };
+  return { pedal, log, reader: new Gp50Reader(pedal.input, pedal.output, log, { timeoutMs: 100, settleMs: 0, quietMs: 20 }) };
 }
 
 // Real messages (Valeton Suite importing a patch into a GP-50, and the
@@ -81,7 +82,7 @@ test("gp50 safety: one send() in the experiment, right after the gate; none in t
   const read = (f) => readFileSync(new URL(`../gp50/${f}`, import.meta.url), "utf8");
   assert.equal(read("device.js").split(".send(").length - 1, 1);
   assert.match(read("device.js"), /assertReadOnly\(msg\);\s+this\.output\.send\(msg\);/);
-  for (const f of ["page.js", "protocol.js", "index.html"]) assert.doesNotMatch(read(f), /\.send\(/, f);
+  for (const f of ["page.js", "protocol.js", "backup.js", "index.html"]) assert.doesNotMatch(read(f), /\.send\(/, f);
 });
 
 test("gp50 is not published: outside src/, not in the publish step, no link from the live page", () => {
@@ -125,6 +126,113 @@ test("gp50 reading: a slot read that isn't answered, or in an unexpected form, f
   const sent = pedal.sent.length;
   await assert.rejects(reader.readSlotPatch(100), /Refused/);
   assert.equal(pedal.sent.length, sent);
+});
+
+test("gp50 read all: every slot, in order, pedal not moved, nothing but reads sent", async () => {
+  const { pedal, reader, log } = setup();
+  const progress = [];
+  const r = await readAllSlots(reader, { log, onProgress: (d) => progress.push(d) });
+  assert.deepEqual(r.entries.map((e) => e.slot), Array.from({ length: 100 }, (_, i) => i));
+  for (const e of r.entries) {
+    assert.equal(e.name, pedal.names[e.slot]);
+    assert.deepEqual([...e.prst.slice(0x29)], pedal.bodies[e.slot]);
+  }
+  assert.deepEqual([r.failed, r.wrongName, r.retries, r.cancelled], [[], [], 0, false]);
+  assert.deepEqual([r.selectedBefore, r.selectedAfter, pedal.slot], [2, 2, 2]);
+  assert.deepEqual(pedal.refused, []);
+  assert.equal(progress.at(-1), 100);
+  for (const m of pedal.sent) assert.doesNotThrow(() => assertReadOnly(m));
+});
+
+test("gp50 read all: a lost frame is retried; a slot that never answers is listed and the rest still read", async () => {
+  let hit = 0;
+  const { reader, log } = setup({
+    faults: (f, fn, args) => {
+      if (fn !== 0x4f) return f;
+      if (args[0] === 3 && hit++ === 0) return f.slice(1);
+      return args[0] === 5 ? [] : f;
+    },
+  });
+  const r = await readAllSlots(reader, { log, count: 8 });
+  assert.deepEqual(r.entries.map((e) => e.slot), [0, 1, 2, 3, 4, 6, 7]);
+  assert.deepEqual(r.failed, [5]);
+  assert.equal(r.retries, 1 + 2);
+  assert.match(log.text(), /Slot 5 couldn't be read/);
+});
+
+test("gp50 read all: another slot's patch is read again, and flagged if it keeps coming", async () => {
+  const { pedal, reader, log } = setup();
+  let swaps = 1;
+  const answer = pedal._answer.bind(pedal);
+  pedal._answer = (fn, args) => {
+    if (fn === 0x4f && args[0] === 1 && swaps-- > 0) return answer(fn, [0, 0, 0, 0]);
+    return answer(fn, args);
+  };
+  let r = await readAllSlots(reader, { log, count: 3 });
+  assert.deepEqual([r.entries[1].name, r.wrongName, r.retries], ["Fake 01", [], 1]);
+  swaps = 99;
+  r = await readAllSlots(reader, { log, count: 3 });
+  assert.deepEqual(r.wrongName, [1]);
+});
+
+test("gp50 read all: the late rest of a failed reply can't pass for the next slot's", async () => {
+  const { pedal, reader, log } = setup({
+    faults: (f, fn, args) => {
+      if (fn !== 0x4f) return f;
+      if (args[0] === 0) {
+        setTimeout(() => pedal._deliver(f.slice(10)), 110); // just after the 100 ms timeout
+        return f.slice(0, 10);
+      }
+      setTimeout(() => pedal._deliver(f), 40); // slow enough that the late frames would land first
+      return [];
+    },
+  });
+  await assert.rejects(reader.readSlotPatch(0), /got 10 of 29/);
+  const { prst } = await reader.readSlotPatch(1);
+  assert.deepEqual([...prst.slice(0x29)], pedal.bodies[1]);
+  assert.match(log.text(), /unasked/);
+});
+
+test("gp50 read all: a frame sent twice with different contents fails the read; the same twice is fine", async () => {
+  let extra = null;
+  const { pedal, reader } = setup({ faults: (f) => (extra ? [f[0], f[1], extra, ...f.slice(2)] : f) });
+  extra = frameToWire(29, 1, new Array(19).fill(1));
+  await assert.rejects(reader.readSlotPatch(4), /came twice/);
+  extra = null;
+  await reader.readSlot();
+  pedal.faults = (f) => [f[0], f[0], ...f.slice(1)];
+  assert.equal((await reader.readSlotPatch(4)).name, "Fake 04");
+});
+
+test("gp50 read all: stopping keeps what was read", async () => {
+  const { reader, log } = setup();
+  let done = 0;
+  const r = await readAllSlots(reader, { log, onProgress: (d) => { done = d; }, isCancelled: () => done >= 4 });
+  assert.equal(r.cancelled, true);
+  assert.equal(r.entries.length, 4);
+});
+
+test("gp50 read all: the pedal unplugged midway keeps what was read", async () => {
+  const { pedal, reader, log } = setup();
+  let gone = false;
+  const r = await readAllSlots(reader, {
+    log,
+    onProgress: (d) => { if (d === 3) { gone = true; pedal.faults = () => []; } },
+    isCancelled: () => gone,
+  });
+  assert.equal(r.entries.length, 3);
+  assert.deepEqual([r.selectedBefore, r.selectedAfter], [2, null]);
+});
+
+test("gp50 read all: file names, identical patches, slot ranges", () => {
+  assert.equal(slotFileName(51, "STD AC"), "51-STD AC.prst");
+  assert.equal(slotFileName(0, 'A/B:"C"?'), "00-A_B__C__.prst");
+  assert.equal(slotFileName(7, ""), "07-unnamed.prst");
+  assert.equal(slotFileName(7, "..."), "07-unnamed.prst");
+  const e = (slot, b) => ({ slot, prst: Uint8Array.of(b, 1) });
+  assert.deepEqual(identicalGroups([e(0, 1), e(1, 2), e(2, 2), e(3, 3), e(4, 2)]), [[1, 2, 4]]);
+  assert.equal(slotRanges([0, 1, 2, 5, 7, 8]), "0-2, 5, 7-8");
+  assert.equal(slotRanges([]), "");
 });
 
 test("gp50 compare: equal, changed and shorter files", () => {

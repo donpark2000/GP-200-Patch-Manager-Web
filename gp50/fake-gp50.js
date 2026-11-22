@@ -1,6 +1,6 @@
 // A fake GP-50 for the tests and for gp50/?fake. Answers the reads the
 // way protocol.js describes; anything else is recorded in `refused` and not
-// answered. `faults(wireFrames, fn)` can drop, change or reorder a reply.
+// answered. `faults(wireFrames, fn, args)` can drop, change or reorder a reply.
 
 import { BODY_LEN, frameToWire, KIND_READ, NAME_COUNT, parseFrame, READ_SLOT_PATCH, READS } from "./protocol.js";
 
@@ -37,7 +37,7 @@ export class FakeGp50 {
     const payload = [KIND_READ, f.payload[1], ...data];
     const total = Math.ceil(payload.length / 19);
     const frames = Array.from({ length: total }, (_, i) => frameToWire(total, i, payload.slice(i * 19, i * 19 + 19)));
-    setTimeout(() => this._deliver(this.faults(frames, f.payload[1])), 1);
+    setTimeout(() => this._deliver(this.faults(frames, f.payload[1], f.payload.slice(2))), 1);
   }
 
   _answer(fn, args) {
