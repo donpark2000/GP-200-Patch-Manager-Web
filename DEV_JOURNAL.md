@@ -3359,8 +3359,8 @@ Nothing sent to the real GP-50 by us yet.
 
 ## 2026-11-22: GP-50 first reads on hardware: patch MATCH with Suite
 
-**First connection** (developer, this computer, Edge 159, USB, Suite
-closed; page at `e1bc5b8`): connected at once, all four reads worked, no
+**First connection** (developer, this computer, Edge 159, USB, Suite asked to be
+closed, not confirmed; page at `e1bc5b8`): connected at once, all four reads worked, no
 warnings or errors. Session folder
 `GP-200-testing\2026-11-22_gp50-first` (log and two `.prst`, moved there by
 Claude from its parent folder).
