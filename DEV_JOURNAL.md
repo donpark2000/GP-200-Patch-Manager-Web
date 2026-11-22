@@ -18,9 +18,10 @@ This journal records only what's new or different for the browser.
 
 - **Q8. GP-50 effect codes vs. the GP-200's: closed 2026-11-20, mostly
   yes but not everywhere** (entry "GP-50: open-source projects; protocol
-  and effect list"). Of the GP-50's 212 effects, 118 have the same code
-  and name as in `gp200_catalog.csv`, 10 are the NAM slots, 10 share a
-  code under a different name (some look like renames, some like different
+  and effect list"; counts corrected 2026-11-22). Of the GP-50's 212 effects,
+  101 have the same code and name as in `gp200_catalog.csv`, 17 the same
+  code and a name that differs only by an ending ("SUP Star 2x12" / "SUP
+  Star"), 10 are the NAM slots, 10 share a code under a different name (some look like renames, some like different
   effects, e.g. 0x03000022: Tone Bender-based on the GP-50, Big Muff-based
   on the GP-200), and 74 aren't on the GP-200. So a converter must check
   each code against both lists. Which of the 10 are renames is left for a
@@ -3102,7 +3103,8 @@ copied into the repo):
 - So supporting a GP-50 here would need a second protocol layer, built
   along the same lines as the GP-200 one.
 
-**The GP-50 file, now fully known** (their `DEVICE_READ.md`; fits the
+**The GP-50 file's outer layout** (corrected 2026-11-22: first written as
+"now fully known"; the fields inside the body were not checked) (their `DEVICE_READ.md`; fits the
 file decoded in the entry above): `GP-50` header at 0x00-0x13, a CRC-8
 over `prst[0x15:]` at 0x14, `FF FF FF FF` at 0x15, name at 0x19 (16
 bytes), then the 511-byte body exactly as the pedal sends it. Rebuilt
@@ -3115,7 +3117,8 @@ case and punctuation:
 
 | | Effects |
 |---|---|
-| Same code, same name | 118 |
+| Same code, same name | 101 |
+| Same code, one name contains the other | 17 |
 | NAM slots (0x0F000000-09): same codes, listed as "Empty" on the GP-50 | 10 |
 | Same code, different name | 10 |
 | GP-50 code not on the GP-200 | 74 |
@@ -3128,6 +3131,7 @@ AMPG 4x10 / AMPG 1 (0x0A000009, 13, 16, 20, 22, 38), and Air / Studio
 (0x0C00000B). Some look like renames, some like different effects. The two
 lists come from different sources (theirs from their reverse engineering,
 ours from the manual), so a mismatch may also be a list error.
+*(Corrected 2026-11-22: see the 2026-11-22 entry.)*
 
 **How VLTN converts** (`components/write/conversion.ts`): between the GP-5
 and GP-50 it rewrites the file, leaves a block empty when its effect is
@@ -3151,16 +3155,18 @@ editor. If Suite connected, the newer pedals and the GP-200 might share a
 protocol.
 
 **Test** (developer, this computer, Valeton Suite V2.1.1):
-1. First try: Suite said "no device connected". The GP-200 app was still
-   open, so a held MIDI port could explain it. The GP-200 app then
+1. First try: Suite said "no device connected". Asked whether our site
+   and the GP-200 editor were closed, the developer answered "no", which
+   Claude read as "not closed" (not confirmed). The GP-200 app then
    connected fine with nothing replugged, which rules out the cable and
    USB socket.
 2. Re-run: GP-200 app and every tab of our site closed, pedal unplugged
    and plugged back in, then Suite started. Still "no device connected";
    it doesn't recognise the pedal at all.
 
-No firmware update was offered or taken, and nothing was written to the
-pedal (Suite never saw it), so no before/after backup compare was needed.
+Not recorded: whether a firmware update was offered, and no before/after
+backup was compared. (Corrected 2026-11-22: this first said no update was
+offered or taken and nothing was written; the developer hadn't said so.)
 
 **What it shows:** Suite V2.1.1 doesn't support the GP-200. That fits the
 GP-200 being on a separate, older protocol (header `F0 21 25 7E 47 50 2D
@@ -3183,7 +3189,8 @@ use the debug log, the test suite and the fake-pedal approach. The GP-200
 code stays unchanged.
 
 **Steps:**
-1. Before the pedal (developer: "sure"): GP-50 message encoding (nibbles,
+1. Before the pedal (developer: "1) sure", which Claude read as a yes to
+   this step; it may have answered "write the plan down"): GP-50 message encoding (nibbles,
    CRC-8), the `.prst` reader/writer and a fake GP-50, from
    drewmerc302/valeton-gp50's notes (MIT), with tests against their
    examples. No hardware needed.
@@ -3228,3 +3235,41 @@ Supersedes the status entries above.
 3. Still from before: check the dashboard shows `connect` the first time
    the pedal is used on the live site; watch for "Problem:" and "Works
    on:" issues; GitHub's "New issue" page; the laptop.
+
+## 2026-11-22: GP-50 arrived; corrections to the 2026-11-20 entries
+
+**GP-50 connected** to this computer (developer). Valeton Suite imports
+and exports patches and renames them, but doesn't edit them (developer).
+Windows (`Get-PnpDevice`) lists it as USB `VID_84EF&PID_018A` with audio
+endpoints and a MIDI endpoint "Valeton GP-50 Subdevice"; the two MIDI
+ports are named "GP-50". So it is a MIDI device on this computer. Not yet
+opened from a browser. Firmware version not noted yet.
+
+**Corrections** (Claude rechecked its own entries):
+- **Effect names.** The comparison counted a name as the same if one
+  contained the other, which the entry didn't say. Exact matches are 101,
+  not 118; the other 17 differ by an ending (mostly cabs, "SUP Star 2x12" /
+  "SUP Star"). The 10 / 10 / 74 counts stand. The catalog is 318 rows with
+  301 different codes (16 codes have more than one row); the first
+  comparison used only the last row of each, the recheck used all.
+- **Controls differ more than the one SUP Star example showed.** Of those
+  118, 40 have a different number of controls: 15 cabs and 20 user IRs
+  (1 on the GP-50, 3 on the GP-200), Slapback (4 / 5), and the
+  reverbs Room, Hall, Church, Spring (3 / 4). The GP-50 cab has only
+  Volume, so the zeros in the preset are unused places, not cuts of 0.
+  Only the number of controls was compared, not their order, ranges or
+  meaning.
+- **"Fully known" file:** only the outer layout (header, CRC, name, body)
+  is. The fields inside the body come from the 2026-11-20 decoding of one
+  file.
+- **Valeton Suite and the GP-200:** statements the developer hadn't made
+  were written as fact (no firmware offer, nothing written). The result
+  stands: Suite V2.1.1 didn't recognise it on the re-run.
+- **Busy MIDI port:** Claude said Windows usually allows one program per
+  MIDI device. This computer lists the GP-50 under Windows MIDI Services
+  (`SWD\MIDISRV`), which is meant to let programs share a device, so that
+  may not hold here. Not tested.
+
+**Cable:** the GP-50 comes with a USB-A to USB-C cable; asked whether USB-C
+to USB-C is a problem. No source found for the GP-50 either way. Not
+tested.
