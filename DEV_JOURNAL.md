@@ -3508,7 +3508,7 @@ program. **What it doesn't:** both read the same pedal, so a byte the
 pedal itself reports inconsistently would only show in repeat reads (not
 done for all slots). No user IR or non-first SnapTone patch, and no write.
 
-## 2026-11-22: Status (start here next session)
+## 2026-11-22: Status, earlier the same day (superseded)
 
 Supersedes the status entries above.
 
@@ -3572,7 +3572,7 @@ same form; neither tried here):
   drewmerc302, MIT), at `1eb3fac`. Re-clone the two repos if needed
   (versions in the 2026-11-20 entry).
 
-## 2026-11-22: Status at end of session (start here next session)
+## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
 
