@@ -3357,6 +3357,36 @@ licence stated for the author's own code, so facts only, no copying.
 
 Nothing sent to the real GP-50 by us yet.
 
+## 2026-11-22: GP-50 first reads on hardware: patch MATCH with Suite
+
+**First connection** (developer, this computer, Edge 159, USB, Suite
+closed; page at `e1bc5b8`): connected at once, all four reads worked, no
+warnings or errors. Session folder
+`GP-200-testing\2026-11-22_gp50-first` (log and two `.prst`, moved there by
+Claude from its parent folder).
+
+- **Patch MATCH:** slot 51 "STD AC" read by our page
+  (`gp50_51_STD AC.prst`) and exported by Valeton Suite (`51-STD AC.prst`,
+  the developer's export): identical, 552 bytes, SHA-256 the same. So the
+  read, the header, the CRC and the name are right for that patch.
+- **Firmware 1.1.0** (settings record (1,1) = 00 01 01 01).
+- **Replies:** 391 frames received, every CRC good (recounted outside the
+  app). Frames per reply as expected: names 106, patch 27, settings 9.
+- **Times** (send to last frame): settings 16 ms, slot 9-173 ms, patch
+  81-133 ms, names 323-580 ms.
+- **The slot number is the one Suite uses in its file names** (51 in both,
+  counted from 0). Whether it equals the number on the pedal's display
+  wasn't reported.
+- **The pedal sends messages by itself:** four `12 1b 01 00 00 00` within
+  0.5 s, between a read of slot 55 and one of slot 51, four slots apart.
+  Probably one per patch change (VLTN: 0x1B = "a list changed", 1 =
+  preset). Not checked.
+- **Settings differ from VLTN's notes:** 30 records, all but (1,1) and
+  (2,1) one byte long; VLTN expects 32-bit values.
+
+**What it doesn't show:** one patch compared, read while selected. Not
+tried: reading a slot that isn't selected, any write.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3364,16 +3394,15 @@ Supersedes the status entries above.
 **Known:**
 - GP-200 site unchanged, live at `58c0117`. Suite 179 pass on
   `gp50-experiments` (165 without the GP-50 tests).
-- GP-50 connected to this computer; test page ready, above. Edge
-  159.0.4402.13.
+- GP-50 (firmware 1.1.0): our page reads it over USB in Edge 159; one
+  patch matches Suite's export byte for byte.
 - Not confirmed: whether the GP-200 app was open on Suite's first try
   (2026-11-20).
 
 **Next:**
-1. Run `http://localhost:8000/gp50/` in Edge with the GP-50 (Suite closed);
-   save the log into `GP-200-testing\2026-11-22_gp50-first`.
-2. If reading works: compare a saved patch with Suite's export of the same
-   patch, byte for byte; then try 0x4F reads.
+1. Read a slot that isn't selected (`[0x12, 0x4F, slot]`, unproven; ask
+   the developer first), starting with slot 51 against the saved file.
+2. Then all 100 against Suite exports.
 3. Writing needs a `CLAUDE.md` exception first (developer's OK).
 4. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
