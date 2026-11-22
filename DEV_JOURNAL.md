@@ -12,7 +12,7 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q8.** GP-50: why frame 27 of slot 84's write got no acknowledgement
+- **Q9.** GP-50: why frame 27 of slot 84's write got no acknowledgement
   (2026-11-22, write test step 3), and what the pedal does with a half-sent
   patch.
 
