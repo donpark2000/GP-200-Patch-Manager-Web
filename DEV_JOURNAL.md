@@ -12,7 +12,9 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-(none)
+- **Q8.** GP-50: why frame 27 of slot 84's write got no acknowledgement
+  (2026-11-22, write test step 3), and what the pedal does with a half-sent
+  patch.
 
 ## Resolved
 
@@ -3696,6 +3698,28 @@ memory, and the other 99 slots are still unchanged. **Not yet:** more than
 one patch, or more than one kind of patch; step 4 repeats the power cycle
 for 45 patches.
 
+## 2026-11-22: GP-50 write test, step 3: copy stopped at slot 84 (open)
+
+**Result** (developer): "STOPPED ON A PROBLEM: 29 of 45 patches written and
+read back identical, 85.5 s. Writing slot 84, frame 27 of 29: not
+acknowledged within 1000 ms. Slot 84 may have changed. The pedal stayed on
+slot 48." Log not yet saved.
+
+**Known from the result:**
+- Slots 55-83 written and read back identical (not yet re-checked after the
+  whole run). 85-99 not started. 84 uncertain.
+- The pedal still answered a read afterwards (which slot it is on).
+
+**Not the patch's content:** frame 27 for slot 84 (slot 29's "Twin TREM"),
+built from the reference zip, is byte for byte the frame 27 of slots 81-83,
+which were acknowledged seconds earlier; 16 of its 29 frames had been
+accepted in earlier slots' writes.
+
+**Not known, the log should say:** whether the frame or its acknowledgement
+was lost, came late, or something else arrived in between. Step 1's frames
+were acknowledged in 1-3 ms (113 ms for the last), so 1 s is not a close
+call.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3720,7 +3744,7 @@ Supersedes the status entries above.
   Suite's first try (2026-11-20); what fixed the developer's connection.
 
 **Next** (with the developer, stopping at the first result that isn't MATCH
-or Done). **Steps 1-2 done** (entry above); next is 3:
+or Done). **Steps 1-2 done** (entry above); **3 stopped at slot 84** (entry above):
 1. Start the local server; page with Ctrl+F5; **pedal on a slot from 0 to 54**
    (it may be on 99 from looking at the patch; the page refuses otherwise).
    Connect, choose `gp50_all_2026-11-22T21-17-41.zip`.
