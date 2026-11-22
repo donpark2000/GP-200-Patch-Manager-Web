@@ -3572,9 +3572,7 @@ same form; neither tried here):
   drewmerc302, MIT), at `1eb3fac`. Re-clone the two repos if needed
   (versions in the 2026-11-20 entry).
 
-## 2026-11-22: Status (start here next session)
-
-Supersedes the status entries above.
+## 2026-11-22: Status before the write page was built (superseded)
 
 **Known:**
 - Branch `gp50-experiments` (pushed; from `designed-ui`, not merged). All
@@ -3598,4 +3596,89 @@ Supersedes the status entries above.
 2. Run its steps on the pedal with the developer.
 3. Later: is one app for both pedals, or a converter, worth it.
 4. Still from before: the dashboard's `connect` count, "Problem:" and
+   "Works on:" issues, GitHub's "New issue" page, the laptop.
+
+## 2026-11-22: GP-50 write-test page built (not yet run on the pedal)
+
+**Built** in `gp50/`: `write.html` and `write-page.js` (the page),
+`write-protocol.js` (message and gate), `writer.js` (sending),
+`write-steps.js` (the test's steps). `page-common.js` is what the two pages
+share (log, connecting), moved out of `page.js`; the read-only page behaves
+as before and loads no write code (a test follows its imports).
+
+**Decisions while building** (Claude):
+- **First write: slot 15 into 99** (the plan said only "one patch"). Slot 15
+  of our pedal, "US Lead", is byte for byte the patch in Suite's captured
+  write, so our frames should equal Suite's except for the slot. They do:
+  built from the real zip, 28 of 29 frames are Suite's, and frame 0 differs
+  in the slot byte and CRC only. (Also shows our slot 15 and drewmerc302's
+  US Lead are the same file.)
+- **Gate:** made for one patch and one slot of 55-99; passes that write's 29
+  frames once, in order; after refusing anything, nothing more.
+- **One missing, unexpected or surplus acknowledgement stops the write**; no
+  retry, and no more writes until Connect. 1 s to acknowledge (others use
+  150-300 ms), 20 ms between frames, 0.5 s before and after each patch. A
+  surplus acknowledgement can be taken for the next frame's, so they are
+  counted before each frame and after the last.
+- **Nothing can be lost:** a slot is written only if what it holds is in the
+  reference zip, or this page wrote it. Never while one of 55-99 is selected
+  on the pedal (what a write does to the selected patch isn't known).
+- **Each write button needs a matching check of all 100** since connecting
+  and since the last write. "Put the zip's patches back" needs only a
+  complete check, or a copy that stopped partway couldn't be undone.
+- **Putting back writes each slot's own patch** from the zip (the plan said
+  slot 55's to all; they are identical, so the bytes are the same).
+- Read-back difference: read three more times, to say stored or changing;
+  it stops either way.
+
+**Tests:** 19 new (`tests/gp50-write.test.js`, fixture
+`tests/fixtures/gp50_suite_write.json` from drewmerc302, MIT), suite 210
+pass. 28 safeguards broken one at a time in a copy: 26 caught at once; the
+two missed (an import without `from`; closing between two frames) got
+tests, and are now caught. Page run with the fake pedal, pauses shortened
+(hidden pane): the whole sequence, a cancelled confirmation, a write
+stopped by a missing acknowledgement then put back, the pedal on slot 60.
+With the real zip loaded into the fake: all steps match.
+
+**Found on the way:**
+- `node --test` runs any `*-test.js` in the repo, so `write-test.js` became
+  `write-steps.js`.
+- The on-screen log rewrote its whole text for every message and slowed the
+  page more with each read. Now in batches, the last 1,000 lines; "Save log"
+  has everything.
+- The browser reused an old cached `write-page.js` from localhost: Ctrl+F5
+  before testing.
+
+**What it doesn't show:** anything about the real pedal. The fake's
+acknowledgements and its dropping of a half-sent write are other people's
+findings, not ours.
+
+## 2026-11-22: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- Branch `gp50-experiments` (pushed; from `designed-ui`, not merged). All
+  GP-50 work is in `gp50/`, `tests/gp50*.test.js` and one fixture; no GP-200
+  app file changed. Suite 210 pass. Nothing to publish: live site unchanged
+  at `58c0117`.
+- GP-50 (firmware 1.1.0): read-only page `http://localhost:8000/gp50/`, 100 of
+  100 identical to Suite's export. Slots 0-54 factory, 55-99 one identical
+  blank patch. **Nothing written to the pedal yet.**
+- Write-test page `http://localhost:8000/gp50/write.html` built and tested with
+  the fake pedal (`?fake`) only.
+- Session folder `GP-200-testing\2026-11-22_gp50-first`: the zip, Suite's 101
+  files, two logs. **The zip is the write test's reference; don't purge.**
+- No open questions. Unconfirmed, minor: whether the GP-200 app was open on
+  Suite's first try (2026-11-20); whether the pedal's display numbers
+  patches as Suite does; what fixed the developer's connection.
+
+**Next:**
+1. Run the write test on the pedal with the developer, a check of all 100
+   after every step, stopping at the first problem: check "as the zip";
+   slot 15 into 99; check; copy 0-44 into 55-99; check; power cycle, check;
+   put back; check. Save the log (and the zip read) each time into a new
+   session folder.
+2. Later: is one app for both pedals, or a converter, worth it.
+3. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.

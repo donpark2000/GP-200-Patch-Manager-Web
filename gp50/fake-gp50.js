@@ -1,14 +1,21 @@
 // A fake GP-50 for the tests and for gp50/?fake. Answers the reads the
 // way protocol.js describes; anything else is recorded in `refused` and not
 // answered. `faults(wireFrames, fn, args)` can drop, change or reorder a reply.
+// With `writable` it also takes patch writes, as Suite's captured one:
+// `ackFaults(acks, index, slot)` can change the answer to a frame, and
+// `storeFault(slot, prstFrom0x19)` what is stored. As VLTN reports, an
+// unacknowledged frame makes it drop the whole write.
 
 import { BODY_LEN, frameToWire, KIND_READ, NAME_COUNT, parseFrame, READ_SLOT_PATCH, READS } from "./protocol.js";
 
 export class FakeGp50 {
-  constructor({ slot = 2, firmware = [1, 1, 0], faults = (frames) => frames } = {}) {
+  constructor({ slot = 2, firmware = [1, 1, 0], faults = (frames) => frames, writable = false, ackFaults = (acks) => acks, storeFault = (_, data) => data, later = (fn) => setTimeout(fn, 1) } = {}) {
     this.slot = slot;
     this.firmware = firmware;
-    this.faults = faults;
+    Object.assign(this, { faults, writable, ackFaults, storeFault, later });
+    this.stored = []; // slots written, in order
+    this.incoming = []; // the write in progress: payload so far
+    this.nextFrame = 0;
     this.sent = []; // every message the app sent
     this.refused = [];
     this.names = Array.from({ length: NAME_COUNT }, (_, i) => `Fake ${String(i).padStart(2, "0")}`);
@@ -29,6 +36,10 @@ export class FakeGp50 {
   _receive(msg) {
     this.sent.push(msg);
     const f = parseFrame(msg);
+    if (this.writable && f.ok && f.total === 29) {
+      this._receiveWrite(f);
+      return;
+    }
     const data = f.ok && f.payload[0] === KIND_READ ? this._answer(f.payload[1], f.payload.slice(2)) : null;
     if (!data) {
       this.refused.push(msg);
@@ -37,7 +48,28 @@ export class FakeGp50 {
     const payload = [KIND_READ, f.payload[1], ...data];
     const total = Math.ceil(payload.length / 19);
     const frames = Array.from({ length: total }, (_, i) => frameToWire(total, i, payload.slice(i * 19, i * 19 + 19)));
-    setTimeout(() => this._deliver(this.faults(frames, f.payload[1], f.payload.slice(2))), 1);
+    this.later(() => this._deliver(this.faults(frames, f.payload[1], f.payload.slice(2))));
+  }
+
+  _receiveWrite(f) {
+    if (f.index === 0) {
+      this.incoming = [];
+      this.nextFrame = 0;
+    }
+    if (f.index !== this.nextFrame) return; // dropped: not acknowledged
+    this.incoming.push(...f.payload);
+    this.nextFrame++;
+    const slot = this.incoming[2];
+    const acks = this.ackFaults([frameToWire(1, 0, [0x14, 0x08, 0x00])], f.index, slot);
+    if (!acks.length) this.nextFrame = -1;
+    else if (f.index === f.total - 1) this._store(slot, this.storeFault(slot, this.incoming.slice(6)));
+    this.later(() => this._deliver(acks));
+  }
+
+  _store(slot, data) {
+    this.names[slot] = String.fromCharCode(...data.slice(0, 16)).split(String.fromCharCode(0))[0];
+    this.bodies[slot] = data.slice(16);
+    this.stored.push(slot);
   }
 
   _answer(fn, args) {

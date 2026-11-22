@@ -15,7 +15,7 @@ export const QUIET_MS = 1000;
 /** "GP-50", "GP-50 MIDI 1"; never GP-5, GP-500 or GP-200. */
 export const isGp50Name = (name) => /GP-50(?!\d)/i.test(name ?? "");
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms) => (ms ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve());
 
 export class Gp50Reader {
   constructor(input, output, log, { timeoutMs = READ_TIMEOUT_MS, settleMs = SETTLE_MS, quietMs = QUIET_MS } = {}) {

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GP-50 write test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../src/ui/testpage.css">
+  <script type="module" src="write-page.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>GP-50 write test</h1>
+      <p class="sub">An experiment, separate from the GP-200 app. <strong>It writes to the pedal</strong>: slots 55-99
+        only, each time after you confirm. Chrome or Edge on a computer. Close Valeton Suite first, and leave the
+        pedal alone while it works.</p>
+    </header>
+
+    <section aria-labelledby="h-connect">
+      <h2 id="h-connect">1. Connect</h2>
+      <div class="row">
+        <button id="connect">Connect</button>
+        <span id="status" role="status">Not connected.</span>
+      </div>
+      <div class="row">
+        <label>Input <select id="in-port" disabled></select></label>
+        <label>Output <select id="out-port" disabled></select></label>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-ref">
+      <h2 id="h-ref">2. Reference</h2>
+      <div class="row">
+        <label>The zip of all 100 slots <input id="reference" type="file" accept=".zip"></label>
+        <span id="ref-status" role="status">Not chosen.</span>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-check">
+      <h2 id="h-check">3. Read all 100 slots and compare (read only)</h2>
+      <div class="row">
+        <label>The pedal should hold
+          <select id="expected">
+            <option value="reference">the same as the reference zip</option>
+            <option value="first">slot 15's patch in slot 99, the rest as the zip</option>
+            <option value="copy">slots 0-44 copied into 55-99, the rest as the zip</option>
+          </select>
+        </label>
+        <button id="check" disabled>Read all and compare</button>
+        <button id="save-zip" class="secondary" disabled>Save what was read (zip)</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-write">
+      <h2 id="h-write">4. Write</h2>
+      <p class="muted">Each needs a check that matched, since connecting and since the last write (putting back: any complete check).
+        Every patch is read back and compared; the first problem stops it.</p>
+      <div class="row">
+        <button id="write-first" disabled>Write slot 15's patch into slot 99</button>
+        <button id="write-copy" disabled>Copy slots 0-44 into 55-99</button>
+        <button id="write-reference" disabled>Put the zip's patches back in 55-99</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-result">
+      <h2 id="h-result">Result</h2>
+      <div class="row">
+        <button id="stop" class="secondary" disabled>Stop after this patch</button>
+        <progress id="progress" max="1" value="0" hidden></progress>
+      </div>
+      <p id="result" role="status">Nothing done yet.</p>
+      <p class="muted">If a write stops on a problem: save the log, unplug the pedal and plug it back in, Connect, and check again before anything else.</p>
+    </section>
+
+    <section aria-labelledby="h-log">
+      <h2 id="h-log">Log</h2>
+      <div class="row">
+        <label><input type="checkbox" id="debug" checked> Debug (log every MIDI message)</label>
+        <button id="save-log" class="secondary">Save log</button>
+        <button id="clear-log" class="secondary">Clear</button>
+      </div>
+      <pre id="log" tabindex="0" aria-live="off"></pre>
+    </section>
+
+    <footer>
+      <p>Protocol facts from <a href="https://github.com/drewmerc302/valeton-gp50">drewmerc302/valeton-gp50</a> (MIT)
+        and <a href="https://github.com/grzmol/VLTN-Tone-Studio">VLTN Tone Studio</a> (GPL-3.0).
+        Not affiliated with Valeton.</p>
+    </footer>
+  </main>
+</body>
+</html>
