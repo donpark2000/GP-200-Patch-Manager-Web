@@ -3679,6 +3679,23 @@ power cycle, more than one patch, more than one kind of patch.
 pedal's display numbers patches as Suite and we do (99 is our slot 99),
 which settles the earlier unconfirmed point. How it sounds is not checked.
 
+## 2026-11-22: GP-50 write test, step 2: slot 99 survived a power cycle, MATCH
+
+**Test** (developer, read only, page at `92ca38e`): the pedal was powered
+off between the sessions, so after the step 1 write (developer's report).
+Check "slot 15's patch in slot 99": **MATCH**, 100 of 100 compared, 100
+identical, 0 retries. The log isn't saved yet.
+
+**The pedal was on slot 99** ("The pedal stayed on slot 99"), not on one
+from 0 to 54 as asked. Harmless for a check, which only reads; the copy
+would refuse. After a power cycle the selected patch too comes from the
+pedal's storage, so this doesn't weaken the result.
+
+**What it shows:** the one patch written is stored, not only held in
+memory, and the other 99 slots are still unchanged. **Not yet:** more than
+one patch, or more than one kind of patch; step 4 repeats the power cycle
+for 45 patches.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3703,7 +3720,7 @@ Supersedes the status entries above.
   Suite's first try (2026-11-20); what fixed the developer's connection.
 
 **Next** (with the developer, stopping at the first result that isn't MATCH
-or Done):
+or Done). **Steps 1-2 done** (entry above); next is 3:
 1. Start the local server; page with Ctrl+F5; **pedal on a slot from 0 to 54**
    (it may be on 99 from looking at the patch; the page refuses otherwise).
    Connect, choose `gp50_all_2026-11-22T21-17-41.zip`.
