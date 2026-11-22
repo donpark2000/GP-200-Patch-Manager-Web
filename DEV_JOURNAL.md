@@ -3715,10 +3715,28 @@ built from the reference zip, is byte for byte the frame 27 of slots 81-83,
 which were acknowledged seconds earlier; 16 of its 29 frames had been
 accepted in earlier slots' writes.
 
-**Not known, the log should say:** whether the frame or its acknowledgement
-was lost, came late, or something else arrived in between. Step 1's frames
-were acknowledged in 1-3 ms (113 ms for the last), so 1 s is not a close
-call.
+**From the log** (`gp50_test_2026-11-22T23-47-56.log`, in
+`2026-11-22_gp50-write`, saved before unplugging):
+- Frame 27 of slot 84 sent at 325.235 s; nothing came; stopped at 326.247 s.
+- The next message (which slot is selected) went at 327.253 s. At
+  327.405 s the acknowledgement arrived, **2.17 s after its frame and in the
+  same millisecond as that read's reply**. One acknowledgement, as expected.
+- That read took 153 ms; the 31 before it took 151-154 ms.
+- 868 acknowledgements in the log: 867 on time (1-3 ms, now and then 25-28
+  ms, the last of a patch 13 or 102-113 ms) and this one.
+- Slot 84 got 27 of 29 frames. Nothing else came in between.
+
+**So** frame 27 arrived at the pedal and was acknowledged; the
+acknowledgement was held up on the way back and came out with the pedal's
+next message. The next read's normal time suggests the pedal itself wasn't
+stalled. Not told apart: held in the pedal's USB side, or in Windows or the
+browser. Once in 868, so rare; not known whether it can be repeated.
+
+**Seen later in the log:** from 382 s the pedal sent `12 1b 01 00 00 00` many
+times unasked, up to ten a second. Probably patches being stepped through
+on the pedal (not confirmed with the developer).
+
+**Not known yet:** what slot 84 holds after 27 of 29 frames.
 
 ## 2026-11-22: Status (start here next session)
 
