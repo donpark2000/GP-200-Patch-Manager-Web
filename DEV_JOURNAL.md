@@ -3736,7 +3736,10 @@ browser. Once in 868, so rare; not known whether it can be repeated.
 times unasked, up to ten a second. Probably patches being stepped through
 on the pedal (not confirmed with the developer).
 
-**Not known yet:** what slot 84 holds after 27 of 29 frames.
+**On the pedal's display** (developer): 84 shows "GP-50", the blank patch's
+name. "Twin TREM" was in the first frames sent, so the pedal seems to have
+dropped the half-sent patch, as VLTN says. A name only; the compare of all
+100 is still to be run.
 
 ## 2026-11-22: Status (start here next session)
 
