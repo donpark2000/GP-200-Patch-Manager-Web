@@ -3454,6 +3454,37 @@ the names read so far: slots 55 and 99 are both named "GP-50".
 **Hardware test to do:** read all, save the zip and log; compare with
 Suite's export of all patches.
 
+## 2026-11-22: GP-50 all 100 slots read; the 45 empty ones are identical
+
+**Test** (developer, Edge, page at `ae69371`): "Read all 100 slots", zip
+`gp50_all_2026-11-22T21-17-41.zip` in `2026-11-22_gp50-first`. No log saved for
+this run, so retries, timing and whether the pedal stayed put aren't
+recorded. Suite's export of all patches not done yet.
+
+**Question** (developer): do the unprogrammed slots differ from each other?
+If so, the differing bytes may not matter; on the GP-200 a long hunt for
+read/write corruption ended at bytes that don't matter.
+
+- **Zip:** 100 files of 552 bytes, every CRC good, names complete (the
+  `gp50_all_` name also means every name matched the pedal's list).
+- **Slots 55-99: all 45 identical, no byte differs.** The 55 factory
+  patches (0-54) are all different from them and from each other.
+- **Equal to another pedal's blank patch:** slot 55 is identical to VLTN's
+  `gp50-blank.prst` (from drewmerc302's GP-50).
+- **No slot number in the file:** 45 slots, one content. (The GP-200 has
+  slot-mirror bytes at 0x2E, 0x34, 0x90.)
+- **Same slots read more than once today, different ways:** slot 51 by
+  selected read, slot read and Suite; slot 55 by selected read and slot
+  read. All identical.
+- Nothing after the end of any name; all settings are ordinary finite
+  numbers; every chain order is a permutation of 0-9.
+
+**What it doesn't show:** whether some bytes don't matter. Empty slots may
+be one default the pedal hands out, so they needn't show what happens to
+bytes of a stored patch. On the GP-200 the changing bytes showed up over
+repeated reads, after switching patches, and after writes. Only two slots
+have been read twice, and nothing has been written.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3468,8 +3499,10 @@ Supersedes the status entries above.
   (2026-11-20).
 
 **Next:**
-1. Hardware test of "Read all 100 slots" (added, entry above).
-2. Compare the zip with Suite's export of all patches.
+1. Stability test, read only: read all 100 again after switching through
+   patches, and once more after a power cycle; compare the zips (save the
+   log each time).
+2. Compare the first zip with Suite's export of all patches.
 3. Writing needs a `CLAUDE.md` exception first (developer's OK).
 4. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
