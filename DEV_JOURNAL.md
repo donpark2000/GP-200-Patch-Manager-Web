@@ -3529,3 +3529,73 @@ Supersedes the status entries above.
 2. Writing needs a `CLAUDE.md` exception first (developer's OK).
 3. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
+
+## 2026-11-22: GP-50 write test: plan and go-ahead (not built)
+
+**Decisions** (developer): no further repeat reads (all 100 were read
+twice, by our page and by Suite, about ten minutes apart, and agreed).
+Write test: copy the first 45 slots into the last 45, read back, compare.
+`CLAUDE.md` exception approved ("Yes - add it") and added: the GP-50 write
+test may write only to slots 55-99, after confirmation in the app.
+
+**Steps** (Claude's proposal around the developer's idea; stop at the
+first failure):
+1. Write one patch into slot 99; read it back.
+2. Read all 100; against `gp50_all_2026-11-22T21-17-41.zip` only slot 99 may
+   differ.
+3. Copy slots 0-44 into 55-99 (n into n + 55). Read all: 55-99 equal 0-44,
+   0-54 unchanged. No byte to excuse: the file holds no slot number.
+4. Power cycle, read all again (are the writes stored?).
+5. Write the blank patch (slot 55 of that zip) back to 55-99; read all:
+   equal to the zip again.
+
+**Safeguards to build:** a separate write-test page, so `gp50/index.html`
+stays unable to write; its own gate (slots 55-99 and the patch write only);
+confirmation before writing; wait for each acknowledgement; stop at the
+first problem; debug log. Tests with the fake pedal, including a missing
+acknowledgement and a slot outside 55-99.
+
+**Write message, from the sources** (drewmerc302 tested it on a real GP-50
+from a browser: 29 of 29 acknowledged, read back identical; VLTN has the
+same form; neither tried here):
+- Payload `[0x11, 0x4F, slot, 0, 0, 0]` + the `.prst` from 0x19 (name and
+  body, 527 bytes) = 533 bytes, in 29 frames of up to 19 (the last has 1).
+  Frames as for reads: `[crc, 29, index, len, ...]`.
+- The pedal answers each frame: captured `f00b02000100000003010400080000f7`
+  = payload `14 08 00` (kind 0x14 = acknowledged). drewmerc302 waits up to
+  150 ms per frame, one frame at a time. No separate commit message.
+- VLTN: if a frame isn't acknowledged the pedal drops the whole transfer.
+  drewmerc302: guessed traffic, and opening and closing the port per
+  message, locked the pedal up once each; a power cycle recovers it.
+- A real 29-frame capture to test against: VLTN's
+  `app/src/renderer/src/gp5/fixtures/gp50_suite_write_slot0.json` (from
+  drewmerc302, MIT), at `1eb3fac`. Re-clone the two repos if needed
+  (versions in the 2026-11-20 entry).
+
+## 2026-11-22: Status at end of session (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- Branch `gp50-experiments` (pushed; from `designed-ui`, not merged). All
+  GP-50 work is in `gp50/` and `tests/gp50.test.js`; no GP-200 app file
+  changed. Suite 191 pass. Nothing to publish: live site unchanged at
+  `58c0117`.
+- GP-50 (firmware 1.1.0) over USB in Edge 159: read-only page
+  `http://localhost:8000/gp50/` (launch config "site") reads names, slot,
+  firmware, the selected patch, any slot without selecting it, and all 100
+  into a zip. 100 of 100 identical to Suite's export. Slots 0-54 factory,
+  55-99 one identical blank patch. **Nothing written to the pedal.**
+- Session folder `GP-200-testing\2026-11-22_gp50-first`: the zip, Suite's 101
+  files, two logs. **Needed as the reference for the write test; don't
+  purge yet.**
+- No open questions. Unconfirmed, minor: whether the GP-200 app was open on
+  Suite's first try (2026-11-20); whether the pedal's display numbers
+  patches as Suite does; what fixed the developer's connection.
+
+**Next:**
+1. Build the GP-50 write-test page (entry above), with tests.
+2. Run its steps on the pedal with the developer.
+3. Later: is one app for both pedals, or a converter, worth it.
+4. Still from before: the dashboard's `connect` count, "Problem:" and
+   "Works on:" issues, GitHub's "New issue" page, the laptop.

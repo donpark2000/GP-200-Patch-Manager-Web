@@ -53,6 +53,9 @@ this is the short version:
   confirmation in the app. One exception: the
   developer-only write-timing test (`test.html?dev`, `src/core/tuning.js`), which
   may write only to the scratch slots 64A-64D, also after confirmation.
+  A second exception (developer, 2026-11-22): the GP-50 write test (`gp50/`,
+  unpublished) may write only to GP-50 slots 55-99, after confirmation in
+  the app.
 
 ## Files: repo vs. test output vs. backups
 
