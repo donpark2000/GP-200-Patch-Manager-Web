@@ -3721,7 +3721,7 @@ accepted in earlier slots' writes.
 - The next message (which slot is selected) went at 327.253 s. At
   327.405 s the acknowledgement arrived, **2.17 s after its frame and in the
   same millisecond as that read's reply**. One acknowledgement, as expected.
-- That read took 153 ms; the 31 before it took 151-154 ms.
+- That read took 153 ms; of the 32 before it, 31 took 152-154 ms and one 3 ms.
 - 868 acknowledgements in the log: 867 on time (1-3 ms, now and then 25-28
   ms, the last of a patch 13 or 102-113 ms) and this one.
 - Slot 84 got 27 of 29 frames. Nothing else came in between.
