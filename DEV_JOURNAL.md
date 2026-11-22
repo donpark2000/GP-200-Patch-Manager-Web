@@ -3653,6 +3653,28 @@ With the real zip loaded into the fake: all steps match.
 acknowledgements and its dropping of a half-sent write are other people's
 findings, not ours.
 
+## 2026-11-22: GP-50 write test, step 1: first write to the pedal, MATCH
+
+**Test** (developer, Edge 159, page at `e35708a`, log
+`gp50_test_2026-11-22T22-17-33.log` in `2026-11-22_gp50-write`):
+1. Check "as the reference zip": MATCH, 100 of 100 identical, 0 retries, 25 s.
+   So the pedal still held the earlier backup, read about an hour later.
+2. Slot 15's "US Lead" written to slot 99, read back identical.
+3. Check "slot 15's patch in slot 99": MATCH, 100 of 100 identical, 0
+   retries. So only slot 99 changed. The pedal stayed on slot 48 throughout.
+
+**From the log:**
+- 29 write frames sent; 28 are Suite's captured ones, frame 0 differs (slot).
+- 29 acknowledgements, each identical to the captured one. 1-3 ms each, the
+  last 113 ms (probably the pedal storing the patch). The write took 771 ms,
+  nearly all of it our 20 ms gaps.
+- After the last one the pedal sent `12 1b 02 00 00 00` unasked; VLTN reads
+  it as "the patch list changed".
+
+**What it shows:** the write message works on our pedal, lands in the slot
+asked for, and changes no other slot. **Not yet:** whether it survives a
+power cycle, more than one patch, more than one kind of patch.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3664,9 +3686,9 @@ Supersedes the status entries above.
   at `58c0117`.
 - GP-50 (firmware 1.1.0): read-only page `http://localhost:8000/gp50/`, 100 of
   100 identical to Suite's export. Slots 0-54 factory, 55-99 one identical
-  blank patch. **Nothing written to the pedal yet.**
-- Write-test page `http://localhost:8000/gp50/write.html` built and tested with
-  the fake pedal (`?fake`) only.
+  blank patch. **Written so far:** slot 99 (holds slot 15's "US Lead").
+- Write-test page `http://localhost:8000/gp50/write.html`: step 1 (slot 99)
+  passed on the pedal.
 - Session folder `GP-200-testing\2026-11-22_gp50-first`: the zip, Suite's 101
   files, two logs. **The zip is the write test's reference; don't purge.**
 - No open questions. Unconfirmed, minor: whether the GP-200 app was open on
@@ -3675,10 +3697,9 @@ Supersedes the status entries above.
 
 **Next:**
 1. Run the write test on the pedal with the developer, a check of all 100
-   after every step, stopping at the first problem: check "as the zip";
-   slot 15 into 99; check; copy 0-44 into 55-99; check; power cycle, check;
-   put back; check. Save the log (and the zip read) each time into a new
-   session folder.
+   after every step, stopping at the first problem. Left: copy 0-44 into
+   55-99; check; power cycle, check; put back; check. Logs (and the zip
+   read) go in `GP-200-testing\2026-11-22_gp50-write`.
 2. Later: is one app for both pedals, or a converter, worth it.
 3. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
