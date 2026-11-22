@@ -53,7 +53,10 @@ export async function readAllSlots(reader, { log, onProgress = () => {}, isCance
   return { entries, failed, wrongName, retries, cancelled, selectedBefore, selectedAfter };
 }
 
-/** "51-STD AC.prst", the way Valeton Suite named its export of that slot. */
+/**
+ * "51-STD AC.prst", as Valeton Suite names its exports, except that Suite
+ * drops punctuation ("35-GnR DST.prst" for "Gn'R DST") and this keeps it.
+ */
 export function slotFileName(slot, name) {
   const safe = name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").replace(/[. ]+$/, "");
   return `${String(slot).padStart(2, "0")}-${safe || "unnamed"}.prst`;

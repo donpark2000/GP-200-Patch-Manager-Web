@@ -3485,6 +3485,29 @@ bytes of a stored patch. On the GP-200 the changing bytes showed up over
 repeated reads, after switching patches, and after writes. Only two slots
 have been read twice, and nothing has been written.
 
+## 2026-11-22: GP-50 full read vs. Suite's export: 100 of 100 MATCH
+
+**Suite can export in bulk** (developer: check them all; not intuitive),
+corrected from "one patch at a time" above. The developer exported all 100
+with Valeton Suite into `2026-11-22_gp50-first`.
+
+- **100 of 100 slots identical**, byte for byte, between our zip
+  (`gp50_all_2026-11-22T21-17-41.zip`) and Suite's files. The folder has 101
+  Suite files: slot 51 twice (`51-STD AC.prst` from the first test,
+  `51-STD AC(1).prst` from this one), both matching.
+- **Time:** Suite wrote its 100 files over 99 s, about 1 s each (the same
+  pace drewmerc302 reported); ours is about 23 s with the fake pedal. The
+  developer finds ours faster on the pedal too; its time wasn't recorded
+  (no log).
+- **File names:** Suite drops punctuation from names (`.`, `'`, `-`): 51 of
+  the 100 names differ from ours for that reason only. The name inside the
+  file is the same.
+
+**What it shows:** for these 100 patches our reads agree with Valeton's own
+program. **What it doesn't:** both read the same pedal, so a byte the
+pedal itself reports inconsistently would only show in repeat reads (not
+done for all slots). No user IR or non-first SnapTone patch, and no write.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3494,7 +3517,8 @@ Supersedes the status entries above.
   `gp50-experiments` (165 without the GP-50 tests).
 - GP-50 (firmware 1.1.0): our page reads it over USB in Edge 159; slot 51
   matches Suite's export byte for byte, read both selected and unselected
-  (slot read, `12 4F`). All read only; no writes tried.
+  (slot read, `12 4F`); then all 100 slots, 100 of 100 identical to Suite's
+  export. All read only; no writes tried.
 - Not confirmed: whether the GP-200 app was open on Suite's first try
   (2026-11-20).
 
@@ -3502,10 +3526,6 @@ Supersedes the status entries above.
 1. Stability test, read only: read all 100 again after switching through
    patches, and once more after a power cycle; compare the zips (save the
    log each time).
-2. Compare a sample with Suite's exports: slots 02, 08, 21, 35, 47, 54 (51
-   done). Suite exports one patch at a time (developer), so not all 55;
-   chosen from the zip for the widest coverage. No factory patch uses a
-   user IR cab or a SnapTone other than the first, so those stay untested.
-3. Writing needs a `CLAUDE.md` exception first (developer's OK).
-4. Still from before: the dashboard's `connect` count, "Problem:" and
+2. Writing needs a `CLAUDE.md` exception first (developer's OK).
+3. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
