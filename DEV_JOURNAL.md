@@ -3328,6 +3328,35 @@ is no obstacle. What does need care: VLTN's notes say the GP-50 effect
 list (`fxid_ring.json`) is derived from Valeton's own data and shouldn't
 be redistributed.
 
+## 2026-11-22: rvalladares.com GP-50 editors (source read)
+
+**Why:** the developer found two online editors by one author:
+<https://rvalladares.com/gp5/gp50editor/> ("GP50 Editor v1.0") and
+<https://rvalladares.com/gp5/gpeditor/> ("GP-5 / GP-50 Editor", 2.3 in its
+source, the newer code). Page source read in the scratchpad; not run. No
+licence stated for the author's own code, so facts only, no copying.
+
+- **Both addresses connect over Bluetooth** (Web Bluetooth, standard BLE
+  MIDI service `03b80e5a-...`), not USB. Each has a USB (Web MIDI) version
+  at `usb.html` in the same folder. A failure to connect over USB at the
+  plain address would be expected; which page the developer tried, over
+  what, isn't recorded.
+- **Our four requests match theirs byte for byte:** names
+  `f0000e00010000000201020400f7`, slot `f0000700010000000201020403f7`, patch
+  `f0000900010000000201020401f7`, settings `f00b0900010000000201020100f7`
+  (compared with `buildRead`'s output).
+- **Frame counts agree with our reading of byte 1:** names 106 (0x6A),
+  GP-50 patch 27 (0x1B), settings 8 or 9. So a real reply should show
+  those numbers in our log.
+- Port name: ours picks "GP-50"; theirs /GP-?5/. Same pedal here ("GP-50").
+- Three more reads they use when syncing: edited flag 0x45, user IR names
+  0x20, SnapTone names 0x24. Not in our allowed list yet.
+- Over Bluetooth the frames carry up to 100 bytes instead of 19 and each
+  packet starts `80 80`. Not needed now; Web Bluetooth could be an option
+  later.
+
+Nothing sent to the real GP-50 by us yet.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
