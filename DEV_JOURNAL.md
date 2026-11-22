@@ -3409,6 +3409,26 @@ and one byte from the patch write.
 `51-STD AC.prst`. A match with the pedal unmoved would show it works for
 that slot.
 
+## 2026-11-22: GP-50 slot read works on hardware: MATCH, pedal not moved
+
+**Test** (developer, Edge 159, page at `c50b669`; log
+`gp50_test_2026-11-22T21-08-32.log` in `2026-11-22_gp50-first`): slot 51 read
+with the pedal on slot 52.
+
+- **MATCH:** identical to Suite's `51-STD AC.prst`. Rechecked from the raw
+  messages in the log without the app's code: the 29 frames' payload after
+  the `12 4f` echo equals the file from 0x15 on; all CRCs good.
+- **Pedal not moved:** slot 52 before and after the read, as it reported
+  itself. The developer wasn't asked to confirm the display.
+- **34 ms** for the read; no warnings or errors. With the 200 ms gap, all
+  100 slots would take about 25 s (not tried; the gap is other projects'
+  figure, not tested here).
+- The pedal again sent one `12 1b 01 00 00 00` before the test, consistent
+  with one per patch change (the change itself wasn't logged).
+
+**What it doesn't show:** one slot, one read. Not tried: the other 99,
+repeated reads, SnapTone or user IR patches, any write.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3416,15 +3436,15 @@ Supersedes the status entries above.
 **Known:**
 - GP-200 site unchanged, live at `58c0117`. Suite 183 pass on
   `gp50-experiments` (165 without the GP-50 tests).
-- GP-50 (firmware 1.1.0): our page reads it over USB in Edge 159; one
-  patch matches Suite's export byte for byte.
+- GP-50 (firmware 1.1.0): our page reads it over USB in Edge 159; slot 51
+  matches Suite's export byte for byte, read both selected and unselected
+  (slot read, `12 4F`). All read only; no writes tried.
 - Not confirmed: whether the GP-200 app was open on Suite's first try
   (2026-11-20).
 
 **Next:**
-1. Hardware test of the slot read (added, entry above): slot 51 against
-   the saved file, pedal on another patch.
-2. Then all 100 against Suite exports.
+1. Read all 100 slots on the test page into a zip (not built; ask first).
+2. Compare them with Suite's export of all patches.
 3. Writing needs a `CLAUDE.md` exception first (developer's OK).
 4. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
