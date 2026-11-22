@@ -3675,6 +3675,10 @@ findings, not ours.
 asked for, and changes no other slot. **Not yet:** whether it survives a
 power cycle, more than one patch, more than one kind of patch.
 
+**On the pedal itself** (developer): patch 99 now shows "US Lead". So the
+pedal's display numbers patches as Suite and we do (99 is our slot 99),
+which settles the earlier unconfirmed point. How it sounds is not checked.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3685,21 +3689,34 @@ Supersedes the status entries above.
   app file changed. Suite 210 pass. Nothing to publish: live site unchanged
   at `58c0117`.
 - GP-50 (firmware 1.1.0): read-only page `http://localhost:8000/gp50/`, 100 of
-  100 identical to Suite's export. Slots 0-54 factory, 55-99 one identical
-  blank patch. **Written so far:** slot 99 (holds slot 15's "US Lead").
-- Write-test page `http://localhost:8000/gp50/write.html`: step 1 (slot 99)
-  passed on the pedal.
-- Session folder `GP-200-testing\2026-11-22_gp50-first`: the zip, Suite's 101
-  files, two logs. **The zip is the write test's reference; don't purge.**
+  100 identical to Suite's export. Write-test page
+  `http://localhost:8000/gp50/write.html` (launch config "site").
+- **Write test step 1 passed on the pedal:** slot 15's "US Lead" is in slot
+  99, the other 99 slots unchanged, the pedal's display shows it too. Not
+  listened to. Slots 0-54 factory, 55-98 the blank patch.
+- The copy step was described to the developer but, as far as reported, **not
+  run**. Ask first, don't assume.
+- Session folders in `GP-200-testing`: `2026-11-22_gp50-first` (the zip is the
+  write test's reference) and `2026-11-22_gp50-write` (step 1's log).
+  **Don't purge either yet.**
 - No open questions. Unconfirmed, minor: whether the GP-200 app was open on
-  Suite's first try (2026-11-20); whether the pedal's display numbers
-  patches as Suite does; what fixed the developer's connection.
+  Suite's first try (2026-11-20); what fixed the developer's connection.
 
-**Next:**
-1. Run the write test on the pedal with the developer, a check of all 100
-   after every step, stopping at the first problem. Left: copy 0-44 into
-   55-99; check; power cycle, check; put back; check. Logs (and the zip
-   read) go in `GP-200-testing\2026-11-22_gp50-write`.
-2. Later: is one app for both pedals, or a converter, worth it.
-3. Still from before: the dashboard's `connect` count, "Problem:" and
+**Next** (with the developer, stopping at the first result that isn't MATCH
+or Done):
+1. Start the local server; page with Ctrl+F5; **pedal on a slot from 0 to 54**
+   (it may be on 99 from looking at the patch; the page refuses otherwise).
+   Connect, choose `gp50_all_2026-11-22T21-17-41.zip`.
+2. Choose "slot 15's patch in slot 99", Read all and compare: MATCH. (Any
+   power cycle since the write makes this a first storage test: note it.)
+3. Copy slots 0-44 into 55-99 (about 2 minutes, page kept in front): "Done:
+   45 of 45"; Read all and compare: MATCH.
+4. Unplug 10 s, plug in, slot 0-54, Connect, Read all and compare with "slots
+   0-44 copied into 55-99": MATCH. Save the zip and the log into
+   `2026-11-22_gp50-write`. Good moment to listen: a copy against its
+   original (e.g. 70 against 15), before going back to a slot from 0 to 54.
+5. Put the zip's patches back in 55-99; Read all and compare: MATCH; save the
+   log.
+6. Later: is one app for both pedals, or a converter, worth it.
+7. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
