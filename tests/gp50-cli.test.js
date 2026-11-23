@@ -93,7 +93,8 @@ test("gp50 runner safety: only the runner's range opens every patch; never outsi
 
 test("gp50 helper: opens only GP-50, sends only SysEx, and resets nothing", () => {
   const py = source("cli/midi_bridge.py");
-  assert.match(py, /re\.compile\(r"GP-50\(\?!\\d\)", re\.I\)/, "as isGp50Name");
+  assert.match(py, /"gp50": \("GP-50", lambda name: re\.search\(r"GP-50\(\?!\\d\)", name, re\.I\)\)/, "as isGp50Name");
+  assert.match(py, /^PEDAL = "gp50"$/m, "the GP-50 unless --pedal says otherwise");
   assert.match(source("device.js"), /\/GP-50\(\?!\\d\)\/i/);
   assert.doesNotMatch(py, /midiOutReset\(|midiOutReset"|midiOutShortMsg/);
   assert.equal(py.split("mm.midiOutLongMsg(").length - 1, 1);

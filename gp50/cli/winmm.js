@@ -39,10 +39,13 @@ export class SysexStream {
  * @param {object} [opts]
  * @param {string[]} [opts.command] the helper to run
  * @param {(reason: string) => void} [opts.onGone] the connection ended by itself
+ * @param {"gp50"|"gp200"} [opts.pedal] which pedal's port; the GP-200's is
+ *   opened read-only (midi_bridge.py refuses anything but reads)
  * @returns {Promise<{input, output, ports, close: () => Promise<void>}>}
  */
-export function connect(log, { command = BRIDGE, onGone = () => {} } = {}) {
-  const child = spawn(command[0], command.slice(1), { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+export function connect(log, { command = BRIDGE, onGone = () => {}, pedal = "gp50" } = {}) {
+  const args = [...command.slice(1), ...(pedal === "gp50" ? [] : ["--pedal", pedal])];
+  const child = spawn(command[0], args, { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
   const input = { name: null, onmidimessage: null };
   let gone = null; // why the connection ended
   let closing = false;

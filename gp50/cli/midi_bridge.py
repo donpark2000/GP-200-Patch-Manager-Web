@@ -6,6 +6,11 @@ Opens the one port named GP-50 and passes SysEx through, a line each:
                                 err <text>, fatal <text>
 Never opens another pedal's port, and can send nothing but SysEx. What may be
 sent is decided by the gates in ../protocol.js and ../write-protocol.js.
+
+With --pedal gp200 it opens the one GP-200 port instead, to READ only
+(CLAUDE.md: no GP-200 writes from the runner): it refuses to send anything
+but the GP-200's identity query and read requests, whatever it is given
+(also gated in gp200-read.js).
 """
 import ctypes
 import json
@@ -20,8 +25,20 @@ mm = ctypes.WinDLL("winmm")
 CALLBACK_FUNCTION = 0x00030000
 MIM_CLOSE, MIM_DATA, MIM_LONGDATA, MIM_ERROR, MIM_LONGERROR = range(0x3C2, 0x3C7)
 MHDR_DONE = 1
-NAME = re.compile(r"GP-50(?!\d)", re.I)  # as isGp50Name in ../device.js
+PEDALS = {
+    "gp50": ("GP-50", lambda name: re.search(r"GP-50(?!\d)", name, re.I)),  # as isGp50Name in ../device.js
+    "gp200": ("GP-200", lambda name: re.search(r"gp", name, re.I) and "200" in name),  # as findGp200Ports
+}
+PEDAL = "gp50"
 BUFFERS, BUFFER_SIZE = 64, 1024
+# GP-200: header, then cmd 0x11 (request) with sub 0x04 identity, 0x10 dump
+# read or 0x20 name read. Nothing else, ever (no 0x12 = enter editor mode).
+GP200_HEADER = bytes([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32])
+GP200_READS = {0x04, 0x10, 0x20}
+
+
+def gp200_read_only(data):
+    return bytes(data[:8]) == GP200_HEADER and len(data) > 10 and data[8] == 0x11 and data[9] in GP200_READS
 
 
 class Caps(ctypes.Structure):
@@ -68,9 +85,10 @@ def names(direction):
 
 
 def choose(direction, ports):
-    hits = [i for i, name in enumerate(ports) if NAME.search(name)]
+    label, match = PEDALS[PEDAL]
+    hits = [i for i, name in enumerate(ports) if match(name)]
     if len(hits) != 1:
-        raise RuntimeError(f"{len(hits)} MIDI {direction} ports are named GP-50, expected 1 (ports: {ports})")
+        raise RuntimeError(f"{len(hits)} MIDI {direction} ports are named {label}, expected 1 (ports: {ports})")
     return hits[0]
 
 
@@ -118,6 +136,8 @@ class Bridge:
     def send(self, data):
         if len(data) < 2 or data[0] != 0xF0 or data[-1] != 0xF7 or any(b > 0x7F for b in data[1:-1]):
             raise RuntimeError("refused to send: not exactly one SysEx message")
+        if PEDAL == "gp200" and not gp200_read_only(data):
+            raise RuntimeError(f"refused to send to the GP-200: not a read ({data[:12].hex()}...)")
         buf = ctypes.create_string_buffer(bytes(data), len(data))
         hdr = Header(data=ctypes.addressof(buf), length=len(data))
         t0 = time.perf_counter()
@@ -175,9 +195,19 @@ class Bridge:
 
 
 def main():
-    if sys.argv[1:] == ["--list"]:
+    global PEDAL
+    args = sys.argv[1:]
+    if args == ["--list"]:
         say("ports " + json.dumps({"in": names("In"), "out": names("Out")}))
         return 0
+    if args[:1] == ["--pedal"]:
+        if len(args) != 2 or args[1] not in PEDALS:
+            say(f"fatal --pedal takes one of {', '.join(PEDALS)}")
+            return 1
+        PEDAL = args[1]
+    elif args:
+        say(f"fatal unknown arguments {args}")
+        return 1
     bridge = Bridge()
     try:
         bridge.open()
