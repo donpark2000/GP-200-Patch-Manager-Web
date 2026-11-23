@@ -4646,7 +4646,34 @@ like "BE100".
 **Developer chose B** (DESIGN.md, "Converter rules"). Duplicates that remain
 are kept and reported; the GP-200 already has some ("JCM800 Recipe" twice).
 
-**Still to check on hardware** (stage 3, within the runner's GP-50
-exception): the GP-50's file has a 16-byte name field, so whether the pedal
-cuts, shows or refuses an 11-16 character name isn't known; and whether it
-shows the GP-200's punctuation ( ) . ' as typed. One test write answers both.
+**The 10-character limit** (developer, after the above): the GP-50's display
+is 10 characters wide and Valeton Suite allows only 10, though the file has
+room for 16. So the converter never writes more than 10, and no test write
+of a longer name is needed. Whether the pedal shows punctuation the rule
+keeps (. and ') as typed shows up in the listening writes, which carry real
+names. Brackets are dropped when words are run together ("FatBirdWah"), as
+in the trial the developer chose from (DESIGN.md).
+
+## 2026-11-23: Listening test: which run of 45 GP-200 patches
+
+**Counted** on the 2026-09-30 backup (scratchpad script: each patch's
+switched-on modules, enabled flag at block +5 per the CLI's `PROTOCOL.md`,
+classed by `gp50/effect-map.json` `toGp50`; the Volume module left out, as
+it has no GP-50 module and is on in every patch):
+- Empty patches: 1-A, 45-A, 45-B, 50-B to 64-D. Runs of 45 with no empty
+  patch lie in 1-B to 44-D only (131 runs). 50-B to 63-D is 55 empty in a
+  row, for the GP-50's 55 factory patches; 64-A to 64-D stay scratch.
+- Whole pedal, switched-on modules: close 617, same 362, rename 6, stand-in
+  5. **No patch converts all-same:** every one has at least one close module
+  (most often RVB Sweet Space 64, PRE S-Comp 59, DLY Digital Delay S 50,
+  NR Gate 3 45). So the planned all-same control pairs don't exist; a
+  same-heavy run is the nearest thing.
+- Runs (close / same / stand-ins): 1-B to 12-B 135 / 117 / 3 (and four
+  "(Wah)" patches, the EXP-wah rule); 16-B to 27-B 124 / 125 / 1 (most
+  same); 33-D to 44-D 176 / 18 / 0 (mostly close).
+
+**Agreed with the developer:** **1-B to 12-B first** (most kinds of change;
+the four wah patches will differ by design, the wah being switched off).
+Depending on the results, **33-D to 44-D next**, as a test of the near
+matches. Each run is 45 GP-50 writes plus 45 to put the reference back
+(1,656 of about 2,000 used so far).
