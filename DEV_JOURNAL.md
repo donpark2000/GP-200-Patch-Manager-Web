@@ -3750,8 +3750,8 @@ differ: 84-99. The pedal stayed on 84.
 **What it shows:** 0-54 unchanged; all 29 copies in 55-83 still right after
 the run moved on and stopped; 84-99 don't hold the copies (84 was dropped
 or is damaged, 85-99 were never sent). **Not yet:** what 84-99 hold exactly
-(needs the saved zip); whether the pedal was power cycled between the stop
-and this check. `gp50_test_2026-11-22T23-58-47.log` shows no port
+(needs the saved zip). The developer did power cycle the pedal before it
+(answered later). `gp50_test_2026-11-22T23-58-47.log` shows no port
 disconnecting from 16:48:45 to 16:58:47; the gaps before and after it
 aren't logged.
 
@@ -3814,10 +3814,11 @@ script; log `gp50_test_2026-11-23T00-03-41.log`; both in
 - **84: byte for byte the blank patch**, as 85-98. 99: still "US Lead".
 
 So the pedal dropped a patch it had 27 of 29 frames of (Q9, second part;
-VLTN's finding, now seen on ours, once). Whether the pedal was power cycled
-before this read isn't known (asked, not answered), so "dropped" could mean
-at once or at the power cycle; either way nothing partial was kept. Step 4
-repeats the power cycle with the page open, so the log shows it.
+VLTN's finding, now seen on ours, once). The developer power cycled the
+pedal between the stop and this read (their report; no log covers it). So
+**the 29 copies survived a power cycle**; and "dropped" could mean at once
+or at the power cycle, but nothing partial was kept. Step 4 repeats the
+power cycle with the page open, so the log shows it.
 
 **Chance of finishing as it is:** one late acknowledgement in 868, and a copy
 of 45 patches needs 1,305. At that rate about 1 run in 5 would finish; from
@@ -3846,7 +3847,8 @@ Supersedes the status entries above.
 - GP-50 write test: step 2 passed (99 survived a power cycle). Step 3, the
   copy, stopped at 84 after 29 of 45: one acknowledgement came 2.2 s late,
   with the pedal's next message.
-- **On the pedal now:** 0-54 factory, 55-83 the copies of 0-28, 84-98 blank,
+- **On the pedal now** (after a power cycle): 0-54 factory, 55-83 the copies
+  of 0-28, 84-98 blank,
   99 "US Lead". It was last on 84 (a write needs 0-54).
 - Open: Q9, where the acknowledgement was held up.
 - Session folders, **don't purge**: `2026-11-22_gp50-first` (the reference
