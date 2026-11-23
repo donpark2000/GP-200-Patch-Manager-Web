@@ -435,8 +435,27 @@ going to get without sound tests").
   together (brackets dropped: "Fat Bird (Wah)" → "FatBirdWah"), then cut. As Valeton names its own GP-50 patches ("LuxuryRiff", "Smooth
   LD"). Two names that still come out the same are kept and the report says
   so (duplicate names are allowed). GP-50 names fit the GP-200 unchanged.
-- All of these are in the patch's report. Where the GP-50 keeps its EXP and
-  CTRL settings in its 552-byte file isn't known yet (stage 3 finds it).
+- **Where each effect goes** (Claude, stage 3): to the module its target
+  effect belongs in. When two want one module (the GP-200's PRE and WAH both
+  go to the GP-50's PRE), one that's on wins over one that's off, then the
+  module's own effect, then the earlier in the chain; the other is left out
+  and reported.
+- **Chain order follows the source pedal**; a module with no source goes
+  after the one before it in the target's default order. Tempo and patch
+  volume are carried. The GP-200's volume module (a volume pedal) has
+  nowhere to go and isn't reported; a GP-50 patch gets the GP-200
+  skeleton's.
+- **CTRL isn't carried yet:** its GP-50 layout isn't confirmed. Every patch
+  with a CTRL assignment says so.
+- **A tempo-synced Time or Rate** is carried as the note length it holds
+  when the target is synced too, otherwise set to the target's default.
+- All of these are in the patch's report, in playing order. A same or
+  renamed effect isn't (nothing was substituted). Layouts and what isn't
+  confirmed: `gp50/convert.js`, journal 2026-11-23 "Stage 3: patch layouts".
+- **Copying from the command line** (`gp50/cli/run.js copy`): GP-200
+  patches are read with reads only (the bridge and `copy.js` refuse anything
+  else), converted, and written to the GP-50; `convert` makes files for the
+  other pedal without one. Both save a listening sheet.
 
 **Working rules:** Claude works through a stage without approval at each
 step and reports at the end of each, or when hands, ears or a decision are

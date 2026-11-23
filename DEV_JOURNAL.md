@@ -4685,3 +4685,104 @@ the four wah patches will differ by design, the wah being switched off).
 Depending on the results, **33-D to 44-D next**, as a test of the near
 matches. Each run is 45 GP-50 writes plus 45 to put the reference back
 (1,656 of about 2,000 used so far).
+
+## 2026-11-23: Stage 3: patch layouts, the converter, copying
+
+**Patch layouts** (scratchpad scripts over the 2026-09-30 GP-200 backup, 256
+patches, and the GP-50's factory patches in `2026-11-22_gp50-first`, 102
+files). Both files are records of [u16 tag, u16 length, value].
+- **GP-200**, beside what `PROTOCOL.md` has: 0x36 u16 **tempo** (120 in 246,
+  250 in 6), 0x38 u16 **patch volume** (50 in 225, 30-100 in artist
+  patches). 0x8C is a record (tag 8, 16 bytes) whose 0x94-0x9E is the
+  **chain order**, the 11 module numbers in playing order: **160 of 256 are
+  not the default order** (74 NR, VOL, PRE, WAH, DST, ...; 52 WAH, NR, DST,
+  AMP, CAB, PRE, ...). `PROTOCOL.md` says 0x8C-0x9F is 0 "in every real
+  sample seen"; our backup's isn't (to tell the CLI repo; nothing here
+  depends on it). Effect blocks are records too (tag 0x14, 68 bytes): +4 the
+  module number (always the block's own), +5 on/off. 0x3B8: 9 **EXP**
+  records (tag 0x0C): id 00-02, 10-12, 20-22, module (FF none), control, two
+  floats; 250-256 of 256 have EXP 1 on the volume module and EXP 2 on the
+  wah's control 3, nothing else. 0x448: 3 **CTRL** records (tag 0x10): n,
+  module, v (the v the pedal changes, journal 2026-10-01, is in these).
+  Not known: 0x3A (1 in three "(Wah)" patches), 0x3C (0-11), 0x92-0x93.
+- **GP-50**, same offsets in all 102: tag 1 holds 2001 (u8, 50 in 92: taken
+  as **patch volume**), 2002 (u32, 120 in all: taken as **tempo**), 2003-200A
+  (the same in all: taken as EXP); tag 2 holds 3001 (u32, a bit per module:
+  **on/off**, 0 in the 45 empty patches), 3002 (**chain order**, 10 bytes;
+  5 factory patches move PRE or MOD; the gate is first in all 102), 3003
+  codes, 3004 values; tag 3, 10 bytes: two u32 that look like **CTRL module
+  masks** (09 Solo Wah: DLY and RVB) and 2 bytes (05 05 in the empties).
+- Not confirmed on the pedal: which 3001 bit is which module (taken in
+  module order), 2001 and 2002, CTRL on either pedal, whether the GP-50
+  takes the gate anywhere but first.
+
+**The converter** (`gp50/convert.js`; rules in DESIGN.md). Notes from
+building it:
+- Run over all 256 GP-200 patches and the 101 GP-50 patch files: none
+  refused. GP-200 to GP-50 orders: 100 put the gate after the amp, as the
+  GP-200's default order does.
+- A delay Time of 4 came out "limited 4 -> 20": the delay was synced, so 4
+  is a note length. Synced Time/Rate are now carried as they are when the
+  target is synced too.
+- Renames ("Gate -> Gate 1") and filled defaults of same effects made every
+  report long and said nothing was lost; they're left out.
+- The base for a GP-50 patch is its empty patch "GP-50" (55-99 as they
+  came), embedded; rebuilt, it matches `55-GP50.prst` byte for byte.
+
+**Tests:** `tests/gp50-convert.test.js` (12) and `tests/gp50-copy.test.js`
+(6): names, a GP-50 patch of same effects through the GP-200 and back
+unchanged, order, the wah and stand-in rules, two modules for one, sync,
+CTRL/EXP notes, refusals, the GP-200 gate, copy and convert end to end on
+the fake pedals. Shown to fail: a shifted on/off bit, order ignored, values
+off by one, and the GP-200 sent editor mode (each caught). Suite **258 pass**.
+
+**Copying** (`gp50/cli/copy.js`, the runner's `copy` and `convert`; the
+developer's Q11). `midi_bridge.py --pedal gp200` opens the GP-200 port and
+refuses anything but its identity query and read requests; `copy.js` checks
+the same, and never sends the handshake (editor mode). Ports now: only
+"GP-50" (the GP-200 isn't plugged in); with `--pedal gp200` the bridge says
+"0 MIDI input ports are named GP-200" and stops.
+
+**Session `2026-11-23_stage3-listening`:**
+- `check` against the reference: MATCH, 100 of 100, on patch 6.
+- GP-50 factory patches 0-54, taken from the reference zip into
+  `gp50_factory_00-54` (the first folder holds two exports of patch 51),
+  converted: `gp200_converted_convert_2026-11-23T22-31-05.zip`, 55 patches,
+  50-B to 63-D, checksums valid; sheet
+  `listening_convert_2026-11-23T22-31-05.csv`. All 55 say CTRL not carried;
+  other notes: Plate (5), EV 4x12 -> UK TD (4), Detune left out, no free MOD
+  (2), Rev Echo and Sweet Space close (2 each). Not written anywhere yet.
+
+## 2026-11-23: Status (start here next session)
+
+Supersedes the status entries above. Topic: **stage 3: converter built and
+tested; the listening run needs both pedals plugged in.**
+
+**Known:**
+- Stages 1 and 2 done. Stage 3: names, run of 45 and copying decided
+  (entries above); converter, `copy` and `convert` built (entry above). Suite
+  258 pass. Branch `gp50-experiments`, pushed, not merged; live site
+  unchanged at `58c0117`.
+- **On the GP-50 now:** the reference zip, byte for byte; on patch 6.
+- Patch writes: 1,656 of about 2,000. The listening run adds 45, and 45 to
+  put the reference back.
+- Open question: Q11 (copy pedal to pedal in the app, for stage 4).
+
+**Needed from the developer:**
+1. Plug in the GP-200 beside the GP-50.
+2. CTRL: on GP-50 patch 9 (Solo Wah), what does CTRL switch? (The file
+   suggests delay and reverb.) That confirms or rules out its layout.
+
+**Next, in `C:\Users\dpark\Documents\GP-200-testing\2026-11-23_stage3-listening`:**
+1. `python C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\midi_bridge.py --list`: both port names.
+2. `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js copy --from 1-B --to 12-B --start 55 --reference ..\2026-11-22_gp50-first\gp50_all_2026-11-22T21-17-41.zip --write --out .`
+   (every patch is read back; a GP-50 that won't keep the gate after the amp
+   shows there as a read-back difference, and the run stops).
+3. The developer: a fresh full backup of the GP-200 in the app, check 50-B to
+   63-D are empty, then Restore `gp200_converted_convert_2026-11-23T22-31-05.zip`
+   from 50-B.
+4. Listening, pair by pair, with the two sheets; then the reference back on
+   the GP-50, and the GP-200's 50-B to 63-D back from the backup if wanted.
+
+Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1`,
+`2026-11-23_gp50-speed` or `2026-11-23_stage3-listening`.

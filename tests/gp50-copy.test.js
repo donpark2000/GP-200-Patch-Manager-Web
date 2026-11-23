@@ -128,3 +128,20 @@ test("convert: GP-50 patches to a GP-200 zip numbered from 50-B, no pedal opened
   assert.equal(await s.run("convert", bad, "--start", "55"), 1);
   assert.match(s.text(), /junk\.prst: can't be converted: not a GP-200 or GP-50 patch/);
 });
+
+test("convert: two different names that come out the same are both kept, and the sheet says so", async (t) => {
+  const s = setup(t);
+  const { skeletonBytes } = await import("../src/core/skeleton.js");
+  const { writeGp200 } = await import("../gp50/convert.js");
+  const patch = (name) => { const p = readGp200(skeletonBytes()); p.name = name; return writeGp200(p); };
+  const a = path.join(s.dir, "1A_one.prst"), b = path.join(s.dir, "1B_two.prst"), c = path.join(s.dir, "1C_three.prst");
+  writeFileSync(a, patch("Forget the Cloud"));
+  writeFileSync(b, patch("Forget the Clou"));
+  writeFileSync(c, patch("Forget the Cloud"));
+  assert.equal(await s.run("convert", a, b, c, "--start", "55"), 0, s.text());
+  const [csv] = s.saved(/^listening_convert_.*\.csv$/);
+  const rows = readFileSync(path.join(s.dir, csv), "utf8").trim().split("\r\n").slice(1);
+  assert.match(rows[0], /Name ""ForgetClou"" is also what ""Forget the Clou"" \(56\) became/);
+  assert.match(rows[1], /Name ""ForgetClou"" is also what ""Forget the Cloud"" \(55\), ""Forget the Cloud"" \(57\) became/);
+  assert.doesNotMatch(rows[0], /\(57\)/, "the same name twice is no news");
+});

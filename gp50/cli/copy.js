@@ -62,13 +62,18 @@ export function convertFiles(files, start, map, { log }) {
       const label = toGp50 ? String(target) : slotToLabel(target);
       const name = toGp50 ? slotFileName(target, r.name) : `${label}_${r.name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "_") || "patch"}.prst`;
       out.push({ name, data: r.prst });
-      rows.push({ pair: i + 1, from: f.name, to: label, name: r.name, notes: r.notes });
+      rows.push({ pair: i + 1, from: f.name, source: r.source, to: label, name: r.name, notes: r.notes });
       for (const n of r.notes) log.info(`  ${f.name}: ${n}`);
     } catch (err) {
       refused.push({ file: f.name, reason: err.message });
       log.error(`${f.name}: can't be converted: ${err.message}`);
     }
   });
+  // DESIGN.md: two different names that come out the same are both kept, and said.
+  for (const r of rows) {
+    const others = rows.filter((o) => o !== r && o.name === r.name && o.source !== r.source);
+    if (others.length) r.notes.push(`Name "${r.name}" is also what ${others.map((o) => `"${o.source}" (${o.to})`).join(", ")} became`);
+  }
   return { files: out, rows, refused };
 }
 

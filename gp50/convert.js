@@ -298,7 +298,8 @@ function noteList() {
 const FIRST = -1, LAST = 100;
 
 /**
- * A GP-200 .prst as a GP-50 .prst. Returns { prst, name, notes }: notes say
+ * A GP-200 .prst as a GP-50 .prst. Returns { prst, name, source, notes }
+ * (source: the name it had): notes say
  * what was substituted, dropped or limited, in playing order. Throws with the
  * reason if the patch can't be converted.
  */
@@ -355,7 +356,7 @@ export function gp200ToGp50(prst, map, { log = () => {} } = {}) {
   if (volume !== p.volume) last(`Patch volume limited ${p.volume} -> ${volume}`);
   const list = notes.sorted();
   log(`Convert GP-200 "${p.name}" -> GP-50 "${name}": ${list.length} note(s); order ${order.map((i) => GP50_MODULES[i]).join(" ")}; on ${modules.filter((m) => m.on).map((m) => m.module).join(" ") || "none"}`);
-  return { prst: writeGp50({ name, volume, tempo: p.tempo, order, modules }), name, notes: list };
+  return { prst: writeGp50({ name, volume, tempo: p.tempo, order, modules }), name, source: p.name.trim(), notes: list };
 }
 
 // ---------------------------------------------------------------- GP-50 -> GP-200
@@ -405,5 +406,5 @@ export function gp50ToGp200(prst, map, { log = () => {} } = {}) {
   const name = p.name.trim();
   const list = notes.sorted();
   log(`Convert GP-50 "${p.name}" -> GP-200 "${name}": ${list.length} note(s); order ${order.map((i) => GP200_MODULES[i]).join(" ")}; on ${modules.filter((m) => m.on).map((m) => m.module).join(" ") || "none"}`);
-  return { prst: writeGp200({ name, tempo: p.tempo, volume: p.volume, order, modules }), name, notes: list };
+  return { prst: writeGp200({ name, tempo: p.tempo, volume: p.volume, order, modules }), name, source: p.name.trim(), notes: list };
 }
