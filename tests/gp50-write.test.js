@@ -147,23 +147,82 @@ test("gp50 writing: one patch, every frame acknowledged before the next, read ba
   assert.match(log.text(), /Wrote slot 99: 29 frames, all acknowledged/);
 });
 
-test("gp50 writing: a missing acknowledgement stops it there, stores nothing, and nothing more is written", async () => {
+test("gp50 writing: an acknowledgement missing every time: 3 attempts, nothing stored, then nothing more is written", async () => {
   for (const lost of [0, 12, 28]) {
-    const { pedal, writer } = setup({ ackFaults: (acks, i) => (i === lost ? [] : acks) });
-    await assert.rejects(writer.writeSlotPatch(99, US_LEAD, yes), new RegExp(`frame ${lost + 1} of 29: not acknowledged`));
-    assert.equal(writesSent(pedal).length, lost + 1);
+    const { pedal, writer, log } = setup({ ackFaults: (acks, i) => (i === lost ? [] : acks) });
+    await assert.rejects(writer.writeSlotPatch(99, US_LEAD, yes), new RegExp(`frame ${lost + 1} of 29: not acknowledged within 100 ms \\(attempt 3 of 3\\)`));
+    assert.equal(writesSent(pedal).length, 3 * (lost + 1));
+    assert.equal(log.text().split("Starting this patch again").length - 1, 2);
     pedal.ackFaults = (acks) => acks;
     await assert.rejects(writer.writeSlotPatch(98, US_LEAD, yes), /stopped earlier/);
-    assert.equal(writesSent(pedal).length, lost + 1);
+    assert.equal(writesSent(pedal).length, 3 * (lost + 1));
     assert.deepEqual(pedal.stored, []);
     assert.equal((await writer.readSlotPatch(99)).name, "Fake 99", "reading still works");
   }
 });
 
-test("gp50 writing: another answer, or one acknowledgement too many, stops it", async () => {
+test("gp50 writing: a held-up acknowledgement (Q9), a lost frame, or the pedal's 'not stored': the patch is started again", async () => {
+  const check = async (s, frame, why) => {
+    const r = await s.writer.writeSlotPatch(99, US_LEAD, yes);
+    assert.deepEqual([r.attempts, s.pedal.stored], [2, [99]], why);
+    assert.equal(toHex((await s.writer.readSlotPatch(99)).prst), toHex(US_LEAD), why);
+    assert.match(s.log.text(), new RegExp(`frame ${frame} of 29: .*attempt 1 of 3`), why);
+    assert.equal((await s.writer.writeSlotPatch(98, US_LEAD, yes)).attempts, 1, `${why}: the next patch is fine`);
+  };
+  for (const k of [0, 13, 26, 28]) {
+    // As seen: it came with the pedal's next message.
+    let s = setup();
+    const deliver = s.pedal._deliver.bind(s.pedal);
+    let held = null;
+    let acks = 0;
+    s.pedal._deliver = (frames) => {
+      if (acks++ === k) held = frames;
+      else {
+        deliver([...(held ?? []), ...frames]);
+        held = null;
+      }
+    };
+    if (k < 28) await check(s, k + 1, `acknowledgement ${k} held up`);
+    else {
+      // The patch was stored; writing it again does no harm.
+      assert.equal((await s.writer.writeSlotPatch(99, US_LEAD, yes)).attempts, 2);
+      assert.deepEqual(s.pedal.stored, [99, 99]);
+    }
+    assert.match(s.log.text(), /Before starting again: 1 late acknowledgement/);
+
+    s = setup();
+    const send = s.pedal.output.send;
+    let n = 0;
+    s.pedal.output.send = (msg) => { if (n++ !== k) send(msg); };
+    await check(s, k + 1, `frame ${k} lost`);
+    assert.match(s.log.text(), /Before starting again: 0 late/);
+  }
+  const s = setup();
+  let once = true;
+  s.pedal.ackFaults = (acks, i) => {
+    if (i === 20 && once) {
+      once = false;
+      s.pedal.output.send(buildRead(READS.slot)); // another program reading meanwhile
+    }
+    return acks;
+  };
+  await check(s, 29, "a read in the middle");
+  assert.match(s.log.text(), /answered 14 08 01, expected 14 08 00: it didn't store the patch/);
+});
+
+test("gp50 writing: 'not stored' every time stops it after 3 attempts; the pedal not answering the read between stops it at once", async () => {
+  let s = setup({ ackFaults: (acks, i) => (i === 28 ? [frameToWire(1, 0, [0x14, 0x08, 0x01])] : acks) });
+  await assert.rejects(s.writer.writeSlotPatch(99, US_LEAD, yes), /didn't store the patch \(attempt 3 of 3\)/);
+  s = setup({ ackFaults: (acks, i) => (i === 4 ? [] : acks), faults: () => [] });
+  await assert.rejects(s.writer.writeSlotPatch(99, US_LEAD, yes), /Reading slot: no reply at all/);
+  assert.equal(writesSent(s.pedal).length, 5);
+  await assert.rejects(s.writer.writeSlotPatch(99, US_LEAD, yes), /stopped earlier/);
+});
+
+test("gp50 writing: an unknown answer, or one acknowledgement too many, stops it at once", async () => {
   const ack = frameToWire(1, 0, [0x14, 0x08, 0x00]);
-  let s = setup({ ackFaults: (acks, i) => (i === 4 ? [frameToWire(1, 0, [0x14, 0x08, 0x01])] : acks) });
-  await assert.rejects(s.writer.writeSlotPatch(99, US_LEAD, yes), /frame 5 of 29: the pedal answered 14 08 01/);
+  let s = setup({ ackFaults: (acks, i) => (i === 4 ? [frameToWire(1, 0, [0x14, 0x08, 0x02])] : acks) });
+  await assert.rejects(s.writer.writeSlotPatch(99, US_LEAD, yes), /frame 5 of 29: the pedal answered 14 08 02/);
   assert.equal(writesSent(s.pedal).length, 5);
   s = setup({ writeSettleMs: 10, ackFaults: (acks, i) => (i === 4 ? [ack, ack] : acks) });
   await assert.rejects(s.writer.writeSlotPatch(99, US_LEAD, yes), /6 acknowledgements for 5 frames/);
@@ -306,4 +365,23 @@ test("gp50 check: a differing or unread slot, or a stopped read, never passes", 
   pedal.faults = (f, fn, args) => (fn === 0x4f && args[0] === 9 ? [] : f);
   c = await check();
   assert.deepEqual([c.pass, c.compared, c.failed], [false, 99, [9]]);
+});
+
+test("gp50 writing: a late acknowledgement after the read between is waited for; closing never starts again", async () => {
+  const s = setup();
+  const deliver = s.pedal._deliver.bind(s.pedal);
+  let acks = 0;
+  s.pedal._deliver = (frames) => {
+    if (acks++ === 6) setTimeout(() => deliver(frames), 180); // after the timeout, and after the read's answer
+    else deliver(frames);
+  };
+  s.writer.quietMs = 300;
+  const r = await s.writer.writeSlotPatch(99, US_LEAD, yes);
+  assert.equal(r.attempts, 2);
+  assert.match(s.log.text(), /Before starting again: 1 late/);
+
+  const c = setup({ ackFaults: (a, i) => (i === 3 ? [] : a) });
+  setTimeout(() => c.writer.close(), 50);
+  await assert.rejects(c.writer.writeSlotPatch(99, US_LEAD, yes), /closed|not acknowledged/);
+  assert.equal(writesSent(c.pedal).length, 4);
 });

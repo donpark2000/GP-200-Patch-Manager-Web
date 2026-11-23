@@ -283,3 +283,39 @@ test("gp50 helper connection: both ways, closing, losing the port, and failing t
   await assert.rejects(connect(log, helper('throw new Error("boom")')), /./);
   await assert.rejects(connect(log, { command: ["no-such-program-gp50"] }), /couldn't be started/);
 });
+
+test("gp50 runner: a patch started again is reported; a stopped restore fails; a name not as in the list makes a backup incomplete", async (t) => {
+  let s = setup(t);
+  let once = true;
+  s.pedal.ackFaults = (acks, i, slot) => (slot === 5 && i === 9 && once ? ((once = false), []) : acks);
+  assert.equal(await s.run("restore", s.zip, "--start", "0", "--out", s.dir, "--reference", s.zip, "--write"), 0);
+  assert.match(s.text(), /100 of 100 written and read back identical, [\d.]+ s; 1 started again \(5\)/);
+
+  s = setup(t);
+  s.isCancelled = () => s.pedal.stored.length >= 2;
+  assert.equal(await s.run("restore", s.zip, "--start", "0", "--out", s.dir, "--reference", s.zip, "--write"), 1);
+  assert.deepEqual(s.pedal.stored, [0, 1]);
+
+  s = setup(t);
+  const answer = s.pedal._answer.bind(s.pedal);
+  s.pedal._answer = (fn, args) => {
+    const data = answer(fn, args);
+    return fn === 0x40 ? data.with(4 + 20 * 11, "X".charCodeAt(0)) : data;
+  };
+  assert.equal(await s.run("backup", "--out", s.dir, "--from", "10", "--to", "12"), 1);
+  assert.match(s.text(), /Slot 11 came back as "Fake 11", the list says "Xake 11"/);
+});
+
+test("gp50 runner: damage to another patch, in either half of a round trip, fails it", async (t) => {
+  for (const half of [1, 2]) {
+    const s = setup(t);
+    const store = s.pedal._store.bind(s.pedal);
+    s.pedal._store = (slot, data) => {
+      store(slot, data);
+      const n = s.pedal.stored.length;
+      if (slot === 60 && (half === 1 ? n <= 100 : n > 100)) s.pedal.bodies[59] = s.pedal.bodies[59].with(9, 0x55);
+    };
+    assert.equal(await s.run("roundtrip", "--out", s.dir, "--reference", s.zip, "--write"), 1, `half ${half}`);
+    assert.match(s.text(), new RegExp(`Check "${half === 1 ? "all moved by 1" : "as the reference, after"}": DIFFERENT.*differ: 59`), `half ${half}`);
+  }
+});

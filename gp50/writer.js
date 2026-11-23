@@ -1,19 +1,24 @@
 // Writes one GP-50 patch at a time, frame by frame, each acknowledged before
-// the next. Any problem stops it for good (until Connect makes a new one):
-// no retries, since what the pedal does with a half-sent patch isn't known.
+// the next. A missing acknowledgement, or the pedal's "not stored", starts
+// that patch again, up to WRITE_ATTEMPTS in all: the pedal drops a half-sent
+// patch and accepts it again (journal 2026-11-22). Anything else stops it for
+// good (until Connect makes a new one).
 
 import { Gp50Reader } from "./device.js";
-import { parseFrame, toHex } from "./protocol.js";
-import { ACK, buildPatchWrite, TEST_RANGE, WriteGate } from "./write-protocol.js";
+import { buildRead, parseFrame, READS, toHex } from "./protocol.js";
+import { ACK, buildPatchWrite, REFUSAL, TEST_RANGE, WriteGate } from "./write-protocol.js";
 
 /** Normally 1-30 ms, 113 ms for a patch's last; one came after 2.2 s (journal, Q9). */
 export const ACK_TIMEOUT_MS = 5000;
 export const ACK_SLOW_MS = 200;
+export const WRITE_ATTEMPTS = 3;
 export const FRAME_GAP_MS = 20;
 /** Before and after a write: time for the pedal to store things, and for a surplus acknowledgement to show up. */
 export const WRITE_SETTLE_MS = 500;
 
 const sleep = (ms) => (ms ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve());
+
+const startAgain = (text) => Object.assign(new Error(text), { startAgain: true });
 
 export class Gp50Writer extends Gp50Reader {
   constructor(input, output, log, { ackTimeoutMs = ACK_TIMEOUT_MS, range = TEST_RANGE, frameGapMs = FRAME_GAP_MS, writeSettleMs = WRITE_SETTLE_MS, ...rest } = {}) {
@@ -32,15 +37,23 @@ export class Gp50Writer extends Gp50Reader {
     super.close();
   }
 
-  /** @returns {Promise<{frames: number, ms: number, slowestAckMs: number}>} */
+  /** @returns {Promise<{frames: number, ms: number, slowestAckMs: number, attempts: number}>} */
   async writeSlotPatch(slot, prst, { confirmed = false } = {}) {
     if (confirmed !== true) throw new Error("Refused: the write wasn't confirmed");
     const frames = buildPatchWrite(slot, prst, this.range);
-    const gate = new WriteGate(slot, prst, this.range);
     return this._queued(async () => {
       if (this.halted) throw new Error(`Refused: writing stopped earlier (${this.halted}). Press Connect again first`);
       try {
-        return await this._write(slot, frames, gate);
+        for (let attempt = 1; ; attempt++) {
+          try {
+            return { ...(await this._write(slot, frames, new WriteGate(slot, prst, this.range))), attempts: attempt };
+          } catch (err) {
+            if (!err.startAgain || this.closed) throw err;
+            if (attempt === WRITE_ATTEMPTS) throw new Error(`${err.message} (attempt ${attempt} of ${WRITE_ATTEMPTS})`);
+            this.log.warn(`${err.message}; attempt ${attempt} of ${WRITE_ATTEMPTS}. Starting this patch again`);
+            await this._clear();
+          }
+        }
       } catch (err) {
         this.halted = err.message;
         throw err;
@@ -48,6 +61,16 @@ export class Gp50Writer extends Gp50Reader {
         this.writing = false;
       }
     });
+  }
+
+  // A held-up acknowledgement came out with the pedal's next message (Q9), so
+  // ask for something harmless, then wait until nothing more comes. Only
+  // before starting again: a read during a write makes the pedal drop it.
+  async _clear() {
+    const before = this.acks;
+    await this._exchange("slot", READS.slot, buildRead(READS.slot));
+    await this._untilQuiet();
+    this.log.warn(`Before starting again: ${this.acks - before} late acknowledgement(s)`);
   }
 
   async _write(slot, frames, gate) {
@@ -64,7 +87,7 @@ export class Gp50Writer extends Gp50Reader {
       try {
         await this._sendFrame(gate, msg);
       } catch (err) {
-        throw new Error(`Writing slot ${slot}, frame ${i + 1} of ${frames.length}: ${err.message}`);
+        throw Object.assign(new Error(`Writing slot ${slot}, frame ${i + 1} of ${frames.length}: ${err.message}`), { startAgain: err.startAgain });
       }
       const took = Math.round(performance.now() - sentAt);
       if (took > ACK_SLOW_MS) this.log.warn(`Slow acknowledgement: slot ${slot}, frame ${i + 1} of ${frames.length}, ${took} ms`);
@@ -84,7 +107,7 @@ export class Gp50Writer extends Gp50Reader {
         this.onAck = null;
         settle(value);
       };
-      const timer = setTimeout(() => done(reject, new Error(`not acknowledged within ${this.ackTimeoutMs} ms`)), this.ackTimeoutMs);
+      const timer = setTimeout(() => done(reject, startAgain(`not acknowledged within ${this.ackTimeoutMs} ms`)), this.ackTimeoutMs);
       this.onAck = { resolve: () => done(resolve), reject: (err) => done(reject, err) };
       try {
         if (this.closed) throw new Error("the connection was closed");
@@ -107,7 +130,8 @@ export class Gp50Writer extends Gp50Reader {
     this.log.debug(`RX ${toHex(msg)}`);
     if (toHex(f.payload) !== toHex(ACK)) {
       this.log.warn(`Unexpected answer: ${toHex(f.payload)}`);
-      this.onAck?.reject(new Error(`the pedal answered ${toHex(f.payload)}, expected ${toHex(ACK)}`));
+      const text = `the pedal answered ${toHex(f.payload)}, expected ${toHex(ACK)}`;
+      this.onAck?.reject(toHex(f.payload) === toHex(REFUSAL) ? startAgain(`${text}: it didn't store the patch`) : new Error(text));
       return;
     }
     this.acks++;

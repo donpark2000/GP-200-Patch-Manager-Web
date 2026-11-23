@@ -17,6 +17,8 @@ export const WRITE_LAST = 99;
 /** What may be written unless a wider range is asked for (only the runner does). */
 export const TEST_RANGE = Object.freeze({ first: WRITE_FIRST, last: WRITE_LAST });
 export const ACK = Object.freeze([0x14, 0x08, 0x00]);
+/** The answer to the last frame when the pedal didn't store the patch (seen when a read came mid-write; journal 2026-11-22). */
+export const REFUSAL = Object.freeze([0x14, 0x08, 0x01]);
 
 const NAME_OFF = 0x19;
 const FRAME_LEN = 19;

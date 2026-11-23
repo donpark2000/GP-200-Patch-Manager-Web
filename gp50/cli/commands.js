@@ -42,7 +42,7 @@ export async function write(writer, items, reference, { log, label, touched = ne
   const r = await writePatches(writer, items, { log, touched, confirmed: true, guard: onlyKnown(reference, touched), ...opts });
   const ok = !r.problem && r.verified.length === items.length;
   const text = `Write "${label}": ${ok ? "DONE" : "STOPPED"}. ${r.verified.length} of ${items.length} written and read back identical, ` +
-    `${((performance.now() - t0) / 1000).toFixed(1)} s; selected ${r.selectedBefore} before, ${r.selectedAfter} after${r.problem ? `; ${r.problem}` : ""}`;
+    `${((performance.now() - t0) / 1000).toFixed(1)} s; ${r.restarted.length} started again${r.restarted.length ? ` (${slotRanges(r.restarted)})` : ""}; selected ${r.selectedBefore} before, ${r.selectedAfter} after${r.problem ? `; ${r.problem}` : ""}`;
   log[ok ? "info" : "error"](text);
   return { ...r, ok };
 }

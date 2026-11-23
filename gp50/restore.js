@@ -80,7 +80,7 @@ export const describeDiff = (offsets) =>
  * @param {Set<number>} [opts.touched] every slot a write was begun on is added
  */
 export async function writePatches(writer, items, { log, confirmed = false, guard = () => {}, touched = new Set(), onProgress = () => {}, isCancelled = () => false } = {}) {
-  const out = { total: items.length, written: [], verified: [], cancelled: false, problem: null, selectedBefore: null, selectedAfter: null };
+  const out = { total: items.length, written: [], verified: [], restarted: [], cancelled: false, problem: null, selectedBefore: null, selectedAfter: null };
   try {
     if (confirmed !== true) throw new Error("Refused: the write wasn't confirmed");
     for (const { slot, prst } of items) {
@@ -95,7 +95,8 @@ export async function writePatches(writer, items, { log, confirmed = false, guar
       // Counted from the first frame: a write that fails may have changed the slot.
       out.written.push(slot);
       touched.add(slot);
-      await writer.writeSlotPatch(slot, prst, { confirmed });
+      const { attempts } = await writer.writeSlotPatch(slot, prst, { confirmed });
+      if (attempts > 1) out.restarted.push(slot);
       const problem = await verify(writer, slot, prst, log);
       if (problem) throw new Error(problem);
       out.verified.push(slot);
