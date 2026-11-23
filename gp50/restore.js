@@ -78,8 +78,12 @@ export const describeDiff = (offsets) =>
  * @param {(found: {slot: number, selected: number, now: {name: string, prst: Uint8Array}}) => void} [opts.guard]
  *   throws if what the slot holds now mustn't be overwritten
  * @param {Set<number>} [opts.touched] every slot a write was begun on is added
+ * @param {boolean} [opts.selectedEach] ask which patch is selected before every
+ *   patch (the pages: their guard refuses while one of 55-99 is). False asks
+ *   only before the first and after the last (the runner: its guard doesn't
+ *   use it, and writing the selected patch is safe; journal 2026-11-22).
  */
-export async function writePatches(writer, items, { log, confirmed = false, guard = () => {}, touched = new Set(), onProgress = () => {}, isCancelled = () => false } = {}) {
+export async function writePatches(writer, items, { log, confirmed = false, guard = () => {}, touched = new Set(), onProgress = () => {}, isCancelled = () => false, selectedEach = true } = {}) {
   const out = { total: items.length, written: [], verified: [], restarted: [], cancelled: false, problem: null, selectedBefore: null, selectedAfter: null };
   try {
     if (confirmed !== true) throw new Error("Refused: the write wasn't confirmed");
@@ -89,7 +93,7 @@ export async function writePatches(writer, items, { log, confirmed = false, guar
         log.warn(`Stopped after ${out.verified.length} of ${items.length} patches`);
         break;
       }
-      const selected = await writer.readSlot();
+      const selected = selectedEach || out.selectedBefore === null ? await writer.readSlot() : out.selectedBefore;
       out.selectedBefore ??= selected;
       guard({ slot, selected, now: await writer.readSlotPatch(slot) });
       // Counted from the first frame: a write that fails may have changed the slot.

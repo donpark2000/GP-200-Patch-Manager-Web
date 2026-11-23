@@ -8,13 +8,22 @@ import { Gp50Reader } from "./device.js";
 import { buildRead, parseFrame, READS, toHex } from "./protocol.js";
 import { ACK, buildPatchWrite, REFUSAL, TEST_RANGE, WriteGate } from "./write-protocol.js";
 
-/** Normally 1-30 ms, 113 ms for a patch's last; one came after 2.2 s (journal, Q9). */
-export const ACK_TIMEOUT_MS = 5000;
+/**
+ * In about 37,000 frames every acknowledgement came within 122 ms (a patch's
+ * last) or was held until the pedal's next message, never later by itself
+ * (25 held, up to 5 s waited; journal 2026-11-23 "GP-50 speed").
+ */
+export const ACK_TIMEOUT_MS = 1000;
 export const ACK_SLOW_MS = 200;
 export const WRITE_ATTEMPTS = 3;
-export const FRAME_GAP_MS = 20;
-/** Before and after a write: time for the pedal to store things, and for a surplus acknowledgement to show up. */
-export const WRITE_SETTLE_MS = 500;
+/** Each frame goes when the last is acknowledged: 400 writes at 0 matched (was 20). */
+export const FRAME_GAP_MS = 0;
+/**
+ * Before and after a write: for a surplus acknowledgement to show up. The
+ * pedal's "patch list changed" comes with the last acknowledgement, so there
+ * is nothing else to wait for (was 500).
+ */
+export const WRITE_SETTLE_MS = 100;
 
 const sleep = (ms) => (ms ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve());
 

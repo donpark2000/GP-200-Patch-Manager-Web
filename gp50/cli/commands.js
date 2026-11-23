@@ -39,7 +39,7 @@ export async function check(reader, expected, label, { log }) {
 export async function write(writer, items, reference, { log, label, touched = new Set(), ...opts }) {
   const t0 = performance.now();
   log.info(`Write "${label}": ${items.length} patches, to ${slotRanges(items.map((i) => i.slot))}`);
-  const r = await writePatches(writer, items, { log, touched, confirmed: true, guard: onlyKnown(reference, touched), ...opts });
+  const r = await writePatches(writer, items, { log, touched, confirmed: true, guard: onlyKnown(reference, touched), selectedEach: false, ...opts });
   const ok = !r.problem && r.verified.length === items.length;
   const text = `Write "${label}": ${ok ? "DONE" : "STOPPED"}. ${r.verified.length} of ${items.length} written and read back identical, ` +
     `${((performance.now() - t0) / 1000).toFixed(1)} s; ${r.restarted.length} started again${r.restarted.length ? ` (${slotRanges(r.restarted)})` : ""}; selected ${r.selectedBefore} before, ${r.selectedAfter} after${r.problem ? `; ${r.problem}` : ""}`;

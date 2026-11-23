@@ -358,7 +358,7 @@ explanation.
 
 **GP-50 writes** (Claude, stage 1, from hardware tests; journal 2026-11-22,
 "GP-50 stage 1"). Unlike the GP-200's rule of no automatic rewrites:
-- An acknowledgement not in 5 s, or the pedal's `14 08 01` ("not stored"),
+- An acknowledgement not in 1 s, or the pedal's `14 08 01` ("not stored"),
   starts that patch again, up to 3 attempts. Before starting again, one read
   (the selected patch number) brings out a held-up acknowledgement, then
   quiet for 1 s. The pedal drops a half-sent patch, whatever the cut, and
@@ -369,6 +369,12 @@ explanation.
   stops the run.
 - Writing to the selected patch is allowed: the pedal stays on it, and its
   current patch reads as the new one at once (not yet listened to).
+- Pace (journal 2026-11-23, "GP-50 speed"): each frame as soon as the last is
+  acknowledged, 0.1 s before and after a patch, 50 ms after each read. The
+  runner asks which patch is selected only before the first patch and after
+  the last; the pages before every patch, for their guard. Speed was never
+  bought with a check: every patch is still read back, and a patch is
+  overwritten only if its contents are in the reference.
 
 **Working rules:** Claude works through a stage without approval at each
 step and reports at the end of each, or when hands, ears or a decision are

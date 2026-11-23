@@ -8,7 +8,8 @@ import {
 } from "./protocol.js";
 
 export const READ_TIMEOUT_MS = 2500;
-export const SETTLE_MS = 200;
+/** 50 ms: about 1,000 reads and 400 writes over Windows MIDI with no lock-up or stray reply (journal 2026-11-23 "GP-50 speed"; was 200). */
+export const SETTLE_MS = 50;
 /** After a failed read, wait until the pedal has sent nothing for this long. */
 export const QUIET_MS = 1000;
 

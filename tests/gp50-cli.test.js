@@ -10,8 +10,8 @@ import { ANY_PATCH, shifted } from "../gp50/cli/commands.js";
 import { main } from "../gp50/cli/run.js";
 import { connect, SysexStream } from "../gp50/cli/winmm.js";
 import { FakeGp50 } from "../gp50/fake-gp50.js";
-import { buildPrst, parseFrame, toHex } from "../gp50/protocol.js";
-import { fileKind, fileProblem, orderPatches, planRestore } from "../gp50/restore.js";
+import { buildPrst, buildRead, parseFrame, READS, toHex } from "../gp50/protocol.js";
+import { fileKind, fileProblem, orderPatches, planRestore, writePatches } from "../gp50/restore.js";
 import { buildPatchWrite, WriteGate } from "../gp50/write-protocol.js";
 import { Gp50Writer } from "../gp50/writer.js";
 import { Logger } from "../src/core/log.js";
@@ -218,6 +218,28 @@ test("gp50 runner: stopping finishes the patch being written, and fails the run"
   assert.equal(await s.run("roundtrip", "--out", s.dir, "--reference", s.zip, "--write"), 1);
   assert.deepEqual(s.pedal.stored, [0, 1, 2]);
   assert.equal(s.closed, 1);
+});
+
+test("gp50 selected patch: the pages ask before every patch, the runner only before the first and after the last", async (t) => {
+  const asked = (pedal) => pedal.sent.filter((m) => toHex(m) === toHex(buildRead(READS.slot))).length;
+  const items = [5, 6, 7].map((slot) => ({ slot, prst: buildPrst(`n${slot}`, new Array(511).fill(slot)) }));
+
+  // The pages' way (the default): asked 3 times, plus once after.
+  const pedal = new FakeGp50({ writable: true, later: setImmediate });
+  const seen = [];
+  const writer = new Gp50Writer(pedal.input, pedal.output, new Logger(), { ...FAST, range: ANY_PATCH });
+  const r = await writePatches(writer, items, { log: new Logger(), confirmed: true, guard: (f) => seen.push(f.selected), onProgress: () => { pedal.slot = 60; } });
+  assert.equal(r.problem, null);
+  assert.equal(asked(pedal), 4);
+  assert.deepEqual(seen, [2, 60, 60], "a selection changed mid-run reaches the guard");
+
+  // The runner: 1 at connecting, 1 before the first, 1 after the last.
+  const s = setup(t);
+  const some = s.file("some.zip", createZip([20, 21, 22, 23].map((n) => ({ name: slotFileName(n, `Fake ${n}`), data: s.reference[n] }))));
+  s.pedal.later = (fn) => { if (s.pedal.stored.length === 2) s.pedal.slot = 9; setImmediate(fn); };
+  assert.equal(await s.run("restore", some, "--start", "0", "--out", s.dir, "--reference", s.zip, "--write"), 0);
+  assert.equal(asked(s.pedal), 3);
+  assert.match(s.text(), /4 of 4 written and read back identical.*selected 2 before, 9 after/);
 });
 
 test("gp50 runner: a slow acknowledgement is waited for, and logged", async () => {

@@ -4067,3 +4067,100 @@ developer's Edge run.**
 
 **Next:** after the Edge run, stage 2 (the effect map); no pedal writes needed
 for it. Don't purge `2026-11-22_gp50-first`, `-write` or `-stage1`.
+
+## 2026-11-23: GP-50 speed: about 0.65 s a patch, every check kept
+
+Developer: "worth running the speed tests. At any point if errors are
+detected we can back off that step", not trading integrity for speed. Run
+unattended. Session folder `2026-11-23_gp50-speed`: every log below.
+
+**Goal and pass bar** (set before the tests): faster writes and reads with
+no check removed (every patch read back; overwrite only what's in the
+reference). A change passes on a round trip moved by 45 and back (every patch
+different) if every check over all 100 is MATCH, every read-back identical,
+no warning other than held acknowledgements, and those no more than about 4
+per 100 patches (stage 1: 18 in 1,082, 1-4 per 100).
+
+**Where the time went** (stage 1, about 3.1 s a patch): 28 gaps of 20 ms
+between frames, which Windows' timer made about 1.0 s; 0.5 s before and after
+each patch; three reads each followed by 0.2 s (which patch is selected, 152
+ms; the patch about to be overwritten; the read-back). The 29 frames are the
+pedal's format (Suite's own write, byte for byte), kept: the pedal answers
+each in 1-3 ms. From the stage-1 log: the pedal's unasked "patch list
+changed" (`12 1b 02`) comes in the same millisecond as the last frame's
+acknowledgement, 100-113 ms after it, so the 0.5 s after waited for nothing.
+
+**1. Reads, 50 ms after each instead of 200** (read only, no writes): check
+of all 100 at 200 / 100 / 50 ms: 24.5 / 15.0 / 9.8 s, MATCH each, then twice
+more at 50 ms (9.9, 9.8 s). No warnings. Not tried below 50 ms: a lock-up
+there would need a power cycle, with nobody here.
+
+**2. Test A, writes: no gap between frames, 0.1 s before and after** (reads
+at 200 ms; `gp50_roundtrip_2026-11-23T17-29-43.log`): PASSED, every check
+MATCH, 200 of 200 read back identical. 100 patches in 165 / 158 s with 4 and
+3 started again. 7 held acknowledgements (frames 7-21), more than stage 1's
+rate would predict (about 3); each recovered as before (came out with the
+next read, patch written on the second attempt).
+
+**The 5 s wait buys nothing** (all logs, stage 1 and these): the only
+acknowledgements later than 200 ms that came by themselves were from stage
+1's own pause experiment (2 s and 10 s pauses mid-patch). Otherwise, in
+about 37,000 frames, every one came within 122 ms, or not until the next
+message (25 held). So 1 s, as at first; a timeout costs about 1 s instead of
+5 s, and the patch is still read back.
+
+**3. Test B, all together: A's writes, 50 ms reads, 1 s wait, and the runner
+asks which patch is selected once** (before the first patch and after the
+last; `gp50_roundtrip_2026-11-23T17-37-11.log`): PASSED, every check MATCH
+(10-11 s each), 200 of 200 read back identical, **100 patches in 67 / 65 s**
+(stage 1: about 310 s), 2 and 1 started again. 3 held acknowledgements, as
+stage 1's rate. A and B sent frames at the same pace, so A's 7 was likely
+chance; A and B together: 10 in 400 (2.5 per 100, stage 1: 1.7). Warnings:
+only the 3 held ones. "Patch list changed" 200 times for 200 writes. Selected-
+patch reads in the log: 216 in A, 14 in B. Comparison note: stage 1's round
+trip moved by 45 (same test, same pedal, the day before) is the baseline; it
+wasn't run again, to save writes.
+
+**Now the defaults** (`writer.js`, `device.js`): frames 0 ms apart, 0.1 s
+before and after a patch, 1 s for an acknowledgement, 50 ms after a read;
+`writePatches({selectedEach: false})` from the runner only (the pages' guard
+refuses while one of 55-99 is selected, so they still ask before every
+patch). DESIGN.md "GP-50 writes" says so. A check with the defaults
+afterwards: MATCH, 10.9 s. The pedal holds the reference, on patch 84.
+Not yet run in Edge: the developer's Edge run (status below) will be the
+first with these values in a browser.
+
+**Tests:** 1 new (the pages ask before every patch and see a change made
+mid-run; the runner asks twice, and reports where the pedal ended up);
+suite 231 pass. The write page in the app's browser: loads, no console
+errors, says "within 1 s", and loads the new values.
+
+**Patch writes:** 410 begun (207 + 203, each attempt counted), 1,565 in all
+of about 2,000.
+
+## 2026-11-23: Status (start here next session)
+
+Supersedes the status entries above. Topic: **GP-50 speed tuned; waiting for
+the developer's Edge run.**
+
+**Known:**
+- Stage 1 done on Claude's side, now about 0.65 s a patch (entry above): 4
+  round trips MATCH at the old pace, 2 at the new (A, and B with every
+  change). Branch `gp50-experiments`, pushed,
+  not merged; live site unchanged at `58c0117`. Suite 231 pass. No open
+  questions.
+- **On the pedal now:** the reference zip, byte for byte; on patch 84.
+- Patch writes: 1,565 of about 2,000.
+- Runner, from the session folder:
+  `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js check --out . --reference ..\2026-11-22_gp50-first\gp50_all_2026-11-22T21-17-41.zip`
+
+**Saved up for the developer:**
+1. One run in Edge on `http://localhost:8000/gp50/write.html`, with a power
+   cycle in the middle: check, copy 0-44 into 55-99, unplug 10 s, check
+   "copied", put back, check, save the log into `2026-11-23_gp50-speed`.
+   The first run of the new pace in a browser.
+2. Listening: saved for stage 3.
+
+**Next:** after the Edge run, stage 2 (the effect map); no pedal writes needed
+for it. Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1` or
+`2026-11-23_gp50-speed`.
