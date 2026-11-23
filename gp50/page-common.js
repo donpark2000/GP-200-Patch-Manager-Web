@@ -19,10 +19,11 @@ export function download(name, data, type) {
 /**
  * @param {object} opts
  * @param {string[]} opts.buttons ids of the buttons that need the pedal
- * @param {(id: string) => boolean} [opts.allowed] whether a button may be pressed now, beyond being connected
+ * @param {(id: string) => string|null} [opts.whyNot] why a button can't be pressed now, beyond being
+ *   connected; shown in the element `<id>-why` if there is one
  * @returns {{log: Logger, reader: object|null, action: Function, refresh: Function}}
  */
-export function startPage({ title, buttons, makeReader, makeFake, allowed = () => true }) {
+export function startPage({ title, buttons, makeReader, makeFake, whyNot = () => null }) {
   // Shown in batches, the last lines only: redrawing the whole log for every
   // message slowed the page more and more. "Save log" has every line.
   let shown = [];
@@ -139,7 +140,12 @@ export function startPage({ title, buttons, makeReader, makeFake, allowed = () =
 
   function refresh() {
     $("connect").disabled = busy;
-    for (const id of buttons) $(id).disabled = busy || !page.reader || !allowed(id);
+    for (const id of buttons) {
+      const why = busy ? "Busy: wait until it's done." : !page.reader ? "Connect first." : whyNot(id);
+      $(id).disabled = why !== null;
+      const note = document.getElementById(`${id}-why`);
+      if (note) note.textContent = why ?? "";
+    }
   }
 
   function portLines() {

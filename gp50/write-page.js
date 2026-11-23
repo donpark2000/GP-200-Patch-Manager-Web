@@ -20,7 +20,7 @@ const page = startPage({
     return new Gp50Writer(input, output, log);
   },
   makeFake: (FakeGp50) => (window.fakePedal = new FakeGp50({ writable: true })),
-  allowed,
+  whyNot,
 });
 const { log, action } = page;
 
@@ -30,37 +30,43 @@ let lastRead = null; // checkAll's result
 let stopRequested = false;
 const touched = new Set(); // slots this page has written
 
-function allowed(id) {
-  if (!reference) return false;
-  if (id === "check") return true;
-  if (!checked || page.reader.halted) return false;
+function whyNot(id) {
+  if (!reference) return "Choose the reference zip first (section 2).";
+  if (id === "check") return null;
+  if (page.reader.halted) return "Writing stopped on a problem: press Connect again first.";
+  if (!checked) return "Needs a check of all 100 (section 3) since connecting and since the last write.";
   // Putting things back must work from any state, e.g. a copy that stopped
   // partway; the slots themselves are checked before each write.
-  return id === "write-reference" ? checked.complete : checked.pass;
+  if (id === "write-reference") return checked.complete ? null : "The last check didn't read all 100.";
+  return checked.pass ? null : "The last check didn't match.";
 }
 
 function forgetCheck() {
   checked = null;
 }
 
-$("reference").addEventListener("change", async () => {
+// The box is emptied once read, so choosing the same file again counts, and
+// the name is shown next to it. A file the browser put back after a reload
+// is read at once (journal 2026-11-22: the page looked hung).
+async function chooseReference() {
+  const file = $("reference").files[0];
+  if (!file) return;
   reference = null;
   forgetCheck();
-  const file = $("reference").files[0];
-  if (file) {
-    try {
-      reference = parseReference(await readZip(await file.arrayBuffer()));
-      $("ref-status").textContent = "100 patches, every CRC good.";
-      log.info(`Reference: ${file.name}, 100 patches, every CRC good`);
-    } catch (err) {
-      $("ref-status").textContent = `Can't use it: ${err.message}`;
-      log.error(`Reference ${file.name}: ${err.message}`);
-    }
-  } else {
-    $("ref-status").textContent = "Not chosen.";
+  try {
+    reference = parseReference(await readZip(await file.arrayBuffer()));
+    $("ref-status").textContent = `${file.name}: 100 patches, every CRC good.`;
+    log.info(`Reference: ${file.name}, 100 patches, every CRC good`);
+  } catch (err) {
+    $("ref-status").textContent = `Can't use ${file.name}: ${err.message}`;
+    log.error(`Reference ${file.name}: ${err.message}`);
   }
+  $("reference").value = "";
   page.refresh();
-});
+}
+$("reference").addEventListener("change", chooseReference);
+page.refresh();
+chooseReference();
 
 action("check", () => check($("expected").value));
 for (const [id, stage] of Object.entries(WRITE_BUTTONS)) action(id, () => write(stage));
