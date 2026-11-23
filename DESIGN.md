@@ -356,6 +356,20 @@ explanation.
 | 3. Copying | A converter that refuses with a reason, or lists what it changed | Tests pass; patches read back right on both pedals; the developer has listened |
 | 4. One app | Detects the pedal; GP-50 in the GP-200 screens | Suite passes; a full round trip on each pedal; one run in Edge |
 
+**GP-50 writes** (Claude, stage 1, from hardware tests; journal 2026-11-22,
+"GP-50 stage 1"). Unlike the GP-200's rule of no automatic rewrites:
+- An acknowledgement not in 5 s, or the pedal's `14 08 01` ("not stored"),
+  starts that patch again, up to 3 attempts. Before starting again, one read
+  (the selected patch number) brings out a held-up acknowledgement, then
+  quiet for 1 s. The pedal drops a half-sent patch, whatever the cut, and
+  takes the next write whole; a read during a write makes it answer the
+  last frame `14 08 01` and store nothing.
+- Every patch is still read back and compared, and any other problem (an
+  unknown answer, one acknowledgement too many, a read-back difference)
+  stops the run.
+- Writing to the selected patch is allowed: the pedal stays on it, and its
+  current patch reads as the new one at once (not yet listened to).
+
 **Working rules:** Claude works through a stage without approval at each
 step and reports at the end of each, or when hands, ears or a decision are
 needed (power cycles and listening are saved up).

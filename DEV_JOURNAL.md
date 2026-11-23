@@ -12,11 +12,20 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q9.** GP-50: why frame 27 of slot 84's write got no acknowledgement
-  (2026-11-22, write test step 3), and what the pedal does with a half-sent
-  patch.
+None.
 
 ## Resolved
+
+- **Q9. GP-50 late acknowledgement: closed 2026-11-22** (entry "GP-50 stage
+  1"). The pedal itself holds an acknowledgement back now and then (18 in
+  about 31,000 frames, from Node with no browser), and sends it only with
+  its answer to the next message; Windows' own timestamps put both at the
+  same millisecond. A half-sent patch is dropped, at any cut. Handled by
+  starting that patch again after a read; it worked all 18 times. Why the
+  pedal does it isn't known, and doesn't need to be. The original question:
+  - **Q9.** GP-50: why frame 27 of slot 84's write got no acknowledgement
+    (2026-11-22, write test step 3), and what the pedal does with a half-sent
+    patch.
 
 - **Q8. GP-50 effect codes vs. the GP-200's: closed 2026-11-20, mostly
   yes but not everywhere** (entry "GP-50: open-source projects; protocol
@@ -891,6 +900,18 @@ entry of that date). The skill's source now lives in the private repo
    done. Evidence: here, seven timing-test runs and several tool changes
    went into reproducing a byte change that, once checked in the editor,
    changed no setting at all.
+5. **Locate a delay with the lowest-level timestamp there is.** Before
+   blaming a layer for a late reply, log the time each layer saw it: the
+   operating system's own receive time tells the device from the software
+   above it. Evidence: a GP-50 acknowledgement 2.2 s late looked like a
+   browser problem; Windows' driver timestamps showed it arrived in the
+   same millisecond as the pedal's next answer, so the pedal held it.
+6. **Give the assistant its own route to the hardware.** A small helper
+   that drives the device without the user's app (here Windows' MIDI from
+   Python) lets the assistant run long hardware tests unattended; keep one
+   run in the real app for the end. Evidence: 1,100 GP-50 patch writes and
+   4 round trips ran without the developer; the Edge page had needed them
+   at each step.
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -3917,3 +3938,132 @@ approval needed at each step):**
 
 **Still from before:** the dashboard's `connect` count, "Problem:" and "Works
 on:" issues, GitHub's "New issue" page, the laptop.
+
+## 2026-11-22: GP-50 stage 1: command-line runner, the late acknowledgement, round trips
+
+Unattended, per DESIGN.md "Both pedals" (developer's go-ahead this session:
+"Yes, all closed"). Session folder `2026-11-22_gp50-stage1`: every log and
+zip below. Reference: `gp50_all_2026-11-22T21-17-41.zip` (`2026-11-22_gp50-first`).
+
+**Built** (`gp50/cli/`, never published; tests `tests/gp50-cli.test.js`):
+- `midi_bridge.py`: Windows' winmm from Python (nothing installed). Opens
+  only the one port named GP-50 (same rule as `isGp50Name`), sends only
+  whole SysEx messages, never `midiOutReset` (it sends note-offs). Passes
+  each message on with Windows' own timestamp.
+- `winmm.js`: Web MIDI-like input and output over the helper; puts SysEx
+  back together however Windows buffers it.
+- `run.js` / `commands.js`: `info`, `backup` (all, a range, one), `check`,
+  `restore` (files from a start patch), `roundtrip` (all moved by n and put
+  back, every step checked over all 100). Writes need `--write`, overwrite
+  only patches whose contents are in the reference zip. Log on disk line by
+  line (MIDI included), the rest on screen. Ctrl+C stops after the patch.
+- `gp50/restore.js`: which pedal a file is for, by its first bytes
+  (`TSRP` / `GP-50\0`); order and placement as the GP-200 restore; write and
+  read back each patch. The page's steps (`write-steps.js`) now use it.
+- The write gate takes a range: 55-99 unless asked; only the runner asks
+  for 0-99 (a test checks the pages never do).
+
+**Read only first:** all 100 equal `gp50_all_2026-11-23T00-03-25.zip`, 0
+retries, 26 s. Same reads as Edge's (a slot read 31-34 ms; "which patch is
+selected" always 152-153 ms, here too). So the route works.
+
+**Writing the selected patch** (84, the blank): stored, the pedal's list
+and its current patch (`12 41`) read as the new one at once, and it stays
+on 84; putting the blank back likewise. Not listened to.
+
+**Half-sent patches** (`gp50_exp-interrupt_...`), on 70 and on the selected 84:
+- Stopped after 1, 14 or 28 of 29 frames: the patch keeps its old contents
+  every time (read 2 s later); the selected patch's current contents too.
+- The full write right after a stop: stored. A stop on 70, then another
+  patch to 71: 70 unchanged, 71 stored.
+- A pause of 2 s or 10 s before frame 15, then the rest: stored. So the
+  pedal doesn't give up on a slow write.
+- A read (the selected patch, or patch 70) before frame 15, then the rest:
+  every frame acknowledged, but the last answered **`14 08 01`**, and
+  nothing stored. So a read in the middle spoils a write, and the pedal says
+  so. (The fake pedal now does the same.)
+- The runner killed (TerminateProcess) 450 ms into writing patch 9 of a
+  move by one: 0-8 moved, 9 and everything else its own; the Python helper
+  ended by itself; the next run connected at once. A kill between patches:
+  the same, nothing partial.
+
+**The late acknowledgement (Q9), without a browser.** The writer now waits
+5 s (was 1 s) and warns above 200 ms. It still happened: 18 times in 31,171
+frames (1,082 patch writes in the restores and round trips; 0 in the first
+45, then 1-4 per 100 patches). Never by itself within 5 s: each came only
+with the answer to the next message, a read sent after the timeout. In
+the log, Windows' timestamp for the acknowledgement and for that answer is
+the same millisecond (e.g. 118433 ms for both, 151 ms after the read was
+sent), so Windows had nothing until then: the pedal held it. Frames 20-28
+in 12 of the 18, the rest 1-7. Every other acknowledgement: 29,513 within
+5 ms, 250 in 6-15 ms, 1 in 16-50 ms (the last frame of a patch: 13-122 ms).
+
+**So the writer starts a patch again** (DESIGN.md "Both pedals", "GP-50
+writes"): after no acknowledgement in 5 s, or `14 08 01`, it reads the
+selected patch number (which brings a held one out), waits until quiet for
+1 s, and sends the patch again from frame 0; up to 3 attempts. Anything else
+still stops it. On the real pedal, with faults made on our side: an
+acknowledgement held back (frames 6 and 29) and a frame never sent (1, 13,
+29) were each written on the second attempt. Then the 18 real ones: each
+written on the second attempt, read back identical.
+
+**Results** (all `restore` and `roundtrip` logs; every check reads all 100):
+- Range: 55-99 from a zip (`reference_55_to_99.zip`), 45 written; check
+  MATCH. Full: the reference zip into 0-99, twice (after each kill test):
+  100 of 100 written, check MATCH. One: `15-US Lead.prst` to 99, check
+  DIFFERENT at 99 only, then `99-GP50.prst` back.
+- **3 round trips, all moved by one and put back** (`gp50_roundtrip_2026-11-23T02-14-38.log`):
+  every check MATCH, 600 writes read back identical, 12 started again. A
+  move by one changes only 56 patches (the 45 blanks are alike), so one more,
+  **moved by 45** (every patch different): MATCH both ways, 1 started again.
+- A GP-200 backup zip given to `restore`: each of its files refused ("this
+  is a GP-200 patch, and the pedal is a GP-50"), nothing sent but two reads.
+- The pedal holds the reference now, on patch 84, as at the start.
+
+**Speed:** about 3.1 s a patch, 5.2 min for all 100: the frames 1.0 s (20 ms
+apart, and Windows' timer rounds up), 0.5 s before and after, and three
+reads with 0.2 s after each (which patch is selected, the patch before, the
+read-back). Not tuned: stage 1 was about reliability.
+
+**Tests:** 20 new (230 in the suite, all pass). 27 safeguards broken one at a
+time in a copy: 7 missed at first, tests added; now 1 missed, and it can't be
+reached (a close while no frame is waiting; the read before starting again
+fails anyway).
+
+**Edge page** (`gp50/write.html`): same writer, so it starts patches again
+too. It now says next to the buttons why one is off, reads a file the
+browser put back after a reload, and empties the box once read so choosing
+the same file counts. Checked with the fake pedal in the app's browser:
+reasons shown at each stage; a lost acknowledgement started the patch again
+(8 + 29 frames), stored once.
+
+**Patch writes:** 1,124 begun this session (each attempt and half-sent one
+counted), 1,155 in all of about 2,000.
+
+**Found on the way:** the Bash tool fails on a long heredoc (it reports an
+unmatched quote); files were written with the editor instead.
+
+## 2026-11-22: Status (start here next session)
+
+Supersedes the status entries above. Topic: **GP-50 stage 1, waiting for the
+developer's Edge run.**
+
+**Known:**
+- Stage 1 done on Claude's side (entry above): runner, retries, 4 round
+  trips MATCH. Branch `gp50-experiments`, pushed, not merged; live site
+  unchanged at `58c0117`. Suite 230 pass. No open questions.
+- **On the pedal now:** the reference zip, byte for byte; on patch 84.
+- Patch writes: 1,155 of about 2,000.
+- Run the runner from the session folder, e.g.
+  `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js check --out . --reference ..\2026-11-22_gp50-first\gp50_all_2026-11-22T21-17-41.zip`
+
+**Saved up for the developer** (asked for at the end of this session):
+1. One run in Edge on `http://localhost:8000/gp50/write.html`, with a power
+   cycle in the middle: check, copy 0-44 into 55-99, unplug 10 s, check
+   "copied", put back, check, save the log into `2026-11-22_gp50-stage1`.
+2. Listening: not needed for stage 1 (the patches written are byte for byte
+   the factory ones); saved for stage 3.
+3. Speed: whether to tune it, and to what target (criteria first).
+
+**Next:** after the Edge run, stage 2 (the effect map); no pedal writes needed
+for it. Don't purge `2026-11-22_gp50-first`, `-write` or `-stage1`.
