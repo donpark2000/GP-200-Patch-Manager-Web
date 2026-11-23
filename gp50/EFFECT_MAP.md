@@ -6,8 +6,8 @@ Don't edit by hand: change the choices file and run the tool.
 
 | | same | rename | close | conflict | none | out of scope |
 |---|---|---|---|---|---|---|
-| GP-50 to GP-200 | 100 | 6 | 4 | 2 | 0 | 100 |
-| GP-200 to GP-50 | 69 | 4 | 91 | 2 | 109 | 30 |
+| GP-50 to GP-200 | 100 | 6 | 6 | 0 | 0 | 100 |
+| GP-200 to GP-50 | 69 | 4 | 93 | 0 | 109 | 30 |
 
 - **same / rename**: the same effect, every setting carried over (some to another position).
 - **close**: a setting is lost or limited, or a near match picked by hand (with the reason).
@@ -17,13 +17,14 @@ Don't edit by hand: change the choices file and run the tool.
 
 ## 1. Conflicts (listen before copying)
 
-- **0x03000022**: Same code, but Valeton describes it three ways: Valeton Suite's file says Sora Fuzz, based on a Tone Bender Mk II; the GP-50 manual (p. 34) says Sora Fuzz, based on a Fuzz Face, word for word its text for Red Haze (likely copied by mistake); the GP-200 editor says Lazaro, based on a Big Muff (the GP-200's own Sora Fuzz is 0x03000026). Listen on both before copying.
-- **0x0A000020**: Same code, but Valeton's files disagree: the GP-50's says EV 4x12 ("Halen 4x12"), and the GP-50 manual (p. 43) says a Peavey 6505 4x12; the GP-200's says UK TD, a 1968 Marshall basketweave 4x12. The GP-200's own EV, 0x0A000023, is the Peavey 6505 4x12: if listening agrees with the manual, copy the GP-50's EV 4x12 to that one instead. Listen on both before copying.
+None.
 
 ## 2. GP-50 to GP-200: close
 
 | From | To | Why | Settings |
 |---|---|---|---|
+| Sora Fuzz | Lazaro | Developer, 2026-11-23: usable and close either way. Valeton describes this code three ways (Suite: Sora Fuzz, a Tone Bender Mk II; GP-50 manual: a Fuzz Face, likely copied from Red Haze; GP-200: Lazaro, a Big Muff); the same code is kept | moved: VOL 1->2; paired: Fuzz = Sustain (by position); set to default: Tone 50 |
+| EV 4x12 | UK TD | Developer, 2026-11-23: usable and similar either way. Valeton's files disagree on what this code is (GP-50: EV 4x12, a Peavey 6505 4x12 per its manual; GP-200: UK TD, a Marshall basketweave 4x12), but Peavey's EV/6505 4x12 is Marshall-style, so the same code is kept | moved: VOL 0->1; set to default: Low Cut 19, High Cut 20001 |
 | Rev Echo (0x0B000013) | Rev Echo (0x0B000028) | Same name; another code on the GP-200 (reverse delay on both) | moved: Sync 3->4, Trail 4->5; set to default: Level 50 |
 | Plate (0x0C00000F) | Plate (0x0C000003) | The GP-200 has one plate reverb | moved: Decay 2->1, Damp 4->2, Trail 6->3; paired: Damp = High Damp |
 | Plate L (0x0C000010) | Plate (0x0C000003) | The GP-200 has one plate reverb | moved: Decay 2->1, Trail 6->3; set to default: High Damp 50 |
@@ -42,6 +43,7 @@ None.
 | Gate 3 (0x00000021) | Gate (0x0000001B) | The GP-50's only noise gate (Gate 3 is an expander) | dropped: Ratio, Attack, Release, Hold, Hysteresis |
 | OD 9 (0x03000001) | Green OD (0x03000000) | Tube Screamer TS9 / TS808 | nothing |
 | Scream OD (0x03000008) | Green OD (0x03000000) | Both Tube Screamer style | dropped: Fat, Air |
+| Lazaro | Sora Fuzz | Developer, 2026-11-23: usable and close either way. Valeton describes this code three ways (Suite: Sora Fuzz, a Tone Bender Mk II; GP-50 manual: a Fuzz Face, likely copied from Red Haze; GP-200: Lazaro, a Big Muff); the same code is kept | moved: Volume 2->1; paired: Sustain = Fuzz (by position); dropped: Tone |
 | B-Jet (0x04000012) | Jet (0x04000011) | Flanger (B-Jet is tuned for bass) | paired: Pre Delay = P.Delay (by position) |
 | Vibrato T (0x04000018) | Vibrato (0x04000017) | Vibrato. Vibrato T's Sens sets how much playing strength changes the depth (the GP-200 editor's text), not the depth itself: dropped, Depth set to default | paired: Output = VOL (by position); dropped: Sens (not the same setting); set to default: Depth 50 |
 | G-Phase (0x0400001A) | O-Phase (0x04000019) | Phaser (a green BBD phaser / MXR Phase 90) | moved: Rate 1->0, Sync 2->1; dropped: Depth |
@@ -65,13 +67,13 @@ None.
 | Dizz VH S (0x07000066) | Dizz VH (0x07000065) | Diezel VH4, another version | nothing |
 | Dizz VH+ S (0x0700006B) | Dizz VH+ (0x0700006A) | Diezel VH4, another version | nothing |
 | Bog RedM (0x0700006E) | Bog RedV (0x0700006D) | Bogner XTC red channel, modern / vintage | nothing |
-| TWD CP, DARK VIT, FOXY 1, D STAR, FOXY 2, J-120, Dark Twin, UK GRN 1, Bellman 1, SUP Star, Dark CS, UK GRN 2, Mess, Bog, Eagle, Solo, Juice, Dizz, AMPG 1 | TWD CP 1x8, Dark VIT 1x12, Foxy 1x12, L-Star 1x12, Foxy 2x12, J-120 2x12, Dark Twin 2x12, UK GRN 2x12, Bellman 2x12, SUP Star 2x12, Dark CS 2x12, UK GRN 4x12, Mess 4x12, Bog 4x12, Eagle 4x12, Solo 4x12, Juice 4x12, Dizz 4x12, AMPG 4x10 | same code | moved: Volume 1->0; dropped: Low Cut, High Cut |
+| TWD CP, DARK VIT, FOXY 1, D STAR, FOXY 2, J-120, Dark Twin, UK GRN 1, Bellman 1, SUP Star, Dark CS, UK TD, UK GRN 2, Mess, Bog, Eagle, Solo, Juice, Dizz, AMPG 1 | TWD CP 1x8, Dark VIT 1x12, Foxy 1x12, L-Star 1x12, Foxy 2x12, J-120 2x12, Dark Twin 2x12, UK GRN 2x12, Bellman 2x12, SUP Star 2x12, Dark CS 2x12, EV 4x12, UK GRN 4x12, Mess 4x12, Bog 4x12, Eagle 4x12, Solo 4x12, Juice 4x12, Dizz 4x12, AMPG 4x10 | same code | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | US STO (0x0A00000C) | L-Star 1x12 (0x0A000009) | Mesa/Boogie 1x12 | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | UK G12 (0x0A00000E) | UK GRN 2x12 (0x0A000013) | Marshall, 1x12 / 2x12 | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | Bellman 2 (0x0A00001E) | Bellman 2x12 (0x0A000016) | Fender Bassman, 4x10 / 2x12 | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | UK LD (0x0A00001F) | UK GRN 4x12 (0x0A000022) | Marshall 4x12 | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | UK MD (0x0A000021) | UK GRN 4x12 (0x0A000022) | Marshall 4x12 | moved: Volume 1->0; dropped: Low Cut, High Cut |
-| EV (0x0A000023) | EV 4x12 (0x0A000020) | Same name; see the conflict on the GP-50's EV 4x12 | moved: Volume 1->0; dropped: Low Cut, High Cut |
+| EV (0x0A000023) | EV 4x12 (0x0A000020) | Peavey 6505 4x12 on both (the GP-50 manual's EV 4x12) | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | Uban (0x0A000027) | Bog 4x12 (0x0A000025) | Bogner 4x12 | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | UK Dark (0x0A00002B) | UK GRN 4x12 (0x0A000022) | Marshall 4x12 (1968) | moved: Volume 1->0; dropped: Low Cut, High Cut |
 | UK 75 (0x0A000030) | UK GRN 4x12 (0x0A000022) | Marshall 4x12 (G12T-75 / Greenback speakers) | moved: Volume 1->0; dropped: Low Cut, High Cut |

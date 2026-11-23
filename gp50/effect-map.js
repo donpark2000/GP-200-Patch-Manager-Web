@@ -271,7 +271,9 @@ export function renderReview(map) {
     "- **none**: no match; a patch using it can't be copied as it is.",
     "- **out of scope**: NAM/SnapTone and user IRs (DESIGN.md \"Both pedals\").", "");
   L.push("## 1. Conflicts (listen before copying)", "");
-  for (const [k, e] of Object.entries(map.toGp50)) if (e.match === "conflict") L.push(`- **${k}**: ${e.why}`);
+  const conflicts = Object.entries(map.toGp50).filter(([, e]) => e.match === "conflict");
+  for (const [k, e] of conflicts) L.push(`- **${k}**: ${e.why}`);
+  if (!conflicts.length) L.push("None.");
   for (const [dir, src, , title] of dirs) {
     L.push("", `## ${dir === "toGp200" ? 2 : 4}. ${title}: close`, "", "| From | To | Why | Settings |", "|---|---|---|---|");
     const rows = new Map(); // same code and the same changes: one row

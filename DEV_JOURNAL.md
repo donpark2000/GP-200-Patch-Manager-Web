@@ -4365,9 +4365,10 @@ built; the developer's review is next.**
 - No open questions.
 
 **Saved up for the developer:**
-1. Review `gp50/EFFECT_MAP.md`: the 2 conflicts, the close lists (sections 2
-   and 4; the hand-picked rows have a reason), and the no-match list
-   (section 5). Changes go in `gp50/effect-map-choices.json`; then run the
+1. Review `gp50/EFFECT_MAP.md`: the close lists (sections 2 and 4; the
+   hand-picked rows have a reason) and the no-match list (section 5); the
+   two conflicts were closed by the developer (entry "The two conflicts
+   closed"). Changes go in `gp50/effect-map-choices.json`; then run the
    tool. Stage 2 is done when this review is.
 2. Listening: saved for stage 3 (the two conflicts are on that list).
 
@@ -4411,3 +4412,28 @@ the Sync reading: with Sync on, Rate sets a "tap divide value", default 1/4.
 
 Choices file, map and review page updated; 1 test added (a null pair). No
 pedal writes.
+
+## 2026-11-23: The two conflicts closed by the developer; listening plan
+
+**Developer:** neither conflict matters for copying. 0x0A000020: Peavey made
+the EV cabs for years and later sold them as the 6505, all Marshall-style, so
+"any of them" gives usable, similar sounds. 0x03000022: likewise, any of the
+possible matches (Tone Bender, Fuzz Face, Big Muff) is usable and close.
+**Done:** both are now close matches on the same code, with that reason, in
+both directions (`effect-map-choices.json`; the conflicts list is empty). The
+GP-200's EV (0x0A000023) still goes to the GP-50's EV 4x12. Counts now: GP-50
+to GP-200 same 100, rename 6, close 6; GP-200 to GP-50 same 69, rename 4,
+close 93, none 109.
+
+**Listening (developer's offer):** Claude makes several patches for both
+pedals and the developer plays them side by side to pick the closest. Saved
+for stage 3, where listening is already planned; the GP-200 patches need the
+developer's OK first (DESIGN.md "Both pedals": no GP-200 writes before stage
+3, and then only after asking).
+
+**Seen in passing: a flaky test.** `gp50 read all: the late rest of a failed
+reply can't pass for the next slot's` (`tests/gp50.test.js`, from
+2026-11-22) failed once in four full runs, passed alone. It uses real timers
+(a reply's rest 110 ms after a 100 ms timeout, the next reply 40 ms late), so
+a busy machine can reorder them: against the standards' "tests don't read
+the clock". Not changed yet.
