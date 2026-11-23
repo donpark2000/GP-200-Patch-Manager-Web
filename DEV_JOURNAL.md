@@ -4620,3 +4620,33 @@ chain order, on/off, CTRL/EXP (find where the GP-50 keeps them), the converter
 rules in DESIGN.md, the patch's report of what was substituted, dropped or
 limited, and the round-trip test (all-same patches unchanged). Don't purge
 `2026-11-22_gp50-first`, `-write`, `-stage1` or `2026-11-23_gp50-speed`.
+
+## 2026-11-23: GP-50 patch names: Valeton style (developer)
+
+**Measured** on the 2026-09-30 GP-200 backup (a scratchpad script reading
+each `.prst`'s name with `prstFileName`): 194 named patches (not "It's
+GP-200"), **75 over 10 characters** (11: 16, 12: 18, 13: 11, 14: 6, 15: 12,
+16: 12). A plain cut at 10 makes **9 groups of different names the same**,
+all numbered sets whose number is cut off ("Wu Shizheng1-4" → "Wu Shizhen",
+"Nathania Jualim1-4", "Angelo Paddeu1/2", ...). Valeton's own GP-50 factory
+names (`2026-11-22_gp50-first`) are all 10 or fewer, and shorten by running
+words together ("LuxuryRiff", "ModernCore") and with LD/CL/AC ("Smooth LD",
+"Tweedy CL", "STD AC").
+
+**Two rules tried on all 75:** (A) cut, keeping a trailing number: 0 groups
+the same; (B) Valeton style: keep the number, Lead→LD, Clean→CL, drop small
+words (of, the, a, and, in), run words together, cut: 0 groups the same.
+Examples (cut / B): "Lack of Ox" / "LackOxygen", "Nathania J" /
+"NathaniaJ3", "Modern Cle" / "Modern CL", "Slow Danci" / "SlowDancin" (B
+keeps more letters, but may read less easily). One flaw found in the trial:
+"Friedman BE100" came out "Friedma100", the number taken as a patch number;
+only 1-2 digits after a letter count, and not when they're part of a word
+like "BE100".
+
+**Developer chose B** (DESIGN.md, "Converter rules"). Duplicates that remain
+are kept and reported; the GP-200 already has some ("JCM800 Recipe" twice).
+
+**Still to check on hardware** (stage 3, within the runner's GP-50
+exception): the GP-50's file has a 16-byte name field, so whether the pedal
+cuts, shows or refuses an 11-16 character name isn't known; and whether it
+shows the GP-200's punctuation ( ) . ' as typed. One test write answers both.

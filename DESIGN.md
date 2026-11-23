@@ -426,6 +426,14 @@ going to get without sound tests").
   assignment is dropped, so it doesn't sit at one fixed setting.
 - **A stand-in stays off:** a CTRL or footswitch assignment that would switch
   it on is dropped too.
+- **Patch names, GP-200 to GP-50: Valeton style** (developer, 2026-11-23).
+  The GP-50 takes 10 characters, the GP-200 16. A name that fits is kept as
+  it is; otherwise, stopping once it fits: keep a 1-2 digit number at the
+  end (not one that's part of a word, as in "BE100"), Lead→LD and
+  Clean→CL, drop "of", "the", "a", "and", "in", run the words together,
+  then cut. As Valeton names its own GP-50 patches ("LuxuryRiff", "Smooth
+  LD"). Two names that still come out the same are kept and the report says
+  so (duplicate names are allowed). GP-50 names fit the GP-200 unchanged.
 - All of these are in the patch's report. Where the GP-50 keeps its EXP and
   CTRL settings in its 552-byte file isn't known yet (stage 3 finds it).
 
