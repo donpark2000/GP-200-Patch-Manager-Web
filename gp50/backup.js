@@ -6,11 +6,12 @@ export const ATTEMPTS = 3;
 
 /**
  * @param {import("./device.js").Gp50Reader} reader
+ * Reads slots `from` up to, not including, `count`.
  * @returns entries read ({slot, name, prst}), failed slot numbers, retries,
  *   slots whose name isn't the one in the pedal's list, the selected slot
  *   before and after, and whether the user stopped it
  */
-export async function readAllSlots(reader, { log, onProgress = () => {}, isCancelled = () => false, count = NAME_COUNT } = {}) {
+export async function readAllSlots(reader, { log, onProgress = () => {}, isCancelled = () => false, from = 0, count = NAME_COUNT } = {}) {
   const entries = [];
   const failed = [];
   const wrongName = [];
@@ -18,10 +19,10 @@ export async function readAllSlots(reader, { log, onProgress = () => {}, isCance
   let cancelled = false;
   const selectedBefore = await reader.readSlot();
   const names = await reader.readNames();
-  for (let slot = 0; slot < count; slot++) {
+  for (let slot = from; slot < count; slot++) {
     if (isCancelled()) {
       cancelled = true;
-      log.warn(`Stopped after ${slot} of ${count} slots`);
+      log.warn(`Stopped after ${slot - from} of ${count - from} slots`);
       break;
     }
     let patch = null;
@@ -46,7 +47,7 @@ export async function readAllSlots(reader, { log, onProgress = () => {}, isCance
       if (patch.name !== names[slot]) wrongName.push(slot);
       entries.push({ slot, ...patch });
     }
-    onProgress(slot + 1, count);
+    onProgress(slot + 1 - from, count - from);
   }
   // Not worth losing the patches over if the pedal has gone.
   const selectedAfter = await reader.readSlot().catch(() => null);

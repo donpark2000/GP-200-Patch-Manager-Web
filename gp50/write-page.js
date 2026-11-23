@@ -6,7 +6,8 @@ import { readZip } from "../src/core/unzip.js";
 import { createZip } from "../src/core/zip.js";
 import { slotFileName, slotRanges } from "./backup.js";
 import { $, download, fileStamp, startPage } from "./page-common.js";
-import { checkAll, describeDiff, expectedAfter, parseReference, runStage, STAGES } from "./write-steps.js";
+import { describeDiff } from "./restore.js";
+import { checkAll, expectedAfter, parseReference, runStage, STAGES } from "./write-steps.js";
 import { Gp50Writer } from "./writer.js";
 
 const WRITE_BUTTONS = { "write-first": "first", "write-copy": "copy", "write-reference": "reference" };

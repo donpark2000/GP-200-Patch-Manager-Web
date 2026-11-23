@@ -4,10 +4,11 @@
 
 import { Gp50Reader } from "./device.js";
 import { parseFrame, toHex } from "./protocol.js";
-import { ACK, buildPatchWrite, WriteGate } from "./write-protocol.js";
+import { ACK, buildPatchWrite, TEST_RANGE, WriteGate } from "./write-protocol.js";
 
-/** Other projects wait 150-300 ms; nothing is sent after a missing one here, so waiting longer is safe. */
-export const ACK_TIMEOUT_MS = 1000;
+/** Normally 1-30 ms, 113 ms for a patch's last; one came after 2.2 s (journal, Q9). */
+export const ACK_TIMEOUT_MS = 5000;
+export const ACK_SLOW_MS = 200;
 export const FRAME_GAP_MS = 20;
 /** Before and after a write: time for the pedal to store things, and for a surplus acknowledgement to show up. */
 export const WRITE_SETTLE_MS = 500;
@@ -15,9 +16,9 @@ export const WRITE_SETTLE_MS = 500;
 const sleep = (ms) => (ms ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve());
 
 export class Gp50Writer extends Gp50Reader {
-  constructor(input, output, log, { ackTimeoutMs = ACK_TIMEOUT_MS, frameGapMs = FRAME_GAP_MS, writeSettleMs = WRITE_SETTLE_MS, ...rest } = {}) {
+  constructor(input, output, log, { ackTimeoutMs = ACK_TIMEOUT_MS, range = TEST_RANGE, frameGapMs = FRAME_GAP_MS, writeSettleMs = WRITE_SETTLE_MS, ...rest } = {}) {
     super(input, output, log, rest);
-    Object.assign(this, { ackTimeoutMs, frameGapMs, writeSettleMs });
+    Object.assign(this, { ackTimeoutMs, range, frameGapMs, writeSettleMs });
     this.halted = null; // why writing stopped, once it has
     this.closed = false;
     this.writing = false;
@@ -34,8 +35,8 @@ export class Gp50Writer extends Gp50Reader {
   /** @returns {Promise<{frames: number, ms: number, slowestAckMs: number}>} */
   async writeSlotPatch(slot, prst, { confirmed = false } = {}) {
     if (confirmed !== true) throw new Error("Refused: the write wasn't confirmed");
-    const frames = buildPatchWrite(slot, prst);
-    const gate = new WriteGate(slot, prst);
+    const frames = buildPatchWrite(slot, prst, this.range);
+    const gate = new WriteGate(slot, prst, this.range);
     return this._queued(async () => {
       if (this.halted) throw new Error(`Refused: writing stopped earlier (${this.halted}). Press Connect again first`);
       try {
@@ -65,7 +66,9 @@ export class Gp50Writer extends Gp50Reader {
       } catch (err) {
         throw new Error(`Writing slot ${slot}, frame ${i + 1} of ${frames.length}: ${err.message}`);
       }
-      times.push(Math.round(performance.now() - sentAt));
+      const took = Math.round(performance.now() - sentAt);
+      if (took > ACK_SLOW_MS) this.log.warn(`Slow acknowledgement: slot ${slot}, frame ${i + 1} of ${frames.length}, ${took} ms`);
+      times.push(took);
     }
     const ms = Math.round(performance.now() - t0);
     await sleep(this.writeSettleMs);

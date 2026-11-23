@@ -1,18 +1,21 @@
-// The GP-50 patch write and its safety gate. Used only by the write test
-// (write.html); the read-only page doesn't load it (tests/gp50-write.test.js).
-// CLAUDE.md allows writes to slots 55-99 only, after confirmation in the app.
+// The GP-50 patch write and its safety gate. Used by the write test
+// (write.html) and the command-line runner (cli/); the read-only page doesn't
+// load it (tests/gp50-write.test.js). CLAUDE.md: the page may write slots
+// 55-99 only, after confirmation in the app; the runner any slot.
 //
 // Message (facts from drewmerc302/valeton-gp50, MIT, (c) 2026 Andrew
 // Mercurio; a real Suite write is the test fixture):
 //   payload = [0x11, 0x4f, slot, 0, 0, 0] + the .prst from 0x19 (name, body)
 //   in 29 frames of up to 19 bytes, each acknowledged by 14 08 00
 
-import { crc8, diffOffsets, frameToWire, parseFrame, PRST_LEN, toHex } from "./protocol.js";
+import { crc8, diffOffsets, frameToWire, NAME_COUNT, parseFrame, PRST_LEN, toHex } from "./protocol.js";
 
 export const KIND_WRITE = 0x11;
 export const WRITE_PATCH = 0x4f;
 export const WRITE_FIRST = 55;
 export const WRITE_LAST = 99;
+/** What may be written unless a wider range is asked for (only the runner does). */
+export const TEST_RANGE = Object.freeze({ first: WRITE_FIRST, last: WRITE_LAST });
 export const ACK = Object.freeze([0x14, 0x08, 0x00]);
 
 const NAME_OFF = 0x19;
@@ -20,10 +23,11 @@ const FRAME_LEN = 19;
 const PAYLOAD_LEN = 6 + PRST_LEN - NAME_OFF;
 export const FRAME_COUNT = Math.ceil(PAYLOAD_LEN / FRAME_LEN);
 
-export const mayWrite = (slot) => Number.isInteger(slot) && slot >= WRITE_FIRST && slot <= WRITE_LAST;
+export const mayWrite = (slot, { first, last } = TEST_RANGE) =>
+  Number.isInteger(slot) && slot >= 0 && slot < NAME_COUNT && slot >= first && slot <= last;
 
-function assertWritable(slot) {
-  if (!mayWrite(slot)) throw new Error(`Refused: slot ${slot} isn't one of ${WRITE_FIRST}-${WRITE_LAST}, the only slots this test may write`);
+function assertWritable(slot, range = TEST_RANGE) {
+  if (!mayWrite(slot, range)) throw new Error(`Refused: slot ${slot} isn't one of ${range.first}-${range.last}, the only slots this may write`);
 }
 
 /** Throws unless `prst` is a complete, undamaged GP-50 patch file. */
@@ -38,15 +42,15 @@ export function assertPrst(prst) {
 const writePayload = (slot, prst) => [KIND_WRITE, WRITE_PATCH, slot, 0, 0, 0, ...prst.slice(NAME_OFF)];
 const framePayload = (payload, i) => payload.slice(i * FRAME_LEN, (i + 1) * FRAME_LEN);
 
-/** The write as Suite sends it, for any slot. The gate lets only slots 55-99 be sent. */
+/** The write as Suite sends it, for any slot. The gate decides which slots may be sent. */
 export function encodePatchWrite(slot, prst) {
   assertPrst(prst);
   const payload = writePayload(slot, prst);
   return Array.from({ length: FRAME_COUNT }, (_, i) => frameToWire(FRAME_COUNT, i, framePayload(payload, i)));
 }
 
-export function buildPatchWrite(slot, prst) {
-  assertWritable(slot);
+export function buildPatchWrite(slot, prst, range) {
+  assertWritable(slot, range);
   return encodePatchWrite(slot, prst);
 }
 
@@ -56,8 +60,8 @@ export function buildPatchWrite(slot, prst) {
  * anything it passes nothing more.
  */
 export class WriteGate {
-  constructor(slot, prst) {
-    assertWritable(slot);
+  constructor(slot, prst, range) {
+    assertWritable(slot, range);
     assertPrst(prst);
     this.slot = slot;
     this.payload = writePayload(slot, prst);
