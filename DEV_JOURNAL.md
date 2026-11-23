@@ -12,7 +12,15 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-None.
+- **Q11. Copy pedal to pedal, with no files in between?** (developer,
+  2026-11-23: "If I have both devices connected, can you do device to device
+  copies?") Nothing in MIDI stops it: each pedal has its own USB-MIDI port,
+  and the converter works on patch bytes, so a direct copy is read, convert,
+  write. Limits now: Claude's runner may write only the GP-50 (CLAUDE.md), so
+  GP-200 to GP-50 could be direct, the other way only through the app's
+  Restore screen. Not yet tried: both pedals plugged in at once (port names,
+  the app's pedal detection). For the app: decide in stage 4 (DESIGN.md
+  plans the GP-50 in the GP-200 screens, not a copy screen).
 
 ## Resolved
 
