@@ -4584,3 +4584,39 @@ by side and compare each pair. **Claude's notes on it:**
   wahs (off on the GP-50 by rule). Same headphones or monitor for both.
 - **Hermetic test to add first:** a GP-50 patch converted to the GP-200 and
   back must come out unchanged where every effect is *same*; no ears needed.
+
+## 2026-11-23: Two points for stage 3 from the developer
+
+- **Patch names:** the GP-50 allows 10 characters, the GP-200 16, so a GP-200
+  name may have to change when copied: plain truncation, or something better
+  (to discuss in stage 3). Things to weigh then: two names that end up the
+  same once cut, and words that shorten well (abbreviations).
+- **The 45 GP-200 patches for listening: a consecutive run**, not picked
+  across the pedal (developer): A/B is far easier stepping up one patch at a
+  time on both pedals. Replaces "pick the 45 for coverage" above; coverage
+  can still decide which run of 45 (Claude can count what each run uses).
+
+## 2026-11-23: Status (start here next session)
+
+Supersedes the status entries above. Topic: **stage 2 done; stage 3 (the
+converter) next, starting with a discussion.**
+
+**Known:**
+- Stages 1 and 2 done (DESIGN.md "Both pedals"). Suite 240 pass. Branch
+  `gp50-experiments`, pushed, not merged; live site unchanged at `58c0117`.
+- **On the GP-50 now:** the reference zip, byte for byte; on patch 6.
+- Patch writes: 1,656 of about 2,000.
+- Rebuild the map: `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\make-effect-map.js`
+  (add `--check`, or `--patches <files, folders or zips>`).
+- No open questions.
+
+**To discuss first in stage 3 (developer):** patch names (10 characters on
+the GP-50, 16 on the GP-200; the entry above), and the listening test (entry
+"Stage 2 done", with a consecutive run of 45 GP-200 patches).
+
+**Stage 3 work:** module places (boosts and overdrives that sit in the
+GP-200's PRE or DST, its WAH module into the GP-50's PRE, a patch with both),
+chain order, on/off, CTRL/EXP (find where the GP-50 keeps them), the converter
+rules in DESIGN.md, the patch's report of what was substituted, dropped or
+limited, and the round-trip test (all-same patches unchanged). Don't purge
+`2026-11-22_gp50-first`, `-write`, `-stage1` or `2026-11-23_gp50-speed`.
