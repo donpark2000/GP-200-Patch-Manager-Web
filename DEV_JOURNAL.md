@@ -3863,36 +3863,57 @@ a plan.
   end of a stage. It may also help with Q9: a late acknowledgement there
   too would point away from the browser.
 
-Plan and rules proposed in chat, **not agreed yet**; `CLAUDE.md` unchanged
-(GP-50 writes: 55-99, confirmed in the app).
+**Agreed** (developer: "yes to the plan"): the stages and rules, now in
+DESIGN.md "Both pedals"; the `CLAUDE.md` write exception is updated. Also
+from the developer: forget NAM and IR; they test actual sounds themselves
+at the end; a factory reset is expected to work, else the pedal goes back
+as faulty; in their own testing several programs connected at once didn't
+interfere, but the other apps will be closed. Added by Claude while
+recording: the write page stays at 55-99 with confirmation, since only the
+runner needs more.
 
 ## 2026-11-22: Status (start here next session)
 
-Supersedes the status entries above.
+Supersedes the status entries above. Topic: **GP-50 stage 1**.
 
 **Known:**
-- Branch `gp50-experiments` (pushed, not merged). Live site unchanged at
-  `58c0117`; nothing to publish. No code changed this session; the suite
-  wasn't run (210 pass on 2026-11-22, before it).
-- GP-50 write test: step 2 passed (99 survived a power cycle). Step 3, the
-  copy, stopped at 84 after 29 of 45: one acknowledgement came 2.2 s late,
-  with the pedal's next message.
-- **On the pedal now** (after a power cycle): 0-54 factory, 55-83 the copies
-  of 0-28, 84-98 blank,
-  99 "US Lead". It was last on 84 (a write needs 0-54).
-- Open: Q9, where the acknowledgement was held up.
-- Session folders, **don't purge**: `2026-11-22_gp50-first` (the reference
-  zip), `2026-11-22_gp50-write` (logs, and the zip after the stop).
-- The developer says "patch", not "slot".
+- Plan and rules agreed: DESIGN.md "Both pedals". Branch `gp50-experiments`
+  (pushed, not merged). Live site unchanged at `58c0117`; nothing to
+  publish. No code changed this session; suite 210 pass at its end.
+- GP-50 write test: 99 survived a power cycle; the copy stopped at 84 after
+  29 of 45 (one acknowledgement 2.2 s late, with the pedal's next message;
+  Q9); the 29 copies survived a power cycle; the half-sent 84 is the blank
+  patch, byte for byte.
+- **On the pedal now:** 0-54 factory, 55-83 the copies of 0-28, 84-98 blank,
+  99 "US Lead", as in `gp50_all_2026-11-23T00-03-25.zip` (session folder
+  `2026-11-22_gp50-write`). Last on 84.
+- **Reference (put this back):** `gp50_all_2026-11-22T21-17-41.zip` in
+  `2026-11-22_gp50-first`. Don't purge either folder.
+- Windows' winmm opens the GP-50's ports from Python without a browser; the
+  app's built-in browser can't. 31 patch writes so far (1 + 29 + the
+  half-sent one), of about 2,000.
+- The developer leaves the pedal connected and on, with Edge's GP-50 pages
+  and Suite closed, and checks back later. They say "patch", not "slot".
 
-**Next:** first, the developer's answer to the plan (entry above); if not
-agreed:
-1. With the developer's OK, the change proposed in the entry above, with
-   tests. Then the suite, commit, Ctrl+F5 on the page.
-2. Read all and compare; continue the copy from 84; compare: MATCH.
-3. Unplug 10 s with the page open, 0-54, Connect, compare: MATCH. Save zip
-   and log. Good moment to listen (70 against 15).
-4. Put the zip's patches back in 55-99; compare: MATCH; save the log.
-5. Later: is one app for both pedals, or a converter, worth it.
-6. Still from before: the dashboard's `connect` count, "Problem:" and
-   "Works on:" issues, GitHub's "New issue" page, the laptop.
+**Next (stage 1; go-ahead given in the developer's first message, no
+approval needed at each step):**
+1. Keep the computer awake. New session folder for the run's logs and zips.
+2. A command-line runner: the same `gp50/` reader and writer in Node, over a
+   small Python winmm helper (no installs), with the log and tests on the
+   fake pedal. Not in the published site.
+3. **Read only first:** all 100 must equal `gp50_all_2026-11-23T00-03-25.zip`.
+   That proves the route before any write.
+4. The gate opened to any patch for the runner only. What a write does to
+   the selected patch isn't known: find out early, on one patch.
+5. Put the reference back; compare: MATCH.
+6. The late acknowledgement: find whether it comes by itself (wait 5 s), how
+   often, and what to do then. A half-sent patch is dropped (seen once), so
+   starting that patch again is a candidate. Interrupted writes tested on
+   purpose. Page: say why buttons are off; read a file already in the box.
+7. Single, range and full writes; then the 3 round trips, with the pass
+   criteria in DESIGN.md; put the reference back; MATCH.
+8. Report. Saved up for the developer: a power cycle and compare, one run
+   in Edge, listening.
+
+**Still from before:** the dashboard's `connect` count, "Problem:" and "Works
+on:" issues, GitHub's "New issue" page, the laptop.

@@ -326,6 +326,48 @@ debug info"). Same approach as the developer's Web-Games site.
 - **The dashboard is public**, linked as "Stats" in the footer and from
   Help's "About", which says what is counted (a new tab).
 
+## Both pedals (GP-200 and GP-50)
+
+Agreed with the developer 2026-11-22 (journal, "Big picture for both
+pedals"). The GP-50 is the developer's backup pedal.
+
+**Goals:**
+- Single patches, ranges, full backup and restore on both pedals.
+- Copy patches between the pedals through a mapping of effects: the same, a
+  clean rename, close, or no match. Close and no-match ones are reviewed
+  with the developer; a patch that can't be copied gives an error saying
+  why.
+- The GP-200 app isn't put at risk: it isn't changed before stage 4.
+- **NAM/SnapTone and user IRs are out of scope for copying** (developer:
+  doesn't use them). Backup and restore still carry the patch bytes as they
+  are.
+
+**Which pedal a file is for:** decided by its content, never its name.
+GP-200: starts `TSRP`, 1224 bytes. GP-50: starts `GP-50`, 552 bytes. Every
+file in a zip is checked; a file for the other pedal is refused with an
+explanation.
+
+**Stages:**
+
+| Stage | Work | Done when |
+|---|---|---|
+| 1. GP-50 reliable | The late acknowledgement (Q9); single, range, full backup and restore; interrupted writes | 3 round trips (all 100 moved by one, then put back) match byte for byte; one run by the developer in Edge |
+| 2. Effect map | A table in both directions, each control's order and range included | The developer has reviewed the close and no-match lists |
+| 3. Copying | A converter that refuses with a reason, or lists what it changed | Tests pass; patches read back right on both pedals; the developer has listened |
+| 4. One app | Detects the pedal; GP-50 in the GP-200 screens | Suite passes; a full round trip on each pedal; one run in Edge |
+
+**Working rules:** Claude works through a stage without approval at each
+step and reports at the end of each, or when hands, ears or a decision are
+needed (power cycles and listening are saved up).
+- **GP-50:** patch writes only, any slot: no firmware, global settings or
+  unknown commands. About 2,000 patch writes in all, counted in the
+  journal. The reference zip's patches are put back after each stage.
+- **GP-200:** no writes before stage 3, and then only after asking.
+- Commit and push to the branch; never merge or publish without the
+  developer's OK.
+- **Stop and report** if the pedal stops answering, or if any patch changes
+  that shouldn't.
+
 ## Phases
 
 ### Phase 1: read-only backup
