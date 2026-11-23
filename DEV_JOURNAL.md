@@ -3763,7 +3763,7 @@ name back in the box after a reload, without the page reading it.
 **To do:** say next to the buttons what is missing; read a file already in
 the box; make choosing the same file again count.
 
-## 2026-11-22: Status (start here next session)
+## 2026-11-22: Status before the copy step (superseded)
 
 Supersedes the status entries above.
 
@@ -3803,4 +3803,63 @@ or Done). **Steps 1-2 done** (entry above); **3 stopped at slot 84**; 55-83 hold
    log.
 6. Later: is one app for both pedals, or a converter, worth it.
 7. Still from before: the dashboard's `connect` count, "Problem:" and
+   "Works on:" issues, GitHub's "New issue" page, the laptop.
+
+## 2026-11-22: GP-50: a half-sent patch is dropped; plan for the late answer
+
+**Compared** (`gp50_all_2026-11-23T00-03-25.zip` against the reference zip, by
+script; log `gp50_test_2026-11-23T00-03-41.log`; both in
+`2026-11-22_gp50-write`): 100 files.
+- 0-54: 55 of 55 as the reference. 55-83: 29 of 29 hold the copy.
+- **84: byte for byte the blank patch**, as 85-98. 99: still "US Lead".
+
+So the pedal dropped a patch it had 27 of 29 frames of (Q9, second part;
+VLTN's finding, now seen on ours, once). Whether the pedal was power cycled
+before this read isn't known (asked, not answered), so "dropped" could mean
+at once or at the power cycle; either way nothing partial was kept. Step 4
+repeats the power cycle with the page open, so the log shows it.
+
+**Chance of finishing as it is:** one late acknowledgement in 868, and a copy
+of 45 patches needs 1,305. At that rate about 1 run in 5 would finish; from
+a single event, so only a rough guess, but running it again unchanged isn't
+a plan.
+
+**Proposed change to the write page** (Claude, not agreed or built):
+1. Wait up to 5 s for an acknowledgement (was 1 s; nothing is sent
+   meanwhile), and warn in the log above 200 ms. Shows whether a late one
+   comes by itself or only with the pedal's next message. Still stops if
+   none; still no automatic retry.
+2. The copy can continue after a stop: skip patches that already hold their
+   copy, and allow it after a complete check if every patch it would
+   overwrite is in the reference zip. The user decides, by pressing it.
+3. Say next to the buttons why they are off; read a file already in the
+   box; make choosing the same file again count.
+
+## 2026-11-22: Status (start here next session)
+
+Supersedes the status entries above.
+
+**Known:**
+- Branch `gp50-experiments` (pushed, not merged). Live site unchanged at
+  `58c0117`; nothing to publish. No code changed this session; the suite
+  wasn't run (210 pass on 2026-11-22, before it).
+- GP-50 write test: step 2 passed (99 survived a power cycle). Step 3, the
+  copy, stopped at 84 after 29 of 45: one acknowledgement came 2.2 s late,
+  with the pedal's next message.
+- **On the pedal now:** 0-54 factory, 55-83 the copies of 0-28, 84-98 blank,
+  99 "US Lead". It was last on 84 (a write needs 0-54).
+- Open: Q9, where the acknowledgement was held up.
+- Session folders, **don't purge**: `2026-11-22_gp50-first` (the reference
+  zip), `2026-11-22_gp50-write` (logs, and the zip after the stop).
+- The developer says "patch", not "slot".
+
+**Next:**
+1. With the developer's OK, the change proposed in the entry above, with
+   tests. Then the suite, commit, Ctrl+F5 on the page.
+2. Read all and compare; continue the copy from 84; compare: MATCH.
+3. Unplug 10 s with the page open, 0-54, Connect, compare: MATCH. Save zip
+   and log. Good moment to listen (70 against 15).
+4. Put the zip's patches back in 55-99; compare: MATCH; save the log.
+5. Later: is one app for both pedals, or a converter, worth it.
+6. Still from before: the dashboard's `connect` count, "Problem:" and
    "Works on:" issues, GitHub's "New issue" page, the laptop.
