@@ -357,6 +357,8 @@ explanation.
 | 4. One app | Detects the pedal; GP-50 in the GP-200 screens | Suite passes; a full round trip on each pedal; one run in Edge |
 
 Stage 1 done 2026-11-23 (journal, "GP-50 Edge run with a power cycle").
+Stage 2 done 2026-11-23: the developer reviewed the map ("as good as it is
+going to get without sound tests").
 
 **GP-50 writes** (Claude, stage 1, from hardware tests; journal 2026-11-22,
 "GP-50 stage 1"). Unlike the GP-200's rule of no automatic rewrites:

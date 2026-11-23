@@ -4555,3 +4555,32 @@ order, on/off, CTRL/EXP (find where the GP-50 keeps them), the converter
 rules in DESIGN.md, and the patch's report of what was substituted, dropped
 or limited. Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1` or
 `2026-11-23_gp50-speed`.
+
+## 2026-11-23: Stage 2 done; the developer's listening test for stage 3
+
+**Developer:** reviewed `gp50/EFFECT_MAP.md`: "as good as it is going to get
+without sound tests". Stage 2 done (DESIGN.md).
+
+**Listening test proposed by the developer** (for stage 3, once the converter
+works): convert 45 of the GP-200's factory patches into the GP-50's empty
+patches (55-99, all 45 identical, entry 2026-11-22) and the GP-50's 55 factory
+patches (0-54) into the GP-200's empty patches; then play both pedals side
+by side and compare each pair. **Claude's notes on it:**
+- **Fits:** in the 2026-09-30 GP-200 backup, 50-B to 63-D are empty ("It's
+  GP-200") and exactly 55 in a row, so the 55 go there in order and 64-A to
+  64-D stay as scratch. To be checked against the pedal's list on the day.
+- **GP-200 writes through the app** (CLAUDE.md: the runner's exception is
+  GP-50 only): Claude makes the zip, the developer restores it on the Restore
+  screen from 50-B after a fresh full backup. GP-50: the runner, 45 writes
+  (1,656 of about 2,000 used so far); the reference zip goes back afterwards.
+- **Pick the 45 for coverage**, not the first 45: patches using close
+  matches and stand-ins, plus some all-same ones as a control (a "same" pair
+  that sounds different points at the converter, not the map).
+- **A sheet per pair** (session folder): source, target patch, what the
+  report says was substituted, dropped or limited, and a column for the
+  developer's verdict (same / close / off), so each listen is recorded.
+- **Things that would differ for reasons other than the conversion:** global
+  settings (global EQ, output mode), the pedals' output level, EXP-driven
+  wahs (off on the GP-50 by rule). Same headphones or monitor for both.
+- **Hermetic test to add first:** a GP-50 patch converted to the GP-200 and
+  back must come out unchanged where every effect is *same*; no ears needed.
