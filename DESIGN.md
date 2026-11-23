@@ -441,7 +441,10 @@ going to get without sound tests").
   module's own effect, then the earlier in the chain; the other is left out
   and reported.
 - **Chain order follows the source pedal**; a module with no source goes
-  after the one before it in the target's default order. Tempo and patch
+  after the one before it in the target's default order. The GP-50 lets the
+  gate (NR) be moved, and its place hardly matters with digital effects,
+  as long as it's before delay and reverb, where it would cut the repeats
+  short (developer, 2026-11-23). Tempo and patch
   volume are carried. The GP-200's volume module (a volume pedal) has
   nowhere to go and isn't reported; a GP-50 patch gets the GP-200
   skeleton's.

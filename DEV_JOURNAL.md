@@ -4753,36 +4753,55 @@ the same, and never sends the handshake (editor mode). Ports now: only
   other notes: Plate (5), EV 4x12 -> UK TD (4), Detune left out, no free MOD
   (2), Rev Echo and Sweet Space close (2 each). Not written anywhere yet.
 
+## 2026-11-23: Two answers from the developer; a simpler listening plan
+
+- **The gate's place** (developer): with digital effects it hardly matters,
+  as they add no noise; it must not come after delay or reverb, where it would
+  cut the repeats short. The GP-50 lets it be moved (Valeton Suite). Counted:
+  none of the 256 GP-200 patches and none of the GP-50 factory patches has
+  the gate after delay or reverb, and the converter keeps the source's order,
+  so nothing changes. DESIGN.md "Converter rules".
+- **No copy command for the listening run** (Claude, after the developer
+  asked why one was needed, since the web app reads and writes the GP-200
+  fine): the plan already has the developer take a fresh full GP-200 backup
+  in the app before restoring to 50-B, and that backup holds 1-B to 12-B.
+  So Claude converts those from the file and writes them to the GP-50 with
+  the runner's `restore`, as in stage 1. Both pedals needn't be plugged in at
+  once, and the new GP-200 read path isn't relied on. `copy` stays for later
+  (Q11, stage 4); it's tested on the fake pedals only.
+
 ## 2026-11-23: Status (start here next session)
 
 Supersedes the status entries above. Topic: **stage 3: converter built and
-tested; the listening run needs both pedals plugged in.**
+tested; next, the listening run.**
 
 **Known:**
-- Stages 1 and 2 done. Stage 3: names, run of 45 and copying decided
-  (entries above); converter, `copy` and `convert` built (entry above). Suite
-  258 pass. Branch `gp50-experiments`, pushed, not merged; live site
-  unchanged at `58c0117`.
+- Stages 1 and 2 done. Stage 3: names, run of 45, gate and plan decided
+  (entries above); converter, `copy` and `convert` built. Suite 258 pass.
+  Branch `gp50-experiments`, pushed, not merged; live site unchanged at
+  `58c0117`.
 - **On the GP-50 now:** the reference zip, byte for byte; on patch 6.
 - Patch writes: 1,656 of about 2,000. The listening run adds 45, and 45 to
   put the reference back.
+- Ready in `C:\Users\dpark\Documents\GP-200-testing\2026-11-23_stage3-listening`:
+  `gp200_converted_convert_2026-11-23T22-31-05.zip` (the GP-50's factory
+  patches 0-54 for the GP-200's 50-B to 63-D) and its sheet
+  `listening_convert_2026-11-23T22-31-05.csv`.
 - Open question: Q11 (copy pedal to pedal in the app, for stage 4).
 
-**Needed from the developer:**
-1. Plug in the GP-200 beside the GP-50.
-2. CTRL: on GP-50 patch 9 (Solo Wah), what does CTRL switch? (The file
-   suggests delay and reverb.) That confirms or rules out its layout.
-
-**Next, in `C:\Users\dpark\Documents\GP-200-testing\2026-11-23_stage3-listening`:**
-1. `python C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\midi_bridge.py --list`: both port names.
-2. `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js copy --from 1-B --to 12-B --start 55 --reference ..\2026-11-22_gp50-first\gp50_all_2026-11-22T21-17-41.zip --write --out .`
-   (every patch is read back; a GP-50 that won't keep the gate after the amp
-   shows there as a read-back difference, and the run stops).
-3. The developer: a fresh full backup of the GP-200 in the app, check 50-B to
-   63-D are empty, then Restore `gp200_converted_convert_2026-11-23T22-31-05.zip`
-   from 50-B.
-4. Listening, pair by pair, with the two sheets; then the reference back on
-   the GP-50, and the GP-200's 50-B to 63-D back from the backup if wanted.
+**The listening run, in that folder:**
+1. The developer: a full GP-200 backup in the web app, saved into the
+   session folder; check in the patch list that 50-B to 63-D are empty.
+2. Claude, from that backup: `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js convert <the 45 files 1B to 12B> --start 55 --out .`,
+   then `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js restore <the converted zip> --start 55 --reference ..\2026-11-22_gp50-first\gp50_all_2026-11-22T21-17-41.zip --write --out .`
+   (every patch read back).
+3. The developer: Restore `gp200_converted_convert_2026-11-23T22-31-05.zip`
+   from 50-B in the web app.
+4. Listening, pair by pair, with the two sheets (verdict: same / close /
+   off). Also: what CTRL switches on GP-50 patch 9 (Solo Wah); the file
+   suggests delay and reverb, which would confirm its CTRL layout.
+5. Afterwards: the reference back on the GP-50 (Claude); the GP-200's 50-B to
+   63-D back from the backup if wanted (the developer).
 
 Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1`,
 `2026-11-23_gp50-speed` or `2026-11-23_stage3-listening`.
