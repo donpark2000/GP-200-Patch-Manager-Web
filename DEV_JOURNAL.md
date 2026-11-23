@@ -3836,6 +3836,36 @@ a plan.
 3. Say next to the buttons why they are off; read a file already in the
    box; make choosing the same file again count.
 
+## 2026-11-22: Big picture for both pedals; can Claude test unattended?
+
+**Goals** (developer):
+- Read and write both pedals: single patches, ranges, full backup and
+  restore. Both save `.prst`, so always know which pedal a file is for.
+- Copy patches from one pedal to the other, with a mapping of effects: the
+  same, a clean rename, or no match; the no-match ones are reviewed
+  together, for a reasonable mapping or an error saying why it can't be
+  copied.
+- Don't put the existing GP-200 app at risk until we are confident.
+- Work to an agreed plan instead of approval at each step: the pedal stays
+  connected, Claude proves control and protocol and changes what fails. The
+  GP-50 is brand new; nothing on it to lose (factory reset possible, not
+  tried by us).
+
+**Checked: how Claude could reach the pedal** (nothing sent to it):
+- The app's built-in browser refuses Web MIDI ("Permission to use Web MIDI
+  API was not granted").
+- Windows' own MIDI calls (winmm, from Python, nothing installed) list the
+  GP-50 as an input and an output, and both opened and closed without
+  error. Edge was running; whether its GP-50 page was still open isn't
+  known. So a small helper could let Node run the same `gp50/` code against
+  the real pedal without a browser. Not built or tried beyond opening.
+- It isn't the browser's MIDI path, so a browser run is still needed at the
+  end of a stage. It may also help with Q9: a late acknowledgement there
+  too would point away from the browser.
+
+Plan and rules proposed in chat, **not agreed yet**; `CLAUDE.md` unchanged
+(GP-50 writes: 55-99, confirmed in the app).
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3855,7 +3885,8 @@ Supersedes the status entries above.
   zip), `2026-11-22_gp50-write` (logs, and the zip after the stop).
 - The developer says "patch", not "slot".
 
-**Next:**
+**Next:** first, the developer's answer to the plan (entry above); if not
+agreed:
 1. With the developer's OK, the change proposed in the entry above, with
    tests. Then the suite, commit, Ctrl+F5 on the page.
 2. Read all and compare; continue the copy from 84; compare: MATCH.
