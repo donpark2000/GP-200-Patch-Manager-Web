@@ -12,12 +12,19 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-- **Q10.** GP-50: which patch the pedal selects after a power cycle
-  (2026-11-23, Edge run: on 6 before, 4 after; once on 99 after writing 99,
-  2026-11-22). Harmless: checks only read, and writes refuse unless one of
-  0-54 is selected. Was the step from 4 to 6 at 822 s done on the pedal?
+None.
 
 ## Resolved
+
+- **Q10. GP-50 patch changes during the Edge run: closed 2026-11-23**
+  (developer): they stepped through all the patches on the pedal to see
+  their names on its screen, ending on 6; that explains the patch changes
+  and the 4 seen after a power cycle. Which patch the pedal starts on isn't
+  worth chasing: checks only read, and writes refuse unless one of 0-54 is
+  selected. The original question:
+  - **Q10.** GP-50: which patch the pedal selects after a power cycle
+    (Edge run: on 6 before, 4 after), and whether the step from 4 to 6 at
+    822 s was done on the pedal.
 
 - **Q9. GP-50 late acknowledgement: closed 2026-11-22** (entry "GP-50 stage
   1"). The pedal itself holds an acknowledgement back now and then (18 in
@@ -4203,7 +4210,8 @@ runner only twice. As designed (DESIGN.md "GP-50 writes").
 pedal was on patch 4 (on 6 before). At 822 s it sent `12 1b 01` twice, 0.8 s
 apart (one per patch change, journal 2026-11-22), and the checks after the
 second power cycle found it on 6 again: likely patches stepped on the pedal,
-4 to 6, not asked yet. A check only reads, and the copy and put-back refuse
+4 to 6 (developer: yes, stepping through every patch to see its name on
+the screen; Q10, closed). A check only reads, and the copy and put-back refuse
 unless one of 0-54 is selected, so neither the selected patch nor the steps
 affect the result (Q10).
 
@@ -4230,7 +4238,7 @@ Supersedes the status entries above. Topic: **GP-50 stage 1 done; stage 2
 - Patch writes: 1,656 of about 2,000.
 - Runner, from the session folder:
   `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js check --out . --reference ..\2026-11-22_gp50-first\gp50_all_2026-11-22T21-17-41.zip`
-- Open: Q10 (what the pedal selects after a power cycle; harmless).
+- No open questions (Q10 closed by the developer's answer).
 
 **Saved up for the developer:** listening, for stage 3.
 
