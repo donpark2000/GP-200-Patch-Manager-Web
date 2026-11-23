@@ -3741,6 +3741,28 @@ name. "Twin TREM" was in the first frames sent, so the pedal seems to have
 dropped the half-sent patch, as VLTN says. A name only; the compare of all
 100 is still to be run.
 
+## 2026-11-22: GP-50 write test, compare after the stop: as expected
+
+**Result** (developer, new tab opened 17:00, read only): Check "slots 0-44
+copied into 55-99": DIFFERENT, 100 of 100 compared, 84 identical, 0 retries,
+differ: 84-99. The pedal stayed on 84.
+
+**What it shows:** 0-54 unchanged; all 29 copies in 55-83 still right after
+the run moved on and stopped; 84-99 don't hold the copies (84 was dropped
+or is damaged, 85-99 were never sent). **Not yet:** what 84-99 hold exactly
+(needs the saved zip); whether the pedal was power cycled between the stop
+and this check. `gp50_test_2026-11-22T23-58-47.log` shows no port
+disconnecting from 16:48:45 to 16:58:47; the gaps before and after it
+aren't logged.
+
+**The page that seemed hung** (16:48 to 16:58): "Read all and compare" was
+off because that page load never read a reference zip: its log has no
+"Reference:" line. The page had been reloaded at 16:48:45 (server log), and
+nothing says why a button is off. Not tested: whether Edge puts the file's
+name back in the box after a reload, without the page reading it.
+**To do:** say next to the buttons what is missing; read a file already in
+the box; make choosing the same file again count.
+
 ## 2026-11-22: Status (start here next session)
 
 Supersedes the status entries above.
@@ -3765,7 +3787,7 @@ Supersedes the status entries above.
   Suite's first try (2026-11-20); what fixed the developer's connection.
 
 **Next** (with the developer, stopping at the first result that isn't MATCH
-or Done). **Steps 1-2 done** (entry above); **3 stopped at slot 84** (entry above):
+or Done). **Steps 1-2 done** (entry above); **3 stopped at slot 84**; 55-83 hold the copies (entries above):
 1. Start the local server; page with Ctrl+F5; **pedal on a slot from 0 to 54**
    (it may be on 99 from looking at the patch; the page refuses otherwise).
    Connect, choose `gp50_all_2026-11-22T21-17-41.zip`.
