@@ -12,7 +12,10 @@ This journal records only what's new or different for the browser.
 
 ## Open questions
 
-None.
+- **Q10.** GP-50: which patch the pedal selects after a power cycle
+  (2026-11-23, Edge run: on 6 before, 4 after; once on 99 after writing 99,
+  2026-11-22). Harmless: checks only read, and writes refuse unless one of
+  0-54 is selected. Was the step from 4 to 6 at 822 s done on the pedal?
 
 ## Resolved
 
@@ -4164,3 +4167,74 @@ the developer's Edge run.**
 **Next:** after the Edge run, stage 2 (the effect map); no pedal writes needed
 for it. Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1` or
 `2026-11-23_gp50-speed`.
+
+## 2026-11-23: GP-50 Edge run with a power cycle: MATCH (stage 1 done)
+
+The developer's run in Edge 159 on `http://localhost:8000/gp50/write.html`
+(page at `4661019`), the first at the new pace in a browser. Two logs in
+`2026-11-23_gp50-speed`: `gp50_test_2026-11-23T19-33-16.log` (first half)
+and `gp50_test_2026-11-23T19-55-13.log` (the whole run, the first half
+included). Pass bar: the same as the speed tests (entry above).
+
+| Step | Result |
+|---|---|
+| Check "the same as the reference zip" | MATCH, 100 of 100, 0 retries |
+| Copy 0-44 into 55-99 | 45 of 45 written and read back identical, 36.9 s; no warnings |
+| Check "copied" | MATCH, 100 of 100 |
+| Unplug (259-343 s), Connect | ports reported disconnected, then open again |
+| Check "copied" | MATCH, 100 of 100: **the 45 copies survived the power cycle** |
+| Second unplug (855-867 s), Connect | as the first |
+| Check "copied" | MATCH, 100 of 100 |
+| Put the zip's patches back in 55-99 | 45 of 45 read back identical, 39.2 s |
+| Check "the same as the reference zip" | MATCH, 100 of 100 |
+
+**Warnings:** only one held acknowledgement (slot 96, frame 8, during the
+put-back), as in stage 1: none came for 1 s, the read before starting again
+brought it out (it came in the same millisecond as that read's answer), and
+the patch was written whole on the second attempt. 1 in 90 patches, within
+the bar (about 4 per 100). "Patch list changed" (`12 1b 02`) 90 times for 90
+writes.
+
+**Speed in the page:** about 0.82-0.87 s a patch, against the runner's 0.65 s;
+the page asks which patch is selected before every patch (its guard), the
+runner only twice. As designed (DESIGN.md "GP-50 writes").
+
+**Also in the log, from the pedal itself:** after the first power cycle the
+pedal was on patch 4 (on 6 before). At 822 s it sent `12 1b 01` twice, 0.8 s
+apart (one per patch change, journal 2026-11-22), and the checks after the
+second power cycle found it on 6 again: likely patches stepped on the pedal,
+4 to 6, not asked yet. A check only reads, and the copy and put-back refuse
+unless one of 0-54 is selected, so neither the selected patch nor the steps
+affect the result (Q10).
+
+**What it shows:** the new pace works the same from Edge as from Node: 90
+patches written and read back, 2 power cycles, every check MATCH. Together
+with stage 1's 4 round trips and the speed tests' 2, **stage 1's "done when"
+is met** (DESIGN.md "Both pedals"). **What it doesn't:** listening (saved for
+stage 3); another computer.
+
+**Patch writes:** 91 begun (45 + 46), 1,656 in all of about 2,000. The pedal
+holds the reference zip again, on patch 6.
+
+## 2026-11-23: Status (start here next session)
+
+Supersedes the status entries above. Topic: **GP-50 stage 1 done; stage 2
+(the effect map) next.**
+
+**Known:**
+- Stage 1 done: the developer's Edge run passed with two power cycles (entry
+  above), after 4 round trips at the old pace and 2 at the new. Branch
+  `gp50-experiments`, pushed, not merged; live site unchanged at `58c0117`.
+  Suite 231 pass.
+- **On the pedal now:** the reference zip, byte for byte; on patch 6.
+- Patch writes: 1,656 of about 2,000.
+- Runner, from the session folder:
+  `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\gp50\cli\run.js check --out . --reference ..\2026-11-22_gp50-first\gp50_all_2026-11-22T21-17-41.zip`
+- Open: Q10 (what the pedal selects after a power cycle; harmless).
+
+**Saved up for the developer:** listening, for stage 3.
+
+**Next:** stage 2, the effect map: a table in both directions, each
+control's order and range included; done when the developer has reviewed
+the close and no-match lists. No pedal writes needed. Don't purge
+`2026-11-22_gp50-first`, `-write`, `-stage1` or `2026-11-23_gp50-speed`.

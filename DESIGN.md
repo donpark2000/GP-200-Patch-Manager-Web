@@ -356,6 +356,8 @@ explanation.
 | 3. Copying | A converter that refuses with a reason, or lists what it changed | Tests pass; patches read back right on both pedals; the developer has listened |
 | 4. One app | Detects the pedal; GP-50 in the GP-200 screens | Suite passes; a full round trip on each pedal; one run in Edge |
 
+Stage 1 done 2026-11-23 (journal, "GP-50 Edge run with a power cycle").
+
 **GP-50 writes** (Claude, stage 1, from hardware tests; journal 2026-11-22,
 "GP-50 stage 1"). Unlike the GP-200's rule of no automatic rewrites:
 - An acknowledgement not in 1 s, or the pedal's `14 08 01` ("not stored"),
