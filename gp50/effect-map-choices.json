@@ -1,5 +1,5 @@
 {
-  "about": "Judgments the effect map can't take from Valeton's files: near matches (suggested by Claude by the developer's rules, for the developer to review), each with its reason. Used by tools/make-effect-map.js. Between two different effects, controls pair by name only; \"controls\" pairs a control with a differently named one, and null drops it.",
+  "about": "Judgments the effect map can't take from Valeton's files: near matches (suggested by Claude by the developer's rules, for the developer to review), each with its reason. Used by tools/make-effect-map.js. Between two different effects, controls pair by name only; \"controls\" pairs a control with a differently named one, and null drops it. \"standIn\": an effect with nothing like it on the other pedal is replaced by this one, switched off, at its defaults (no settings carried); \"inModule\" gives the stand-in for another module the effect can sit in.",
   "conflicts": {},
   "toGp200": {
     "0x03000022": {
@@ -91,11 +91,32 @@
       "toName": "AC Sim",
       "why": "Developer's rule, 2026-11-23: same kind: acoustic guitar sound"
     },
+    "0x01000019": {
+      "name": "Step Filter",
+      "to": "0x01000015",
+      "toName": "Crier",
+      "standIn": true,
+      "why": "Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used); Crier, the GP-50's auto-wah (a filter like it), switched off"
+    },
     "0x01000024": {
       "name": "P-Bend",
       "to": "0x01000023",
       "toName": "Pitch",
       "why": "Developer's rule, 2026-11-23: same kind: polyphonic pitch shifter"
+    },
+    "0x0100002E": {
+      "name": "Bit Smash",
+      "to": "0x04000000",
+      "toName": "A-Chorus",
+      "standIn": true,
+      "why": "Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used); a chorus, switched off"
+    },
+    "0x0100002F": {
+      "name": "Ring Mod",
+      "to": "0x00000001",
+      "toName": "COMP4",
+      "standIn": true,
+      "why": "Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there"
     },
     "0x01000033": {
       "name": "Saturate",
@@ -355,6 +376,49 @@
       "to": "0x04000026",
       "toName": "Sine Trem",
       "why": "Tremolo, triangle / sine wave"
+    },
+    "0x0400002D": {
+      "name": "Auto Swell",
+      "to": "0x00000001",
+      "toName": "COMP4",
+      "standIn": true,
+      "why": "Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there, and the GP-50's only gate in NR",
+      "inModule": {
+        "MOD": {
+          "to": "0x04000000",
+          "toName": "A-Chorus"
+        },
+        "NR": {
+          "to": "0x0000001B",
+          "toName": "Gate"
+        }
+      }
+    },
+    "0x0400002F": {
+      "name": "Hold",
+      "to": "0x00000001",
+      "toName": "COMP4",
+      "standIn": true,
+      "why": "Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there",
+      "inModule": {
+        "MOD": {
+          "to": "0x04000000",
+          "toName": "A-Chorus"
+        }
+      }
+    },
+    "0x04000030": {
+      "name": "Freeze",
+      "to": "0x00000001",
+      "toName": "COMP4",
+      "standIn": true,
+      "why": "Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there",
+      "inModule": {
+        "MOD": {
+          "to": "0x04000000",
+          "toName": "A-Chorus"
+        }
+      }
     },
     "0x05000001": {
       "name": "V-Wah",

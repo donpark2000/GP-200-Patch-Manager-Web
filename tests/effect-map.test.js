@@ -108,8 +108,8 @@ test("effect map: classes in both directions, choices, conflicts and out-of-scop
   assert.equal(map.toGp200["0x0F000000"].match, "out of scope");
   assert.ok(outOfScope(0x0a100003) && !outOfScope(0x0a000003), "user IRs are out of scope, cabs aren't");
   const page = renderReview(map);
-  assert.match(page, /\| GP-50 to GP-200 \| 2 \| 0 \| 1 \| 1 \| 0 \| 1 \|/, "same: Pure, Guitar EQ 1; close: Rev Echo; conflict: SUP Star; out of scope: SnapTone");
-  assert.match(page, /\| GP-200 to GP-50 \| 1 \| 0 \| 1 \| 1 \| 1 \| 1 \|/);
+  assert.match(page, /\| GP-50 to GP-200 \| 2 \| 0 \| 1 \| 0 \| 1 \| 0 \| 1 \|/, "same: Pure, Guitar EQ 1; close: Rev Echo; conflict: SUP Star; out of scope: SnapTone");
+  assert.match(page, /\| GP-200 to GP-50 \| 1 \| 0 \| 1 \| 0 \| 1 \| 1 \| 1 \|/);
   assert.match(page, /Nearest delay/);
   assert.match(page, /Two different cabs\?/);
   assert.match(page, /\*\*DLY\*\* \(1\): Wow & Echo/);
@@ -133,6 +133,38 @@ test("effect map: checkMap reports each kind of broken entry", () => {
   assert.match(broken((m) => m.toGp50["0x0A000019"].dropped.pop()).join("\n"), /accounts for 2 of 3 controls/);
   assert.match(broken((m) => (m.toGp50["0x0B000000"].match = "maybe")).join("\n"), /has match "maybe"/);
   assert.match(broken((m) => (m.toGp50["0x12345678"] = { match: "none" })).join("\n"), /entry 0x12345678 isn't an effect/);
+});
+
+test("effect map: a stand-in goes in switched off, at its defaults, one per module the effect can sit in", () => {
+  // Wow & Echo has nothing like it in the fixtures: Pure stands in (developer, 2026-11-23).
+  const why = "Nothing like it; switched off";
+  const choices = { toGp50: { "0x0B000021": { name: "Wow & Echo", to: "0x0B000000", toName: "Pure", standIn: true, why } } };
+  const map = buildMap({ ...parsed(), choices });
+  assert.deepEqual(checkMap(map), []);
+  const e = map.toGp50["0x0B000021"];
+  assert.equal(e.match, "stand-in");
+  assert.equal(e.off, true);
+  assert.deepEqual(e.moves, [], "no setting carried, not even Mix (the effects have nothing in common)");
+  assert.deepEqual(e.dropped.map((c) => c.name), ["Mix"]);
+  assert.deepEqual(e.filled.map((c) => [c.name, c.def]), [["Mix", 20], ["Time", 500], ["Sync", 0]]);
+  const page = renderReview(map);
+  assert.match(page, /\| GP-200 to GP-50 \| 1 \| 0 \| 2 \| 1 \| 0 \| 0 \| 1 \|/, "counted as a stand-in, not as none");
+  assert.match(page, /\| Wow & Echo \(0x0B000021\) \| DLY \| DLY: Pure \(0x0B000000\) \| Nothing like it; switched off \|/);
+  // Refused choices, each naming the problem.
+  const bad = (pick) => () => buildMap({ ...parsed(), choices: { toGp50: { "0x0B000021": { ...choices.toGp50["0x0B000021"], ...pick } } } });
+  assert.throws(bad({ why: undefined }), /stand-in without a reason/);
+  assert.throws(bad({ controls: { Mix: "Mix" } }), /carries no settings, but pairs controls/);
+  assert.throws(bad({ inModule: { CAB: { to: "0x0A000019", toName: "SUP Star 2x12" } } }), /stand-in for CAB, where Wow & Echo can't sit/);
+  assert.throws(bad({ inModule: { DLY: { to: "0x0A000019", toName: "SUP Star 2x12" } } }), /SUP Star 2x12 in CAB/);
+  assert.throws(bad({ standIn: false, inModule: { DLY: { to: "0x0B000000", toName: "Pure" } } }), /isn't a stand-in/);
+  // checkMap catches a broken stand-in.
+  const broken = (edit) => { const m = structuredClone(map); edit(m); return checkMap(m).join("\n"); };
+  assert.match(broken((m) => delete m.toGp50["0x0B000021"].off), /"stand-in" but not switched off/);
+  assert.match(broken((m) => (m.toGp50["0x0B000000"].off = true)), /0x0B000000 is "close" but switched off/);
+  assert.match(broken((m) => { const x = m.toGp50["0x0B000021"]; x.moves = [{ from: 0, to: 0, name: "Mix" }]; x.dropped = []; x.filled = x.filled.slice(1); }), /stand-in but carries a setting/);
+  assert.match(broken((m) => m.gp200["0x0B000021"].modules.push("CAB")), /can sit in CAB but has no stand-in there/);
+  assert.match(broken((m) => (m.toGp50["0x0B000021"].inModule = { CAB: { to: "0x0B000000", toName: "Pure" } })), /stand-in for CAB, where it can't sit[\s\S]*stand-in for CAB is Pure, which isn't a CAB effect/);
+  assert.equal(checkMap(map).length, 0, "the edits above were on copies");
 });
 
 // Patches in each pedal's real layout: GP-200 blocks at 0xA0, 72 bytes each; GP-50 records 0x3003/0x3004.

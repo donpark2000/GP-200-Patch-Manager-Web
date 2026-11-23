@@ -394,17 +394,38 @@ Stage 1 done 2026-11-23 (journal, "GP-50 Edge run with a power cycle").
   Feedback); the map moves it.
 - **Classes,** each direction: *same* / *rename* (every setting carried
   over), *close* (a setting dropped or limited, or a near match by hand),
-  *conflict* (listen first), *none* (can't be copied as it is), *out of
-  scope* (NAM/SnapTone, user IRs). A control the source lacks gets the
-  target's default.
+  *stand-in* (below), *conflict* (listen first), *none* (that module is left
+  out, and the user told), *out of scope* (NAM/SnapTone, user IRs). A control
+  the source lacks gets the target's default.
 - **Near matches by kind** (developer, 2026-11-23): an effect the other
   pedal lacks goes to one of the same kind (a compressor to a compressor, a
   high-gain amp to a high-gain amp, a cab of the same maker and speaker
   layout), since changing one module is easier than building a patch. Only
   effects with nothing like them stay *none*. Between two different effects
   controls pair by name only, never by position.
+- **Stand-ins** (developer, 2026-11-23): an effect with nothing like it (the
+  GP-200's Step Filter, Ring Mod, Auto Swell, Hold, Freeze, Bit Smash: special
+  effects, rarely used) goes to the GP-50 as a chorus, **switched off**, at its
+  defaults, so the module is there to use. The GP-50's PRE module can't hold
+  a chorus, so there it's COMP4 (Crier for Step Filter, a filter like it), and
+  in NR its only gate: one stand-in per module the effect can sit in. No
+  setting is carried. The GP-200's Volume module has no GP-50 module to go to,
+  so it stays *none*.
 - **The user is told** what was substituted, dropped or limited in each
   converted patch; how, is for the UI (stage 4).
+- **A copy needn't be perfect** (developer, 2026-11-23): a close conversion,
+  said plainly, is worth having.
+
+**Converter rules** (stage 3; developer, 2026-11-23):
+- **Expression pedal: off on the GP-50.** It has only a jack for an external
+  pedal, no built-in one, so a GP-200 patch's EXP assignments aren't carried;
+  the GP-50's are left at their defaults, off.
+- **A wah driven by the expression pedal is switched off** when that
+  assignment is dropped, so it doesn't sit at one fixed setting.
+- **A stand-in stays off:** a CTRL or footswitch assignment that would switch
+  it on is dropped too.
+- All of these are in the patch's report. Where the GP-50 keeps its EXP and
+  CTRL settings in its 552-byte file isn't known yet (stage 3 finds it).
 
 **Working rules:** Claude works through a stage without approval at each
 step and reports at the end of each, or when hands, ears or a decision are

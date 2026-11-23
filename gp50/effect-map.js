@@ -21,6 +21,7 @@ export const GP200_MODULES = ["PRE", "WAH", "DST", "AMP", "NR", "CAB", "EQ", "MO
 export const GP50_MODULES = ["NR", "PRE", "DST", "AMP", "CAB", "EQ", "MOD", "DLY", "RVB", "NAM"];
 export const GP200_VALUES = 15;
 export const GP50_VALUES = 8;
+export const MATCHES = ["same", "rename", "close", "stand-in", "conflict", "none", "out of scope"];
 
 export const hex = (code) => "0x" + (code >>> 0).toString(16).toUpperCase().padStart(8, "0");
 
@@ -138,8 +139,19 @@ export function mapControls(from, to, pairs = {}, { byPosition = from.code === t
   return { moves, dropped, filled };
 }
 
-function entry(from, to, choice) {
+function entry(from, to, choice, dst) {
   if (!to) return { match: "none" };
+  // A stand-in (developer, 2026-11-23): an effect with nothing like it on the
+  // other pedal is replaced by one that fits the module, switched off, at its
+  // defaults. No setting is carried: the two effects have nothing in common.
+  if (choice?.standIn) {
+    const e = { to: hex(to.code), toName: to.name, match: "stand-in", off: true, why: choice.why, moves: [] };
+    // One stand-in per module the effect can sit in (Hold: COMP4 in PRE, A-Chorus in MOD).
+    if (choice.inModule) e.inModule = Object.fromEntries(Object.entries(choice.inModule).map(([m, c]) => [m, { to: hex(Number(c.to)), toName: dst.get(Number(c.to) >>> 0).name }]));
+    if (from.controls.length) e.dropped = from.controls.map((c) => ({ pos: c.pos, name: c.name }));
+    if (to.controls.length) e.filled = to.controls.map((x) => ({ pos: x.pos, name: x.name, def: x.def }));
+    return e;
+  }
   const { moves, dropped, filled } = mapControls(from, to, choice?.controls);
   const e = { to: hex(to.code), toName: to.name };
   const lossy = dropped.length > 0 || moves.some((m) => m.clamp);
@@ -165,10 +177,18 @@ export function buildMap({ gp200, gp50, descriptions = new Map(), choices = {} }
       const target = pick ? dst.get(Number(pick.to) >>> 0) : dst.get(e.code);
       if (pick && !target) throw new Error(`Choice for ${k} names ${pick.to}, which isn't on the other pedal`);
       if (pick && (pick.name !== e.name || pick.toName !== target.name)) throw new Error(`Choice for ${k} says ${pick.name} -> ${pick.toName}, but Valeton's files say ${e.name} -> ${target.name}`);
+      if (pick?.standIn && pick.controls) throw new Error(`Choice for ${k} is a stand-in, which carries no settings, but pairs controls`);
+      if (pick?.standIn && !pick.why) throw new Error(`Choice for ${k} is a stand-in without a reason`);
+      for (const [m, c] of Object.entries(pick?.inModule ?? {})) {
+        const t = dst.get(Number(c.to) >>> 0);
+        if (!pick.standIn) throw new Error(`Choice for ${k} gives a stand-in for ${m} but isn't a stand-in`);
+        if (!t || t.name !== c.toName || t.module !== m) throw new Error(`Choice for ${k} gives ${c.toName} (${c.to}) for ${m}, but Valeton's files say ${t ? `${t.name} in ${t.module}` : "no such effect"}`);
+        if (!e.modules?.includes(m)) throw new Error(`Choice for ${k} gives a stand-in for ${m}, where ${e.name} can't sit`);
+      }
       for (const [f, t] of Object.entries(pick?.controls ?? {})) {
         if (!e.controls.some((c) => c.name === f) || (t !== null && !target.controls.some((c) => c.name === t))) throw new Error(`Choice for ${k} pairs controls ${f} -> ${t}, not both there`);
       }
-      const en = entry(e, target, pick);
+      const en = entry(e, target, pick, dst);
       if (conflicts[k] && en.match !== "none") Object.assign(en, { match: "conflict", why: conflicts[k] });
       out[k] = en;
     }
@@ -195,7 +215,7 @@ export function checkMap(map) {
     for (const [k, e] of Object.entries(src)) {
       const en = map[dir][k];
       if (!en) { problems.push(`${dir}: ${k} ${e.name} has no entry`); continue; }
-      if (!["same", "rename", "close", "conflict", "none", "out of scope"].includes(en.match)) problems.push(`${dir}: ${k} has match "${en.match}"`);
+      if (!MATCHES.includes(en.match)) problems.push(`${dir}: ${k} has match "${en.match}"`);
       if (en.match === "none" || en.match === "out of scope") continue;
       const t = dst[en.to];
       if (!t) { problems.push(`${dir}: ${k} goes to ${en.to}, which isn't on the other pedal`); continue; }
@@ -215,6 +235,16 @@ export function checkMap(map) {
       if (en.match === "same" || en.match === "rename") {
         if (en.dropped?.length || en.moves.some((m) => m.clamp)) problems.push(`${dir}: ${k} is "${en.match}" but loses a setting`);
         if (en.to !== k) problems.push(`${dir}: ${k} is "${en.match}" but changes code`);
+      }
+      if ((en.match === "stand-in") !== (en.off === true)) problems.push(`${dir}: ${k} is "${en.match}"${en.off ? " but switched off" : " but not switched off"}`);
+      if (en.match === "stand-in" && en.moves.length) problems.push(`${dir}: ${k} is a stand-in but carries a setting`);
+      if (en.match === "stand-in" && e.modules) {
+        const places = { [t.module]: en.to, ...Object.fromEntries(Object.entries(en.inModule ?? {}).map(([m, c]) => [m, c.to])) };
+        for (const [m, code] of Object.entries(places)) {
+          if (!e.modules.includes(m)) problems.push(`${dir}: ${k} ${e.name} (${e.modules.join("/")}) has a stand-in for ${m}, where it can't sit`);
+          if (dst[code]?.module !== m) problems.push(`${dir}: ${k} ${e.name}'s stand-in for ${m} is ${dst[code]?.name ?? code}, which isn't a ${m} effect`);
+        }
+        for (const m of e.modules) if (GP50_MODULES.includes(m) && !places[m]) problems.push(`${dir}: ${k} ${e.name} can sit in ${m} but has no stand-in there`);
       }
     }
     for (const k of Object.keys(map[dir])) if (!src[k]) problems.push(`${dir}: entry ${k} isn't an effect of that pedal`);
@@ -265,12 +295,13 @@ export function renderReview(map) {
   L.push("# Effect map: review", "", "Made by `tools/make-effect-map.js` from Valeton's own files (the GP-200 editor's",
     "`algorithm.xml`, Valeton Suite's `module50_data.json`) and `gp50/effect-map-choices.json`.",
     "Don't edit by hand: change the choices file and run the tool.", "",
-    "| | same | rename | close | conflict | none | out of scope |", "|---|---|---|---|---|---|---|");
-  for (const [dir, , , title] of dirs) L.push(`| ${title} | ${["same", "rename", "close", "conflict", "none", "out of scope"].map((m) => count(dir, m)).join(" | ")} |`);
+    `| | ${MATCHES.join(" | ")} |`, `|${"---|".repeat(MATCHES.length + 1)}`);
+  for (const [dir, , , title] of dirs) L.push(`| ${title} | ${MATCHES.map((m) => count(dir, m)).join(" | ")} |`);
   L.push("", "- **same / rename**: the same effect, every setting carried over (some to another position).",
     "- **close**: a setting is lost or limited, or a near match picked by hand (with the reason).",
     "- **conflict**: same code, but Valeton's two files describe different effects.",
-    "- **none**: no match; a patch using it can't be copied as it is.",
+    "- **stand-in**: nothing like it on the other pedal; an effect that fits the module goes in its place, switched off, at its defaults.",
+    "- **none**: no match and no stand-in; the converter leaves that module out and says so.",
     "- **out of scope**: NAM/SnapTone and user IRs (DESIGN.md \"Both pedals\").", "");
   L.push("## 1. Conflicts (listen before copying)", "");
   const conflicts = Object.entries(map.toGp50).filter(([, e]) => e.match === "conflict");
@@ -289,7 +320,18 @@ export function renderReview(map) {
     }
     for (const r of rows.values()) L.push(`| ${r.from.join(", ")} | ${r.to.join(", ")} | ${r.why} | ${r.c} |`);
     L.push("", `## ${dir === "toGp200" ? 3 : 5}. ${title}: no match`, "");
+    const stand = Object.entries(map[dir]).filter(([, e]) => e.match === "stand-in");
+    if (stand.length) {
+      L.push("Stand-ins, switched off:", "", "| From | Can sit in | Stand-in (switched off) | Why |", "|---|---|---|---|");
+      for (const [k, e] of stand) {
+        const f = fx(src, k);
+        const ins = [[fx(dir === "toGp50" ? "gp50" : "gp200", e.to).module, e], ...Object.entries(e.inModule ?? {})].map(([m, c]) => `${m}: ${c.toName} (${c.to})`);
+        L.push(`| ${label(src, k)} | ${f.module ?? f.modules.join("/")} | ${ins.join("; ")} | ${e.why} |`);
+      }
+      L.push("");
+    }
     const none = Object.entries(map[dir]).filter(([, e]) => e.match === "none");
+    if (stand.length) L.push("No stand-in:", "");
     if (!none.length) L.push("None.");
     const byMod = {};
     for (const [k] of none) { const f = fx(src, k); const mod = f.module ?? f.modules[0]; (byMod[mod] ||= []).push(`${f.name}${f.basedOn ? ` (${short(f.basedOn)})` : ""}`); }

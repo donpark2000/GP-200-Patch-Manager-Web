@@ -4479,3 +4479,79 @@ The earlier Vibrato T / Sens mistake was one of these.
 to GP-50 same 69, rename 4, close 195, none 7. Real patches still all in
 range (368, 15,016 values). Tests: 3 asserts added (position pairing);
 suite 239 pass.
+
+## 2026-11-23: Stand-ins for the no-match effects; EXP off on the GP-50
+
+**Developer:** the effects with no match (Ring Mod and the like) are very
+special effects they never use; a reasonable compromise is a chorus with the
+module left off. The GP-50 has a jack for an external expression pedal but no
+built-in one, so EXP assignments should be off. "I never expected the
+conversion to be perfect", and a less-than-perfect copy has value.
+
+**Found when checking it against Valeton Suite's `module50_data.json`:** the
+GP-50's modules are fixed, and its PRE takes only Comp, Boost, Filter, Wah,
+Pitch and Sim, so a chorus can't go there. Five of the seven no-match effects
+sit in the GP-200's PRE, and Auto Swell, Hold and Freeze can also sit in MOD
+(Auto Swell in NR too). **Agreed (developer, "yes to all"):**
+- **Stand-ins, switched off, at their defaults, no setting carried:** a chorus
+  (A-Chorus) in MOD, COMP4 in PRE (Crier, the GP-50's auto-wah, for Step
+  Filter, a filter like it), the GP-50's only gate in NR. One per module the
+  effect can sit in.
+- **Volume** has no GP-50 module to go to: stays *none*, left out and reported.
+- **EXP assignments off** on the GP-50; **a wah driven by EXP is switched off**
+  with it (else it sits at one fixed setting); **a CTRL or footswitch
+  assignment that would switch a stand-in on is dropped.** All three are
+  converter rules for stage 3 (DESIGN.md "Converter rules"); where the GP-50
+  file keeps EXP and CTRL isn't known yet.
+
+**Built:** a *stand-in* class in the map (`off: true`, every source control
+dropped, every target control at its default; `inModule` gives the stand-in
+for another module). The tool refuses a stand-in without a reason, with
+control pairs, or in a module the effect can't sit in or the stand-in isn't
+from; `checkMap` reports one not switched off, carrying a setting, or missing
+for a module the effect can sit in. **Shown failing:** before the MOD and NR
+stand-ins were added, `make-effect-map.js` stopped with "Hold can sit in MOD
+but has no stand-in there" (and Freeze, Auto Swell); the new test feeds each
+broken case and checks its message. Review page: the stand-ins are a table
+in section 5, with a "stand-in" column in the counts.
+
+**Counts:** GP-200 to GP-50 same 69, rename 4, close 195, stand-in 6, none 1
+(Volume); GP-50 to GP-200 unchanged. `--check --patches` over the same
+sources as before: 468 patches read, every code known, 18,564 values all in
+range. Tests: 1 added; suite 240 pass.
+
+**How often it matters, in the developer's 266 GP-200 patches** (backup zip
+and `GP-200\Patches`): every patch has a WAH and a VOL module (a code is
+always there, often switched off), so their on/off state matters more than
+the effect: WAH V-Wah 186, P-Wah 59, C-Wah 12, Hammy 5, S-Wah 3, B-Wah 1.
+Stand-in effects in 14 modules: Hold 5, Step Filter 3, Bit Smash 3, Auto
+Swell 2. Also seen (stage 3): boosts and overdrives that can sit in the
+GP-200's PRE or DST and wahs from its WAH module all land in one GP-50 module
+(22 effects), so module places need rules of their own. No pedal writes.
+
+## 2026-11-23: Status (start here next session)
+
+Supersedes the status entries above. Topic: **GP-50 stage 2: stand-ins and
+EXP rules agreed; ready for stage 3.**
+
+**Known:**
+- Stage 1 done. Stage 2: map, near matches by kind (102 by Claude), stand-ins
+  (entry above); suite 240 pass. Branch `gp50-experiments`, pushed, not
+  merged; live site unchanged at `58c0117`.
+- **On the pedal now:** the reference zip, byte for byte; on patch 6.
+- Patch writes: 1,656 of about 2,000.
+- Rebuild the map: `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\make-effect-map.js`
+  (add `--check`, or `--patches <files, folders or zips>`).
+- No open questions.
+
+**Saved up for the developer:**
+1. The close lists in `gp50/EFFECT_MAP.md` (sections 2 and 4), if not yet
+   looked at: stage 2 is done when they are reviewed.
+2. Listening: for stage 3 (GP-200 patches need the developer's OK first).
+
+**Next: stage 3 (the converter):** module places (PRE/DST boosts and
+overdrives, the WAH module into the GP-50's PRE, a patch with both), chain
+order, on/off, CTRL/EXP (find where the GP-50 keeps them), the converter
+rules in DESIGN.md, and the patch's report of what was substituted, dropped
+or limited. Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1` or
+`2026-11-23_gp50-speed`.

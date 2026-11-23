@@ -4,15 +4,16 @@ Made by `tools/make-effect-map.js` from Valeton's own files (the GP-200 editor's
 `algorithm.xml`, Valeton Suite's `module50_data.json`) and `gp50/effect-map-choices.json`.
 Don't edit by hand: change the choices file and run the tool.
 
-| | same | rename | close | conflict | none | out of scope |
-|---|---|---|---|---|---|---|
-| GP-50 to GP-200 | 100 | 6 | 6 | 0 | 0 | 100 |
-| GP-200 to GP-50 | 69 | 4 | 195 | 0 | 7 | 30 |
+| | same | rename | close | stand-in | conflict | none | out of scope |
+|---|---|---|---|---|---|---|---|
+| GP-50 to GP-200 | 100 | 6 | 6 | 0 | 0 | 0 | 100 |
+| GP-200 to GP-50 | 69 | 4 | 195 | 6 | 0 | 1 | 30 |
 
 - **same / rename**: the same effect, every setting carried over (some to another position).
 - **close**: a setting is lost or limited, or a near match picked by hand (with the reason).
 - **conflict**: same code, but Valeton's two files describe different effects.
-- **none**: no match; a patch using it can't be copied as it is.
+- **stand-in**: nothing like it on the other pedal; an effect that fits the module goes in its place, switched off, at its defaults.
+- **none**: no match and no stand-in; the converter leaves that module out and says so.
 - **out of scope**: NAM/SnapTone and user IRs (DESIGN.md "Both pedals").
 
 ## 1. Conflicts (listen before copying)
@@ -212,8 +213,19 @@ None.
 
 ## 5. GP-200 to GP-50: no match
 
-- **PRE** (5): Step Filter; Ring Mod; Auto Swell; Hold; Freeze
-- **MOD** (1): Bit Smash
+Stand-ins, switched off:
+
+| From | Can sit in | Stand-in (switched off) | Why |
+|---|---|---|---|
+| Step Filter (0x01000019) | PRE | PRE: Crier (0x01000015) | Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used); Crier, the GP-50's auto-wah (a filter like it), switched off |
+| Bit Smash (0x0100002E) | MOD | MOD: A-Chorus (0x04000000) | Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used); a chorus, switched off |
+| Ring Mod (0x0100002F) | PRE | PRE: COMP4 (0x00000001) | Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there |
+| Auto Swell (0x0400002D) | PRE/NR/MOD | PRE: COMP4 (0x00000001); MOD: A-Chorus (0x04000000); NR: Gate (0x0000001B) | Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there, and the GP-50's only gate in NR |
+| Hold (0x0400002F) | PRE/MOD | PRE: COMP4 (0x00000001); MOD: A-Chorus (0x04000000) | Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there |
+| Freeze (0x04000030) | PRE/MOD | PRE: COMP4 (0x00000001); MOD: A-Chorus (0x04000000) | Developer, 2026-11-23: nothing like it on the GP-50 (a special effect, rarely used), so a chorus, switched off; the GP-50's PRE module can't hold a chorus, so COMP4 there |
+
+No stand-in:
+
 - **VOL** (1): Volume
 
 ## 6. Same effect, settings moved or renamed (for information)
