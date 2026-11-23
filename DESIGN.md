@@ -378,6 +378,26 @@ Stage 1 done 2026-11-23 (journal, "GP-50 Edge run with a power cycle").
   bought with a check: every patch is still read back, and a patch is
   overwritten only if its contents are in the reference.
 
+**Effect map** (stage 2; journal 2026-11-23, "GP-50 stage 2"):
+- **From Valeton's own files**, read where the GP-200 editor and Valeton
+  Suite install them, by `tools/make-effect-map.js`, into
+  `gp50/effect-map.json` and the review page `gp50/EFFECT_MAP.md`. Never
+  edited by hand; a test fails when they're stale (skipped where Valeton's
+  programs aren't installed). Only facts are kept, not Valeton's text.
+- **Judgments are apart**, in `gp50/effect-map-choices.json`: near matches
+  for an effect the other pedal lacks (each with its reason, reviewed by the
+  developer) and codes the two files describe differently. The tool refuses
+  a choice whose names no longer match Valeton's files.
+- **Positions:** a setting's place is the GP-200 control's `ID` (not
+  `idx`) and the GP-50's `algId`. The same effect may keep a setting in a
+  different place on each pedal (cab Volume, three delays' Time and
+  Feedback); the map moves it.
+- **Classes,** each direction: *same* / *rename* (every setting carried
+  over), *close* (a setting dropped or limited, or a near match by hand),
+  *conflict* (listen first), *none* (can't be copied as it is), *out of
+  scope* (NAM/SnapTone, user IRs). A control the source lacks gets the
+  target's default.
+
 **Working rules:** Claude works through a stage without approval at each
 step and reports at the end of each, or when hands, ears or a decision are
 needed (power cycles and listening are saved up).

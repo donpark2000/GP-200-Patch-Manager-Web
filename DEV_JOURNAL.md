@@ -922,6 +922,13 @@ entry of that date). The skill's source now lives in the private repo
    run in the real app for the end. Evidence: 1,100 GP-50 patch writes and
    4 round trips ran without the developer; the Edge page had needed them
    at each step.
+7. **Look for the maker's own data before using anyone else's.** The
+   vendor's installed software often ships its data as plain files
+   (effect lists, parameter ranges, defaults); check those before relying
+   on community lists or a manual, and confirm them against real files.
+   Evidence: Valeton's two editors held every effect and control of both
+   pedals; checked against 368 real patches (15,016 values, all in range),
+   they settled questions two other projects' lists had left open.
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -4246,3 +4253,125 @@ Supersedes the status entries above. Topic: **GP-50 stage 1 done; stage 2
 control's order and range included; done when the developer has reviewed
 the close and no-match lists. No pedal writes needed. Don't purge
 `2026-11-22_gp50-first`, `-write`, `-stage1` or `2026-11-23_gp50-speed`.
+
+## 2026-11-23: GP-50 stage 2: the effect map, from Valeton's own files
+
+**Goal and pass bar** (set before building): (1) the map is written by a tool
+from the makers' own data, and a test fails when the committed files are
+stale; (2) every effect code in our real patches is in it, and every stored
+value at a control's position is in range; (3) every in-scope effect has an
+entry in both directions (same / rename / close / none), every control
+moved, dropped or set to its default; (4) tests, the normal case and broken
+input; (5) the developer has reviewed the close, conflict and no-match lists.
+1-4 done; 5 is with the developer (`gp50/EFFECT_MAP.md`).
+
+**Sources: Valeton's own installed files**, found on this computer, better
+than the 2026-11-20 sources (other projects' lists and the manual):
+- GP-200 editor, `C:\Program Files\Valeton\GP-200\Resource\GP-200\File\`:
+  `algorithm.xml` (305 effects; each control's name, `ID`, `idx`, range,
+  default, menu; four kinds, Knob, Slider, Switch, Combox) and
+  `description_en.xml`. `algorithm_lt.xml` (284) is likely another model's;
+  not used.
+- Valeton Suite, `...\Valeton Suite\data\flutter_assets\assets\data\module50_data.json`:
+  212 GP-50 effects in 10 modules, each control's `algId`, range, default,
+  and which position holds its Sync switch. (Also `module_data.json`,
+  `module150_data.json`: other models, not used.)
+- Only facts go in the repo (codes, names, positions, ranges, defaults, and
+  what an effect is "based on" where the text says so), not Valeton's text.
+
+**Where a setting is stored** (the key question; checked on real patches):
+the GP-50's `algId` is the position among its module's 8 values; the
+GP-200's is the control's `ID`, not `idx` (display order; they differ in 687
+of the file's 1,401 controls). Evidence, `node tools/make-effect-map.js --patches` over
+102 GP-50 patches (`2026-11-22_gp50-first`: Suite's 100 exports, our zip,
+one more) and 266 GP-200 ones (`GP-200\Backups\2026-09-30_full-backup.zip`,
+`GP-200\Patches`): 3,946 modules, **every code known; 15,016 values at a
+control's position, all in range**. With `idx` instead of `ID`, GP-200 cabs
+would put Volume (40-79 in real patches) at Low Cut's place.
+- **206 values only look out of range:** a delay's Time or a modulation's
+  Rate holds a small whole number (4, 7, 10) when its Sync switch is on: a
+  note length, not ms or Hz. Counted apart; Sync switches are named "Sync",
+  "Time Sync", "Sync A/B", "Sweep Sync". None of our GP-50 patches has Sync
+  on.
+- Values at positions no control claims are often nonzero (mostly 50):
+  left over from an effect used there before. Ignored.
+
+**What the map says** (`gp50/effect-map.json`, review page
+`gp50/EFFECT_MAP.md`):
+
+| | same | rename | close | conflict | none | out of scope |
+|---|---|---|---|---|---|---|
+| GP-50 to GP-200 | 100 | 6 | 4 | 2 | 0 | 100 |
+| GP-200 to GP-50 | 69 | 4 | 91 | 2 | 109 | 30 |
+
+- **Every GP-50 effect has a place on the GP-200.** 128 of its 132 in-scope
+  effects have the same code there; the other 4 (Rev Echo, Plate L, Plate,
+  Sweet Space) have namesakes under other codes, suggested as close.
+- **Same code, settings in other places:** the GP-50's cabs keep Volume at
+  0, the GP-200's at 1 (Low/High Cut at 5/6, not on the GP-50); Ping Pong,
+  Ring Echo and Sweep Echo swap Time and Feedback (1 and 2); Pitch's two
+  volumes are at 3-4 on the GP-50, 4-5 on the GP-200. The map moves each.
+- **Limits:** GP-50 delays' Time stops at 1000 ms (Ping Pong 500, Rev Echo
+  780), the GP-200's at 4000; several GP-50 reverbs have no Pre Delay or
+  Tone. Copying to the GP-50 limits or drops these, so those entries are
+  "close".
+- **Two conflicts**, the same code described as different effects:
+  0x03000022 (GP-50: Sora Fuzz, Tone Bender; GP-200: Lazaro, Big Muff) and
+  0x0A000020 (GP-50: EV 4x12 "Halen"; GP-200: UK TD, Marshall). Only
+  listening settles them (stage 3).
+- **The 2026-11-20 counts, explained:** its 74 "GP-50 codes not on the
+  GP-200" were the 70 SnapTone places beyond the GP-200's 10, plus these 4;
+  its 10 "different names" are renames (Toucher / T-Wah, Crier / A-WAH, Air /
+  Studio, cab names) except the two conflicts.
+- **Near matches by hand** (`gp50/effect-map-choices.json`, 4 + 58): Claude's
+  suggestions, each with its reason (same amp on another channel, same
+  maker's 4x12, the GP-50's only wah or gate, acoustic bodies to its one AC
+  sim). The tool refuses a choice whose names no longer match Valeton's
+  files, or that pairs a control one side lacks (it caught one of Claude's:
+  Plate L has no Damp). 109 GP-200 effects are left as no match.
+- **Module places:** GP-50 C-Wah is in the GP-200's WAH module, Detune in
+  its MOD. The GP-200 has WAH and VOL modules the GP-50 lacks; where a
+  GP-200 patch's PRE and WAH both hold effects, or VOL does, is for the
+  converter (stage 3), with chain order, on/off, CTRL and EXP.
+
+**Built:** `gp50/effect-map.js` (parsers, `mapControls`, `buildMap`,
+`checkMap`, `renderReview`, `patchEffects`; no DOM), `tools/make-effect-map.js`
+(writes the map one effect per line, 287 KB, and the review page; `--check`
+exits 1 when stale; `--patches` checks real patches). Tests: 8 new (parsing
+in Valeton's shapes, positions, limits, classes, refused choices, 8 kinds of
+broken map, both pedals' patch layouts, the committed files; the stale check
+skips where Valeton's programs aren't installed, as in CI). Shown failing:
+one character added to `EFFECT_MAP.md`, `--check` exited 1 and the test
+failed. Suite 239 pass.
+
+**What it doesn't show:** that a "same" effect sounds the same on both
+pedals (stage 3, listening); whether a GP-50 effect without a GP-200 control
+(Pre Delay) behaves like that control at its default; the GP-50's Sync note
+numbers (no synced patch to check). No pedal writes (1,656 of about 2,000).
+
+## 2026-11-23: Status (start here next session)
+
+Supersedes the status entries above. Topic: **GP-50 stage 2: effect map
+built; the developer's review is next.**
+
+**Known:**
+- Stage 1 done (Edge run, entry before last). Stage 2 built (entry above):
+  map, tool, review page, tests; suite 239 pass. Branch `gp50-experiments`,
+  pushed, not merged; live site unchanged at `58c0117`.
+- **On the pedal now:** the reference zip, byte for byte; on patch 6.
+- Patch writes: 1,656 of about 2,000.
+- Rebuild the map: `node C:\Users\dpark\Documents\GP-200-Patch-Manager-Web\tools\make-effect-map.js`
+  (add `--check`, or `--patches <files, folders or zips>`).
+- No open questions.
+
+**Saved up for the developer:**
+1. Review `gp50/EFFECT_MAP.md`: the 2 conflicts, the close lists (sections 2
+   and 4; the hand-picked rows have a reason), and the no-match list
+   (section 5). Changes go in `gp50/effect-map-choices.json`; then run the
+   tool. Stage 2 is done when this review is.
+2. Listening: saved for stage 3 (the two conflicts are on that list).
+
+**Next:** after the review, stage 3 (the converter): module places, chain
+order, on/off, CTRL/EXP, and the patch-level report of what was dropped or
+limited. Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1` or
+`2026-11-23_gp50-speed`.

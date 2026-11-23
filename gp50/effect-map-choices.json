@@ -1,0 +1,389 @@
+{
+  "about": "Judgments the effect map can't take from Valeton's files: suggested near matches (by Claude, for the developer to review) and codes the two files describe differently. Used by tools/make-effect-map.js. \"controls\" pairs a control with a differently named one.",
+  "conflicts": {
+    "0x03000022": "Same code, but Valeton's files disagree: the GP-50's says Sora Fuzz, based on a Tone Bender Mk II; the GP-200's says Lazaro, based on a Big Muff (the GP-200's own Sora Fuzz is 0x03000026). Listen on both before copying.",
+    "0x0A000020": "Same code, but Valeton's files disagree: the GP-50's says EV 4x12 (\"Halen 4x12\"); the GP-200's says UK TD, a 1968 Marshall basketweave 4x12 (the GP-200's own EV, a Peavey 6505 4x12, is 0x0A000023). Listen on both before copying."
+  },
+  "toGp200": {
+    "0x0B000013": {
+      "name": "Rev Echo",
+      "to": "0x0B000028",
+      "toName": "Rev Echo",
+      "why": "Same name; another code on the GP-200 (reverse delay on both)"
+    },
+    "0x0C000010": {
+      "name": "Plate L",
+      "to": "0x0C000003",
+      "toName": "Plate",
+      "why": "The GP-200 has one plate reverb"
+    },
+    "0x0C00000F": {
+      "name": "Plate",
+      "to": "0x0C000003",
+      "toName": "Plate",
+      "why": "The GP-200 has one plate reverb",
+      "controls": {
+        "Damp": "High Damp"
+      }
+    },
+    "0x0C000015": {
+      "name": "Sweet Space",
+      "to": "0x0C000008",
+      "toName": "Sweet Space",
+      "why": "Same name; another code on the GP-200 (modulated reverb on both)"
+    }
+  },
+  "toGp50": {
+    "0x0000000C": {
+      "name": "P-Boost",
+      "to": "0x0000001A",
+      "toName": "Boost",
+      "why": "Both Xotic clean boosts (RC Booster / EP Booster)"
+    },
+    "0x03000001": {
+      "name": "OD 9",
+      "to": "0x03000000",
+      "toName": "Green OD",
+      "why": "Tube Screamer TS9 / TS808"
+    },
+    "0x03000008": {
+      "name": "Scream OD",
+      "to": "0x03000000",
+      "toName": "Green OD",
+      "why": "Both Tube Screamer style"
+    },
+    "0x05000001": {
+      "name": "V-Wah",
+      "to": "0x05000008",
+      "toName": "C-Wah",
+      "why": "The GP-50's only wah (Vox V846 / Cry Baby)"
+    },
+    "0x0500000A": {
+      "name": "P-Wah",
+      "to": "0x05000008",
+      "toName": "C-Wah",
+      "why": "The GP-50's only wah (a Cry Baby setting / Cry Baby)"
+    },
+    "0x05000006": {
+      "name": "S-Wah",
+      "to": "0x05000008",
+      "toName": "C-Wah",
+      "why": "The GP-50's only wah"
+    },
+    "0x0000001D": {
+      "name": "Gate 2",
+      "to": "0x0000001B",
+      "toName": "Gate",
+      "why": "The GP-50's only noise gate"
+    },
+    "0x00000021": {
+      "name": "Gate 3",
+      "to": "0x0000001B",
+      "toName": "Gate",
+      "why": "The GP-50's only noise gate (Gate 3 is an expander)"
+    },
+    "0x0700002B": {
+      "name": "UK 45+",
+      "to": "0x0700002A",
+      "toName": "UK 45",
+      "why": "Marshall JTM45, another setting"
+    },
+    "0x0700002C": {
+      "name": "UK 45JP",
+      "to": "0x0700002A",
+      "toName": "UK 45",
+      "why": "Marshall JTM45, jumped / normal input"
+    },
+    "0x0700002D": {
+      "name": "UK 50",
+      "to": "0x0700002F",
+      "toName": "UK 50JP",
+      "why": "Marshall JMP50, jumped on both"
+    },
+    "0x0700002E": {
+      "name": "UK 50+",
+      "to": "0x0700002F",
+      "toName": "UK 50JP",
+      "why": "Marshall JMP50, another setting"
+    },
+    "0x0700004E": {
+      "name": "UK 900",
+      "to": "0x07000035",
+      "toName": "UK 800",
+      "why": "Marshall JCM900 / JCM800"
+    },
+    "0x07000040": {
+      "name": "Flagman 1",
+      "to": "0x0700005D",
+      "toName": "Flagman+",
+      "why": "Friedman BE100: BE channel / HBE channel (more gain)"
+    },
+    "0x07000041": {
+      "name": "Flagman 2",
+      "to": "0x0700005D",
+      "toName": "Flagman+",
+      "why": "Friedman BE100: BE channel / HBE channel (more gain)"
+    },
+    "0x0700005E": {
+      "name": "Flagman+ 2",
+      "to": "0x0700005D",
+      "toName": "Flagman+",
+      "why": "Friedman BE100 HBE channel on both"
+    },
+    "0x0700006E": {
+      "name": "Bog RedM",
+      "to": "0x0700006D",
+      "toName": "Bog RedV",
+      "why": "Bogner XTC red channel, modern / vintage"
+    },
+    "0x07000066": {
+      "name": "Dizz VH S",
+      "to": "0x07000065",
+      "toName": "Dizz VH",
+      "why": "Diezel VH4, another version"
+    },
+    "0x0700006B": {
+      "name": "Dizz VH+ S",
+      "to": "0x0700006A",
+      "toName": "Dizz VH+",
+      "why": "Diezel VH4, another version"
+    },
+    "0x07000060": {
+      "name": "Eagle 120+",
+      "to": "0x0700005F",
+      "toName": "Eagle 120",
+      "why": "ENGL Savage 120, another setting"
+    },
+    "0x0700000D": {
+      "name": "Silver Twin",
+      "to": "0x07000004",
+      "toName": "Dark Twin",
+      "why": "Fender Twin Reverb, Silverface / Blackface"
+    },
+    "0x07000010": {
+      "name": "Foxy 15TB",
+      "to": "0x07000075",
+      "toName": "Foxy Bass",
+      "why": "Vox AC-100 bass amp on both"
+    },
+    "0x04000012": {
+      "name": "B-Jet",
+      "to": "0x04000011",
+      "toName": "Jet",
+      "why": "Flanger (B-Jet is tuned for bass)"
+    },
+    "0x04000020": {
+      "name": "Vibe",
+      "to": "0x0400001F",
+      "toName": "M-Vibe",
+      "why": "Uni-Vibe / Micro-Vibe"
+    },
+    "0x0400001B": {
+      "name": "S-Phase",
+      "to": "0x04000019",
+      "toName": "O-Phase",
+      "why": "Phaser (EHX Small Stone / MXR Phase 90)"
+    },
+    "0x0400001A": {
+      "name": "G-Phase",
+      "to": "0x04000019",
+      "toName": "O-Phase",
+      "why": "Phaser (a green BBD phaser / MXR Phase 90)"
+    },
+    "0x04000018": {
+      "name": "Vibrato T",
+      "to": "0x04000017",
+      "toName": "Vibrato",
+      "why": "Vibrato"
+    },
+    "0x04000027": {
+      "name": "Triangle Trem",
+      "to": "0x04000026",
+      "toName": "Sine Trem",
+      "why": "Tremolo, triangle / sine wave"
+    },
+    "0x0B00001D": {
+      "name": "BBD Delay S",
+      "to": "0x0B000001",
+      "toName": "Analog",
+      "why": "Analog (BBD) delay; stereo on the GP-200"
+    },
+    "0x0B000012": {
+      "name": "999 Echo",
+      "to": "0x0B000001",
+      "toName": "Analog",
+      "why": "Analog delay (Maxon AD900)"
+    },
+    "0x0B00001F": {
+      "name": "Digital Delay S",
+      "to": "0x0B000000",
+      "toName": "Pure",
+      "why": "Clean digital delay; stereo on the GP-200"
+    },
+    "0x0B000021": {
+      "name": "Tape Delay S",
+      "to": "0x0B000002",
+      "toName": "Tape",
+      "why": "Tape delay; stereo on the GP-200"
+    },
+    "0x0B000028": {
+      "name": "Rev Echo",
+      "to": "0x0B000013",
+      "toName": "Rev Echo",
+      "why": "Same name; another code on the GP-50 (reverse delay on both)"
+    },
+    "0x0C000003": {
+      "name": "Plate",
+      "to": "0x0C00000F",
+      "toName": "Plate",
+      "why": "Plate reverb (the GP-50's small plate)",
+      "controls": {
+        "High Damp": "Damp"
+      }
+    },
+    "0x0C000012": {
+      "name": "Tube Spring",
+      "to": "0x0C000004",
+      "toName": "Spring",
+      "why": "Spring reverb"
+    },
+    "0x0C000011": {
+      "name": "Amp Spring",
+      "to": "0x0C000004",
+      "toName": "Spring",
+      "why": "Spring reverb"
+    },
+    "0x0C00000C": {
+      "name": "Club",
+      "to": "0x0C000000",
+      "toName": "Room",
+      "why": "Small room"
+    },
+    "0x0C00000D": {
+      "name": "Concert",
+      "to": "0x0C000001",
+      "toName": "Hall",
+      "why": "Hall"
+    },
+    "0x0C00000E": {
+      "name": "Arena",
+      "to": "0x0C000001",
+      "toName": "Hall",
+      "why": "The GP-50's biggest room reverb"
+    },
+    "0x0C000008": {
+      "name": "Sweet Space",
+      "to": "0x0C000015",
+      "toName": "Sweet Space",
+      "why": "Same name; another code on the GP-50 (modulated reverb on both)"
+    },
+    "0x0A00001F": {
+      "name": "UK LD",
+      "to": "0x0A000022",
+      "toName": "UK GRN 4x12",
+      "why": "Marshall 4x12"
+    },
+    "0x0A000021": {
+      "name": "UK MD",
+      "to": "0x0A000022",
+      "toName": "UK GRN 4x12",
+      "why": "Marshall 4x12"
+    },
+    "0x0A000030": {
+      "name": "UK 75",
+      "to": "0x0A000022",
+      "toName": "UK GRN 4x12",
+      "why": "Marshall 4x12 (G12T-75 / Greenback speakers)"
+    },
+    "0x0A00002B": {
+      "name": "UK Dark",
+      "to": "0x0A000022",
+      "toName": "UK GRN 4x12",
+      "why": "Marshall 4x12 (1968)"
+    },
+    "0x0A00000E": {
+      "name": "UK G12",
+      "to": "0x0A000013",
+      "toName": "UK GRN 2x12",
+      "why": "Marshall, 1x12 / 2x12"
+    },
+    "0x0A000031": {
+      "name": "King",
+      "to": "0x0A000024",
+      "toName": "Mess 4x12",
+      "why": "Mesa/Boogie 4x12 (Road King / Rectifier)"
+    },
+    "0x0A00000C": {
+      "name": "US STO",
+      "to": "0x0A000009",
+      "toName": "L-Star 1x12",
+      "why": "Mesa/Boogie 1x12"
+    },
+    "0x0A000027": {
+      "name": "Uban",
+      "to": "0x0A000025",
+      "toName": "Bog 4x12",
+      "why": "Bogner 4x12"
+    },
+    "0x0A000023": {
+      "name": "EV",
+      "to": "0x0A000020",
+      "toName": "EV 4x12",
+      "why": "Same name; see the conflict on the GP-50's EV 4x12"
+    },
+    "0x0A00001E": {
+      "name": "Bellman 2",
+      "to": "0x0A000016",
+      "toName": "Bellman 2x12",
+      "why": "Fender Bassman, 4x10 / 2x12"
+    },
+    "0x0A00003B": {
+      "name": "AMPG 2",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Ampeg bass cab, 8x10 / 4x10"
+    },
+    "0x0A000037": {
+      "name": "ADM 2",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Bass 4x10"
+    },
+    "0x0A000039": {
+      "name": "Workman 2",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Bass 4x10"
+    },
+    "0x0A00003D": {
+      "name": "AC Dream",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Acoustic guitar body (dreadnought 2 / 1)"
+    },
+    "0x0A00003E": {
+      "name": "OM",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Acoustic guitar body (the GP-50 has one, a dreadnought)"
+    },
+    "0x0A00003F": {
+      "name": "JUMBO",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Acoustic guitar body (the GP-50 has one, a dreadnought)"
+    },
+    "0x0A000040": {
+      "name": "Bird",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Acoustic guitar body (the GP-50 has one, a dreadnought)"
+    },
+    "0x0A000041": {
+      "name": "GA",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Acoustic guitar body (the GP-50 has one, a dreadnought)"
+    }
+  }
+}
