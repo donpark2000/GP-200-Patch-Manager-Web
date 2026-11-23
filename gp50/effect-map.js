@@ -109,14 +109,17 @@ const effectKey = (name) => String(name).toLowerCase().replace(/\b\d+x\d+\b/g, "
 /**
  * Where each source control goes on the target effect. Matched by name (or a
  * name given in `pairs`), then by position when the name differs but the
- * range is the same. Returns the moves, the source controls with no place
- * (dropped), and the target controls with no source (set to their default).
+ * range is the same. A pair given as null drops that control, for a
+ * position match that would be wrong (Vibrato T's Sens isn't a depth).
+ * Returns the moves, the source controls with no place (dropped), and the
+ * target controls with no source (set to their default).
  */
 export function mapControls(from, to, pairs = {}) {
   const used = new Set();
   const moves = [], dropped = [];
   const want = (c) => key(pairs[c.name] ?? c.name);
   for (const c of from.controls) {
+    if (pairs[c.name] === null) { dropped.push({ pos: c.pos, name: c.name, byChoice: true }); continue; }
     let t = to.controls.find((x) => !used.has(x) && key(x.name) === want(c));
     let byPos = false;
     if (!t) { t = to.controls.find((x) => !used.has(x) && x.pos === c.pos && x.min === c.min && x.max === c.max && !from.controls.some((y) => y !== c && want(y) === key(x.name))); byPos = !!t; }
@@ -161,7 +164,7 @@ export function buildMap({ gp200, gp50, descriptions = new Map(), choices = {} }
       if (pick && !target) throw new Error(`Choice for ${k} names ${pick.to}, which isn't on the other pedal`);
       if (pick && (pick.name !== e.name || pick.toName !== target.name)) throw new Error(`Choice for ${k} says ${pick.name} -> ${pick.toName}, but Valeton's files say ${e.name} -> ${target.name}`);
       for (const [f, t] of Object.entries(pick?.controls ?? {})) {
-        if (!e.controls.some((c) => c.name === f) || !target.controls.some((c) => c.name === t)) throw new Error(`Choice for ${k} pairs controls ${f} -> ${t}, not both there`);
+        if (!e.controls.some((c) => c.name === f) || (t !== null && !target.controls.some((c) => c.name === t))) throw new Error(`Choice for ${k} pairs controls ${f} -> ${t}, not both there`);
       }
       const en = entry(e, target, pick);
       if (conflicts[k] && en.match !== "none") Object.assign(en, { match: "conflict", why: conflicts[k] });
@@ -251,7 +254,7 @@ export function renderReview(map) {
     if (renamed.length) out.push("paired: " + renamed.map((m) => `${m.name} = ${m.toName}${m.byPosition ? " (by position)" : ""}`).join(", "));
     const clamped = en.moves.filter((m) => m.clamp);
     if (clamped.length) out.push("limited: " + clamped.map((m) => `${m.name} to ${m.clamp[0]}-${m.clamp[1]}`).join(", "));
-    if (en.dropped?.length) out.push("dropped: " + en.dropped.map(ctl).join(", "));
+    if (en.dropped?.length) out.push("dropped: " + en.dropped.map((c) => ctl(c) + (c.byChoice ? " (not the same setting)" : "")).join(", "));
     if (en.filled?.length) out.push("set to default: " + en.filled.map((c) => `${c.name} ${c.def}`).join(", "));
     return out.join("; ") || "nothing";
   };

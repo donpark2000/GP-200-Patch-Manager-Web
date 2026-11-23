@@ -17,8 +17,8 @@ Don't edit by hand: change the choices file and run the tool.
 
 ## 1. Conflicts (listen before copying)
 
-- **0x03000022**: Same code, but Valeton's files disagree: the GP-50's says Sora Fuzz, based on a Tone Bender Mk II; the GP-200's says Lazaro, based on a Big Muff (the GP-200's own Sora Fuzz is 0x03000026). Listen on both before copying.
-- **0x0A000020**: Same code, but Valeton's files disagree: the GP-50's says EV 4x12 ("Halen 4x12"); the GP-200's says UK TD, a 1968 Marshall basketweave 4x12 (the GP-200's own EV, a Peavey 6505 4x12, is 0x0A000023). Listen on both before copying.
+- **0x03000022**: Same code, but Valeton describes it three ways: Valeton Suite's file says Sora Fuzz, based on a Tone Bender Mk II; the GP-50 manual (p. 34) says Sora Fuzz, based on a Fuzz Face, word for word its text for Red Haze (likely copied by mistake); the GP-200 editor says Lazaro, based on a Big Muff (the GP-200's own Sora Fuzz is 0x03000026). Listen on both before copying.
+- **0x0A000020**: Same code, but Valeton's files disagree: the GP-50's says EV 4x12 ("Halen 4x12"), and the GP-50 manual (p. 43) says a Peavey 6505 4x12; the GP-200's says UK TD, a 1968 Marshall basketweave 4x12. The GP-200's own EV, 0x0A000023, is the Peavey 6505 4x12: if listening agrees with the manual, copy the GP-50's EV 4x12 to that one instead. Listen on both before copying.
 
 ## 2. GP-50 to GP-200: close
 
@@ -43,7 +43,7 @@ None.
 | OD 9 (0x03000001) | Green OD (0x03000000) | Tube Screamer TS9 / TS808 | nothing |
 | Scream OD (0x03000008) | Green OD (0x03000000) | Both Tube Screamer style | dropped: Fat, Air |
 | B-Jet (0x04000012) | Jet (0x04000011) | Flanger (B-Jet is tuned for bass) | paired: Pre Delay = P.Delay (by position) |
-| Vibrato T (0x04000018) | Vibrato (0x04000017) | Vibrato | paired: Sens = Depth (by position), Output = VOL (by position) |
+| Vibrato T (0x04000018) | Vibrato (0x04000017) | Vibrato. Vibrato T's Sens sets how much playing strength changes the depth (the GP-200 editor's text), not the depth itself: dropped, Depth set to default | paired: Output = VOL (by position); dropped: Sens (not the same setting); set to default: Depth 50 |
 | G-Phase (0x0400001A) | O-Phase (0x04000019) | Phaser (a green BBD phaser / MXR Phase 90) | moved: Rate 1->0, Sync 2->1; dropped: Depth |
 | S-Phase (0x0400001B) | O-Phase (0x04000019) | Phaser (EHX Small Stone / MXR Phase 90) | moved: Rate 1->0, Sync 2->1; dropped: Color |
 | Vibe (0x04000020) | M-Vibe (0x0400001F) | Uni-Vibe / Micro-Vibe | moved: Sync 4->2; dropped: Volume, Mode |

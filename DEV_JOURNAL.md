@@ -4375,3 +4375,39 @@ built; the developer's review is next.**
 order, on/off, CTRL/EXP, and the patch-level report of what was dropped or
 limited. Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1` or
 `2026-11-23_gp50-speed`.
+
+## 2026-11-23: GP-50 manual checked against the effect map
+
+The developer's copy of the GP-50 user manual
+(`C:\Users\dpark\OneDrive\Documents\Manuals\GP-50.pdf`, not in the repo), its
+"Effect List" (pp. 31-48), read as text with `pdftotext`, and compared with
+the map. **What it adds:**
+- **Cabs:** Suite's file gives no "based on" for GP-50 cabs; the manual does.
+  For all 20 cab codes the pedals share, it names the same model as the
+  GP-200 editor's description, except one (below). The 20 "same" cab
+  entries stand.
+- **EV 4x12 (0x0A000020):** the manual says a Peavey 6505 4x12, the model
+  the GP-200 calls EV (0x0A000023); at 0x0A000020 the GP-200 has UK TD, a
+  Marshall basketweave. Still a conflict (only listening settles it), now
+  with a likely answer: if listening agrees with the manual, copy it to the
+  GP-200's 0x0A000023.
+- **Sora Fuzz (0x03000022):** the manual says a Fuzz Face, in text identical
+  to its Red Haze entry, so probably copied by mistake; Suite says Tone
+  Bender, the GP-200 Big Muff. Still a conflict.
+- **No other code differs:** comparing each shared code's "based on" text on
+  the two pedals found no other pair with nothing in common (the remaining
+  ones are the same thing worded differently, e.g. "Boss VB-2" / "a BBD-based
+  blue vibrato pedal").
+- **Delays and reverbs:** the manual lists the same controls as Suite's file
+  (Room, Hall, Church: Mix, Decay, Trail) and says nothing of a fixed
+  pre-delay; Sync is only "switches Tap Tempo sync on/off".
+
+**Also corrected, from the GP-200 editor's own text** (prompted by reading the
+manual's Vibrato entry): Vibrato T's **Sens** sets how much playing strength
+changes the depth, so the position match Sens = Depth (Claude's choice) was
+wrong. A choice can now give a pair as null, which drops that control; Sens
+is dropped and the GP-50's Depth set to its default. The same text confirms
+the Sync reading: with Sync on, Rate sets a "tap divide value", default 1/4.
+
+Choices file, map and review page updated; 1 test added (a null pair). No
+pedal writes.

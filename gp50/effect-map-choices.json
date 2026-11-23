@@ -1,8 +1,8 @@
 {
-  "about": "Judgments the effect map can't take from Valeton's files: suggested near matches (by Claude, for the developer to review) and codes the two files describe differently. Used by tools/make-effect-map.js. \"controls\" pairs a control with a differently named one.",
+  "about": "Judgments the effect map can't take from Valeton's files: suggested near matches (by Claude, for the developer to review) and codes the two files describe differently. Used by tools/make-effect-map.js. \"controls\" pairs a control with a differently named one; null drops it, where pairing it by position would be wrong.",
   "conflicts": {
-    "0x03000022": "Same code, but Valeton's files disagree: the GP-50's says Sora Fuzz, based on a Tone Bender Mk II; the GP-200's says Lazaro, based on a Big Muff (the GP-200's own Sora Fuzz is 0x03000026). Listen on both before copying.",
-    "0x0A000020": "Same code, but Valeton's files disagree: the GP-50's says EV 4x12 (\"Halen 4x12\"); the GP-200's says UK TD, a 1968 Marshall basketweave 4x12 (the GP-200's own EV, a Peavey 6505 4x12, is 0x0A000023). Listen on both before copying."
+    "0x03000022": "Same code, but Valeton describes it three ways: Valeton Suite's file says Sora Fuzz, based on a Tone Bender Mk II; the GP-50 manual (p. 34) says Sora Fuzz, based on a Fuzz Face, word for word its text for Red Haze (likely copied by mistake); the GP-200 editor says Lazaro, based on a Big Muff (the GP-200's own Sora Fuzz is 0x03000026). Listen on both before copying.",
+    "0x0A000020": "Same code, but Valeton's files disagree: the GP-50's says EV 4x12 (\"Halen 4x12\"), and the GP-50 manual (p. 43) says a Peavey 6505 4x12; the GP-200's says UK TD, a 1968 Marshall basketweave 4x12. The GP-200's own EV, 0x0A000023, is the Peavey 6505 4x12: if listening agrees with the manual, copy the GP-50's EV 4x12 to that one instead. Listen on both before copying."
   },
   "toGp200": {
     "0x0B000013": {
@@ -194,7 +194,10 @@
       "name": "Vibrato T",
       "to": "0x04000017",
       "toName": "Vibrato",
-      "why": "Vibrato"
+      "why": "Vibrato. Vibrato T's Sens sets how much playing strength changes the depth (the GP-200 editor's text), not the depth itself: dropped, Depth set to default",
+      "controls": {
+        "Sens": null
+      }
     },
     "0x04000027": {
       "name": "Triangle Trem",

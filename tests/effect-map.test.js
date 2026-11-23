@@ -78,6 +78,11 @@ test("effect map: a setting moves to its position on the other pedal; missing on
   assert.deepEqual(back.dropped.map((c) => c.name), ["Low Cut", "High Cut"]);
   const time = mapControls(gp200.get(0x0b000000), gp50.get(0x0b000000)).moves.find((m) => m.name === "Time");
   assert.deepEqual(time.clamp, [20, 1000], "a narrower range on the other pedal is a limit");
+  // A pair given as null drops a control a position match would wrongly pair.
+  const unpaired = mapControls(gp50.get(0x0a000019), gp200.get(0x0a000019), { VOL: null });
+  assert.deepEqual(unpaired.moves, []);
+  assert.deepEqual(unpaired.dropped, [{ pos: 0, name: "VOL", byChoice: true }]);
+  assert.equal(unpaired.filled.length, 3, "the target's Volume falls back to its default");
 });
 
 test("effect map: classes in both directions, choices, conflicts and out-of-scope codes", () => {
