@@ -17,7 +17,7 @@ function setup(opts) {
   const pedal = new FakeGp50(opts);
   const log = new Logger();
   log.debugEnabled = true;
-  return { pedal, log, reader: new Gp50Reader(pedal.input, pedal.output, log, { timeoutMs: 100, settleMs: 0, quietMs: 20 }) };
+  return { pedal, log, reader: new Gp50Reader(pedal.input, pedal.output, log, { timeoutMs: 100, settleMs: 0, quietMs: 20, ...opts?.reader }) };
 }
 
 // Real messages (Valeton Suite importing a patch into a GP-50, and the
@@ -176,19 +176,28 @@ test("gp50 read all: another slot's patch is read again, and flagged if it keeps
 });
 
 test("gp50 read all: the late rest of a failed reply can't pass for the next slot's", async () => {
+  // Not timed against the timeout (that raced on a busy machine, 2026-11-23):
+  // the rest is sent once the read has given up, 5 ms into a 300 ms quiet wait.
+  // Slot 1's reply is 40 ms slow, so without the quiet wait the rest would land
+  // in slot 1's read first (shown failing that way, DEV_JOURNAL.md 2026-11-23).
+  let rest = null;
   const { pedal, reader, log } = setup({
+    reader: { quietMs: 300 },
     faults: (f, fn, args) => {
       if (fn !== 0x4f) return f;
       if (args[0] === 0) {
-        setTimeout(() => pedal._deliver(f.slice(10)), 110); // just after the 100 ms timeout
+        rest = f.slice(10);
         return f.slice(0, 10);
       }
-      setTimeout(() => pedal._deliver(f), 40); // slow enough that the late frames would land first
+      setTimeout(() => pedal._deliver(f), 40);
       return [];
     },
   });
-  await assert.rejects(reader.readSlotPatch(0), /got 10 of 29/);
-  const { prst } = await reader.readSlotPatch(1);
+  const first = reader.readSlotPatch(0);
+  const second = reader.readSlotPatch(1); // queued behind the failing read, as "read all" does
+  await assert.rejects(first, /got 10 of 29/);
+  setTimeout(() => pedal._deliver(rest), 5);
+  const { prst } = await second;
   assert.deepEqual([...prst.slice(0x29)], pedal.bodies[1]);
   assert.match(log.text(), /unasked/);
 });

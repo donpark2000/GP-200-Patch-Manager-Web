@@ -108,13 +108,15 @@ const effectKey = (name) => String(name).toLowerCase().replace(/\b\d+x\d+\b/g, "
 
 /**
  * Where each source control goes on the target effect. Matched by name (or a
- * name given in `pairs`), then by position when the name differs but the
- * range is the same. A pair given as null drops that control, for a
- * position match that would be wrong (Vibrato T's Sens isn't a depth).
- * Returns the moves, the source controls with no place (dropped), and the
- * target controls with no source (set to their default).
+ * name given in `pairs`), then, for the same code only (`byPosition`), by
+ * position when the name differs but the range is the same: the same
+ * algorithm stores the same setting in the same place. Between two different
+ * effects a position says nothing (S-Comp's Threshold isn't COMP4's Sustain),
+ * so there only names and `pairs` count. A pair given as null drops that
+ * control. Returns the moves, the source controls with no place (dropped),
+ * and the target controls with no source (set to their default).
  */
-export function mapControls(from, to, pairs = {}) {
+export function mapControls(from, to, pairs = {}, { byPosition = from.code === to.code } = {}) {
   const used = new Set();
   const moves = [], dropped = [];
   const want = (c) => key(pairs[c.name] ?? c.name);
@@ -122,7 +124,7 @@ export function mapControls(from, to, pairs = {}) {
     if (pairs[c.name] === null) { dropped.push({ pos: c.pos, name: c.name, byChoice: true }); continue; }
     let t = to.controls.find((x) => !used.has(x) && key(x.name) === want(c));
     let byPos = false;
-    if (!t) { t = to.controls.find((x) => !used.has(x) && x.pos === c.pos && x.min === c.min && x.max === c.max && !from.controls.some((y) => y !== c && want(y) === key(x.name))); byPos = !!t; }
+    if (!t && byPosition) { t = to.controls.find((x) => !used.has(x) && x.pos === c.pos && x.min === c.min && x.max === c.max && !from.controls.some((y) => y !== c && want(y) === key(x.name))); byPos = !!t; }
     if (!t) { dropped.push({ pos: c.pos, name: c.name }); continue; }
     used.add(t);
     const mv = { from: c.pos, to: t.pos, name: c.name };

@@ -4437,3 +4437,45 @@ reply can't pass for the next slot's` (`tests/gp50.test.js`, from
 (a reply's rest 110 ms after a 100 ms timeout, the next reply 40 ms late), so
 a busy machine can reorder them: against the standards' "tests don't read
 the clock". Not changed yet.
+
+## 2026-11-23: Flaky test fixed; near matches for the no-match effects
+
+**The flaky test** (entry above, "Seen in passing"): the rest of slot 0's
+reply was sent 110 ms after the read began, so it had to land after the
+100 ms timeout and inside the 20 ms quiet wait: 10 ms of slack on each side,
+against Windows timers that step about 15 ms. Now it isn't timed against the
+timeout: it is sent 5 ms after the read has given up, inside a 300 ms quiet
+wait (this test only), and slot 1's reply stays 40 ms slow so the rest would
+land in it without the wait. **Shown failing:** with the quiet wait removed
+from `gp50/device.js` (temporarily), the test failed; put back, it passed 10
+of 10 alone and in every full run since. `device.js` unchanged.
+
+**Near matches by the developer's rules** ("one compressor is much like
+another ... one chorus ... high-gain amps"; cabs by "brand and config", open
+or closed back, number of speakers; it's easier to change one module than
+build a patch; what was substituted is shown to the user, for the UI stage).
+Claude picked a substitute for 102 of the 109 GP-200 effects with no match,
+each with the rule as its reason in `effect-map-choices.json`: overdrives to
+an overdrive of the same kind (Klon, Zendrive, TS9 to Green OD; Bluesbreaker
+to Yellow OD), distortions to SM Dist or La Charger, bass drives to Bass OD,
+choruses to A-Chorus, Mesa Mark leads to Mess DualV, clean channels to a
+clean amp, cabs by maker and speaker layout (bass cabs to AMPG 4x10,
+acoustic bodies to AC), delays to the nearest plain one (Dual Echo to Ping
+Pong with its A side). **Left as no match (7):** Step Filter, Ring Mod, Auto
+Swell, Hold, Freeze, Bit Smash, and the Volume module; nothing on the GP-50
+is like them, so the converter will leave that module off and say so.
+
+**Corrected while checking the picks: no position pairing between two
+different effects.** Matching a control by position when the names differ
+is sound for the same code (the same algorithm stores it in the same place;
+J-120 CL's Gain / VOL), but between two effects it paired nonsense: S-Comp's
+Threshold with COMP4's Sustain (they work opposite ways), FAT BB's Bass with
+Boost's Gain, Hammy's Position with Pitch's H-VOL, G-Chorus's Volume with
+A-Chorus's Tone. Now only names and pairs given in the choices count there;
+10 sensible pairs are given (Saturation = Gain, Low = Bass, Gain = Gain 1 ...).
+The earlier Vibrato T / Sens mistake was one of these.
+
+**Counts now:** GP-50 to GP-200 same 100, rename 6, close 6, none 0; GP-200
+to GP-50 same 69, rename 4, close 195, none 7. Real patches still all in
+range (368, 15,016 values). Tests: 3 asserts added (position pairing);
+suite 239 pass.

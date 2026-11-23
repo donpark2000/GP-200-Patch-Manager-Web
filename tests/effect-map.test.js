@@ -78,6 +78,12 @@ test("effect map: a setting moves to its position on the other pedal; missing on
   assert.deepEqual(back.dropped.map((c) => c.name), ["Low Cut", "High Cut"]);
   const time = mapControls(gp200.get(0x0b000000), gp50.get(0x0b000000)).moves.find((m) => m.name === "Time");
   assert.deepEqual(time.clamp, [20, 1000], "a narrower range on the other pedal is a limit");
+  // Position pairs only within one code: between two effects it says nothing.
+  const a = { code: 1, controls: [{ pos: 0, name: "Threshold", min: 0, max: 100 }] };
+  const b = { code: 2, controls: [{ pos: 0, name: "Sustain", min: 0, max: 100, def: 20 }] };
+  assert.deepEqual(mapControls(a, b).dropped.map((c) => c.name), ["Threshold"], "different codes: not paired by position");
+  assert.equal(mapControls(a, { ...b, code: 1 }).moves[0].byPosition, true, "same code: paired by position");
+  assert.equal(mapControls(a, b, { Threshold: "Sustain" }).moves[0].paired, true, "a pair given by hand still counts");
   // A pair given as null drops a control a position match would wrongly pair.
   const unpaired = mapControls(gp50.get(0x0a000019), gp200.get(0x0a000019), { VOL: null });
   assert.deepEqual(unpaired.moves, []);

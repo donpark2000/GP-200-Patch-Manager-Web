@@ -1,5 +1,5 @@
 {
-  "about": "Judgments the effect map can't take from Valeton's files: suggested near matches (by Claude, for the developer to review) and codes the two files describe differently. Used by tools/make-effect-map.js. \"controls\" pairs a control with a differently named one; null drops it, where pairing it by position would be wrong.",
+  "about": "Judgments the effect map can't take from Valeton's files: near matches (suggested by Claude by the developer's rules, for the developer to review), each with its reason. Used by tools/make-effect-map.js. Between two different effects, controls pair by name only; \"controls\" pairs a control with a differently named one, and null drops it.",
   "conflicts": {},
   "toGp200": {
     "0x03000022": {
@@ -43,11 +43,35 @@
     }
   },
   "toGp50": {
+    "0x00000003": {
+      "name": "S-Comp",
+      "to": "0x00000001",
+      "toName": "COMP4",
+      "why": "Developer's rule, 2026-11-23: one compressor is much like another (COMP4: the GP-50's most adjustable)"
+    },
+    "0x0000000A": {
+      "name": "AC Boost",
+      "to": "0x0000000B",
+      "toName": "B-Boost",
+      "why": "Developer's rule, 2026-11-23: same kind: Xotic drive/boost (AC Booster / BB Preamp)"
+    },
     "0x0000000C": {
       "name": "P-Boost",
       "to": "0x0000001A",
       "toName": "Boost",
       "why": "Both Xotic clean boosts (RC Booster / EP Booster)"
+    },
+    "0x0000000E": {
+      "name": "14 Boost",
+      "to": "0x0000001A",
+      "toName": "Boost",
+      "why": "Developer's rule, 2026-11-23: same kind: clean boost"
+    },
+    "0x00000019": {
+      "name": "FAT BB",
+      "to": "0x0000001A",
+      "toName": "Boost",
+      "why": "Developer's rule, 2026-11-23: same kind: clean boost"
     },
     "0x0000001D": {
       "name": "Gate 2",
@@ -61,11 +85,62 @@
       "toName": "Gate",
       "why": "The GP-50's only noise gate (Gate 3 is an expander)"
     },
+    "0x01000000": {
+      "name": "AC Refiner",
+      "to": "0x01000001",
+      "toName": "AC Sim",
+      "why": "Developer's rule, 2026-11-23: same kind: acoustic guitar sound"
+    },
+    "0x01000024": {
+      "name": "P-Bend",
+      "to": "0x01000023",
+      "toName": "Pitch",
+      "why": "Developer's rule, 2026-11-23: same kind: polyphonic pitch shifter"
+    },
+    "0x01000033": {
+      "name": "Saturate",
+      "to": "0x0000001A",
+      "toName": "Boost",
+      "why": "Developer's rule, 2026-11-23: nearest kind: light saturation / boost",
+      "controls": {
+        "Saturation": "Gain"
+      }
+    },
+    "0x01000043": {
+      "name": "Hyper EQ",
+      "to": "0x01000035",
+      "toName": "Guitar EQ 1",
+      "why": "Developer's rule, 2026-11-23: same kind: EQ (the bands differ, so set flat; Volume kept)"
+    },
+    "0x01000049": {
+      "name": "Hammy",
+      "to": "0x01000023",
+      "toName": "Pitch",
+      "why": "Developer's rule, 2026-11-23: same kind: pitch shifter"
+    },
+    "0x0100004D": {
+      "name": "Harmonizer 1",
+      "to": "0x01000023",
+      "toName": "Pitch",
+      "why": "Developer's rule, 2026-11-23: same kind: harmony (fixed intervals on the GP-50)"
+    },
+    "0x0100004E": {
+      "name": "Harmonizer 2",
+      "to": "0x01000023",
+      "toName": "Pitch",
+      "why": "Developer's rule, 2026-11-23: same kind: harmony (fixed intervals on the GP-50)"
+    },
     "0x03000001": {
       "name": "OD 9",
       "to": "0x03000000",
       "toName": "Green OD",
       "why": "Tube Screamer TS9 / TS808"
+    },
+    "0x03000004": {
+      "name": "Swarm",
+      "to": "0x03000006",
+      "toName": "Super OD",
+      "why": "Developer's rule, 2026-11-23: same kind: overdrive"
     },
     "0x03000008": {
       "name": "Scream OD",
@@ -73,17 +148,169 @@
       "toName": "Green OD",
       "why": "Both Tube Screamer style"
     },
+    "0x03000009": {
+      "name": "Blues OD",
+      "to": "0x03000006",
+      "toName": "Super OD",
+      "why": "Developer's rule, 2026-11-23: same kind: overdrive"
+    },
+    "0x0300000A": {
+      "name": "Force",
+      "to": "0x03000030",
+      "toName": "La Charger",
+      "why": "Developer's rule, 2026-11-23: same kind: amp-like overdrive/distortion (OCD / Crunch Box)"
+    },
+    "0x0300000B": {
+      "name": "Tube",
+      "to": "0x03000000",
+      "toName": "Green OD",
+      "why": "Developer's rule, 2026-11-23: same kind: tube-style overdrive"
+    },
+    "0x0300000E": {
+      "name": "Blues Master",
+      "to": "0x03000002",
+      "toName": "Yellow OD",
+      "why": "Developer's rule, 2026-11-23: same kind: low-gain overdrive (Bluesbreaker / OD-1)"
+    },
+    "0x0300000F": {
+      "name": "Master OD",
+      "to": "0x03000006",
+      "toName": "Super OD",
+      "why": "Developer's rule, 2026-11-23: same kind: overdrive"
+    },
+    "0x03000010": {
+      "name": "TaiChi OD",
+      "to": "0x03000000",
+      "toName": "Green OD",
+      "why": "Developer's rule, 2026-11-23: same kind: smooth overdrive (Zendrive / TS808)"
+    },
+    "0x03000014": {
+      "name": "Penesas",
+      "to": "0x03000000",
+      "toName": "Green OD",
+      "why": "Developer's rule, 2026-11-23: same kind: transparent overdrive (Klon / TS808)"
+    },
+    "0x0300001C": {
+      "name": "Precise OD",
+      "to": "0x03000000",
+      "toName": "Green OD",
+      "why": "Developer's rule, 2026-11-23: same kind: tight overdrive"
+    },
+    "0x0300001E": {
+      "name": "Timmy OD",
+      "to": "0x03000006",
+      "toName": "Super OD",
+      "why": "Developer's rule, 2026-11-23: same kind: transparent overdrive"
+    },
     "0x03000022": {
       "name": "Lazaro",
       "to": "0x03000022",
       "toName": "Sora Fuzz",
       "why": "Developer, 2026-11-23: usable and close either way. Valeton describes this code three ways (Suite: Sora Fuzz, a Tone Bender Mk II; GP-50 manual: a Fuzz Face, likely copied from Red Haze; GP-200: Lazaro, a Big Muff); the same code is kept"
     },
+    "0x03000026": {
+      "name": "Sora Fuzz",
+      "to": "0x03000022",
+      "toName": "Sora Fuzz",
+      "why": "Developer's rule, 2026-11-23: same name; germanium fuzz (Tone Bender, per Valeton Suite)"
+    },
+    "0x0300002D": {
+      "name": "Chief",
+      "to": "0x03000030",
+      "toName": "La Charger",
+      "why": "Developer's rule, 2026-11-23: same kind: amp-in-a-box distortion (Guv'nor / Crunch Box)"
+    },
+    "0x0300002E": {
+      "name": "Master Dist",
+      "to": "0x0300002A",
+      "toName": "SM Dist",
+      "why": "Developer's rule, 2026-11-23: same kind: distortion"
+    },
+    "0x03000032": {
+      "name": "Revolt",
+      "to": "0x0300002A",
+      "toName": "SM Dist",
+      "why": "Developer's rule, 2026-11-23: same kind: distortion"
+    },
+    "0x0300003F": {
+      "name": "Flex OD",
+      "to": "0x0300002A",
+      "toName": "SM Dist",
+      "why": "Developer's rule, 2026-11-23: same kind: distortion"
+    },
+    "0x03000044": {
+      "name": "Black Bass",
+      "to": "0x03000040",
+      "toName": "Bass OD",
+      "why": "Developer's rule, 2026-11-23: same kind: bass drive",
+      "controls": {
+        "Low": "Bass"
+      }
+    },
+    "0x03000050": {
+      "name": "Empire OD",
+      "to": "0x03000002",
+      "toName": "Yellow OD",
+      "why": "Developer's rule, 2026-11-23: same kind: low-gain overdrive"
+    },
+    "0x03000051": {
+      "name": "Bass Hammer",
+      "to": "0x03000040",
+      "toName": "Bass OD",
+      "why": "Developer's rule, 2026-11-23: same kind: bass drive"
+    },
+    "0x03000052": {
+      "name": "Flagman Dist",
+      "to": "0x0300002A",
+      "toName": "SM Dist",
+      "why": "Developer's rule, 2026-11-23: same kind: high-gain distortion"
+    },
+    "0x04000001": {
+      "name": "G-Chorus",
+      "to": "0x04000000",
+      "toName": "A-Chorus",
+      "why": "Developer's rule, 2026-11-23: one chorus is much like another"
+    },
+    "0x04000002": {
+      "name": "C-Chorus",
+      "to": "0x04000000",
+      "toName": "A-Chorus",
+      "why": "Developer's rule, 2026-11-23: one chorus is much like another"
+    },
+    "0x0400000F": {
+      "name": "M-Chorus",
+      "to": "0x04000000",
+      "toName": "A-Chorus",
+      "why": "Developer's rule, 2026-11-23: one chorus is much like another",
+      "controls": {
+        "Filter": "Tone"
+      }
+    },
     "0x04000012": {
       "name": "B-Jet",
       "to": "0x04000011",
       "toName": "Jet",
-      "why": "Flanger (B-Jet is tuned for bass)"
+      "why": "Flanger (B-Jet is tuned for bass)",
+      "controls": {
+        "Pre Delay": "P.Delay"
+      }
+    },
+    "0x04000014": {
+      "name": "Trem Jet",
+      "to": "0x04000011",
+      "toName": "Jet",
+      "why": "Developer's rule, 2026-11-23: same kind: flanger (its tremolo is lost)",
+      "controls": {
+        "Flg Depth": "Depth",
+        "Flg Rate": "Rate",
+        "Flg Sync": "Sync"
+      }
+    },
+    "0x04000016": {
+      "name": "G-Roto",
+      "to": "0x04000015",
+      "toName": "V-Roto",
+      "why": "Developer's rule, 2026-11-23: same kind: vibrato"
     },
     "0x04000018": {
       "name": "Vibrato T",
@@ -91,7 +318,8 @@
       "toName": "Vibrato",
       "why": "Vibrato. Vibrato T's Sens sets how much playing strength changes the depth (the GP-200 editor's text), not the depth itself: dropped, Depth set to default",
       "controls": {
-        "Sens": null
+        "Sens": null,
+        "Output": "VOL"
       }
     },
     "0x0400001A": {
@@ -105,6 +333,16 @@
       "to": "0x04000019",
       "toName": "O-Phase",
       "why": "Phaser (EHX Small Stone / MXR Phase 90)"
+    },
+    "0x0400001E": {
+      "name": "Pan Phase",
+      "to": "0x04000019",
+      "toName": "O-Phase",
+      "why": "Developer's rule, 2026-11-23: same kind: phaser (its panning is lost)",
+      "controls": {
+        "Phs Rate": "Rate",
+        "Phs Sync": "Sync"
+      }
     },
     "0x04000020": {
       "name": "Vibe",
@@ -130,11 +368,29 @@
       "toName": "C-Wah",
       "why": "The GP-50's only wah"
     },
+    "0x05000007": {
+      "name": "B-Wah",
+      "to": "0x05000008",
+      "toName": "C-Wah",
+      "why": "Developer's rule, 2026-11-23: same kind: wah (the GP-50's only one)"
+    },
     "0x0500000A": {
       "name": "P-Wah",
       "to": "0x05000008",
       "toName": "C-Wah",
       "why": "The GP-50's only wah (a Cry Baby setting / Cry Baby)"
+    },
+    "0x07000005": {
+      "name": "Dark DLX",
+      "to": "0x07000004",
+      "toName": "Dark Twin",
+      "why": "Developer's rule, 2026-11-23: same family: Fender blackface clean"
+    },
+    "0x07000009": {
+      "name": "Dark Vibra",
+      "to": "0x07000004",
+      "toName": "Dark Twin",
+      "why": "Developer's rule, 2026-11-23: same family: Fender blackface clean"
     },
     "0x0700000D": {
       "name": "Silver Twin",
@@ -142,11 +398,51 @@
       "toName": "Dark Twin",
       "why": "Fender Twin Reverb, Silverface / Blackface"
     },
+    "0x0700000F": {
+      "name": "SUPDual CL",
+      "to": "0x07000028",
+      "toName": "SUPDual OD",
+      "why": "Developer's rule, 2026-11-23: same amp, Supro Dual-Tone (CH1 / CH1+2)",
+      "controls": {
+        "Gain": "Gain 1",
+        "Tone": "Tone 1"
+      }
+    },
     "0x07000010": {
       "name": "Foxy 15TB",
       "to": "0x07000075",
       "toName": "Foxy Bass",
       "why": "Vox AC-100 bass amp on both"
+    },
+    "0x0700001A": {
+      "name": "BogSV CL",
+      "to": "0x07000015",
+      "toName": "Match CL",
+      "why": "Developer's rule, 2026-11-23: same kind: boutique clean"
+    },
+    "0x0700001B": {
+      "name": "Z38 CL",
+      "to": "0x07000011",
+      "toName": "Foxy 30N",
+      "why": "Developer's rule, 2026-11-23: same kind: class A clean (Dr. Z / AC30)"
+    },
+    "0x0700001F": {
+      "name": "Knights CL",
+      "to": "0x07000011",
+      "toName": "Foxy 30N",
+      "why": "Developer's rule, 2026-11-23: same kind: British class A clean"
+    },
+    "0x07000022": {
+      "name": "Bad-KT CL",
+      "to": "0x07000015",
+      "toName": "Match CL",
+      "why": "Developer's rule, 2026-11-23: same kind: class A boutique clean"
+    },
+    "0x07000023": {
+      "name": "Solo100 CL",
+      "to": "0x07000004",
+      "toName": "Dark Twin",
+      "why": "Developer's rule, 2026-11-23: same kind: clean"
     },
     "0x0700002B": {
       "name": "UK 45+",
@@ -158,19 +454,67 @@
       "name": "UK 45JP",
       "to": "0x0700002A",
       "toName": "UK 45",
-      "why": "Marshall JTM45, jumped / normal input"
+      "why": "Marshall JTM45, jumped / normal input",
+      "controls": {
+        "Gain 1": "Gain"
+      }
     },
     "0x0700002D": {
       "name": "UK 50",
       "to": "0x0700002F",
       "toName": "UK 50JP",
-      "why": "Marshall JMP50, jumped on both"
+      "why": "Marshall JMP50, jumped on both",
+      "controls": {
+        "Gain": "Gain 1"
+      }
     },
     "0x0700002E": {
       "name": "UK 50+",
       "to": "0x0700002F",
       "toName": "UK 50JP",
-      "why": "Marshall JMP50, another setting"
+      "why": "Marshall JMP50, another setting",
+      "controls": {
+        "Gain": "Gain 1"
+      }
+    },
+    "0x07000030": {
+      "name": "UK SLP",
+      "to": "0x0700002F",
+      "toName": "UK 50JP",
+      "why": "Developer's rule, 2026-11-23: same family: Marshall Plexi era",
+      "controls": {
+        "Gain": "Gain 1"
+      }
+    },
+    "0x07000039": {
+      "name": "Mess2C+ 1",
+      "to": "0x07000068",
+      "toName": "Mess DualV",
+      "why": "Developer's rule, 2026-11-23: high-gain amps are much alike; same maker (Mesa/Boogie)"
+    },
+    "0x0700003A": {
+      "name": "Mess2C+ 2",
+      "to": "0x07000068",
+      "toName": "Mess DualV",
+      "why": "Developer's rule, 2026-11-23: high-gain amps are much alike; same maker (Mesa/Boogie)"
+    },
+    "0x0700003B": {
+      "name": "Mess2C+ 3",
+      "to": "0x07000068",
+      "toName": "Mess DualV",
+      "why": "Developer's rule, 2026-11-23: high-gain amps are much alike; same maker (Mesa/Boogie)"
+    },
+    "0x0700003D": {
+      "name": "BogSV OD",
+      "to": "0x0700006D",
+      "toName": "Bog RedV",
+      "why": "Developer's rule, 2026-11-23: same maker: Bogner drive"
+    },
+    "0x0700003E": {
+      "name": "Juice30 OD",
+      "to": "0x07000053",
+      "toName": "Juice R100",
+      "why": "Developer's rule, 2026-11-23: same maker: Orange"
     },
     "0x07000040": {
       "name": "Flagman 1",
@@ -184,11 +528,53 @@
       "toName": "Flagman+",
       "why": "Friedman BE100: BE channel / HBE channel (more gain)"
     },
+    "0x07000043": {
+      "name": "Bog BlueV",
+      "to": "0x0700006D",
+      "toName": "Bog RedV",
+      "why": "Developer's rule, 2026-11-23: same amp, Bogner XTC (blue / red channel, more gain)"
+    },
+    "0x07000044": {
+      "name": "Bog BlueM",
+      "to": "0x0700006D",
+      "toName": "Bog RedV",
+      "why": "Developer's rule, 2026-11-23: same amp, Bogner XTC (blue / red channel, more gain)"
+    },
+    "0x07000048": {
+      "name": "Match OD",
+      "to": "0x07000027",
+      "toName": "Foxy 30TB",
+      "why": "Developer's rule, 2026-11-23: same kind: class A drive (Matchless / AC30)"
+    },
+    "0x0700004A": {
+      "name": "L-Star OD",
+      "to": "0x07000035",
+      "toName": "UK 800",
+      "why": "Developer's rule, 2026-11-23: same kind: medium-gain drive"
+    },
     "0x0700004E": {
       "name": "UK 900",
       "to": "0x07000035",
       "toName": "UK 800",
       "why": "Marshall JCM900 / JCM800"
+    },
+    "0x07000055": {
+      "name": "Mess4 LD",
+      "to": "0x07000068",
+      "toName": "Mess DualV",
+      "why": "Developer's rule, 2026-11-23: high-gain amps are much alike; same maker (Mesa/Boogie)"
+    },
+    "0x07000056": {
+      "name": "Mess4 LD 2",
+      "to": "0x07000068",
+      "toName": "Mess DualV",
+      "why": "Developer's rule, 2026-11-23: high-gain amps are much alike; same maker (Mesa/Boogie)"
+    },
+    "0x07000057": {
+      "name": "Mess4 LD 3",
+      "to": "0x07000068",
+      "toName": "Mess DualV",
+      "why": "Developer's rule, 2026-11-23: high-gain amps are much alike; same maker (Mesa/Boogie)"
     },
     "0x0700005E": {
       "name": "Flagman+ 2",
@@ -220,17 +606,143 @@
       "toName": "Bog RedV",
       "why": "Bogner XTC red channel, modern / vintage"
     },
+    "0x0700007B": {
+      "name": "Knights CL+",
+      "to": "0x07000011",
+      "toName": "Foxy 30N",
+      "why": "Developer's rule, 2026-11-23: same kind: British class A clean"
+    },
+    "0x0700007C": {
+      "name": "Knights OD",
+      "to": "0x07000027",
+      "toName": "Foxy 30TB",
+      "why": "Developer's rule, 2026-11-23: same kind: British class A drive"
+    },
+    "0x08000075": {
+      "name": "Mini Bass",
+      "to": "0x07000073",
+      "toName": "Classic Bass",
+      "why": "Developer's rule, 2026-11-23: same maker: Ampeg bass amp (B-15 / SVT)"
+    },
+    "0x08000076": {
+      "name": "Bass Pre",
+      "to": "0x07000073",
+      "toName": "Classic Bass",
+      "why": "Developer's rule, 2026-11-23: same kind: bass amp"
+    },
+    "0x0A000000": {
+      "name": "SUP ZEP",
+      "to": "0x0A000001",
+      "toName": "TWD CP 1x8",
+      "why": "Developer's rule, 2026-11-23: cab by size: one small speaker"
+    },
+    "0x0A000002": {
+      "name": "TWD PRC",
+      "to": "0x0A000004",
+      "toName": "Dark VIT 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by maker and layout: Fender, one speaker"
+    },
+    "0x0A000003": {
+      "name": "DARK LUX",
+      "to": "0x0A000004",
+      "toName": "Dark VIT 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by maker and layout: Fender 1x12"
+    },
+    "0x0A000005": {
+      "name": "ROUT",
+      "to": "0x0A000004",
+      "toName": "Dark VIT 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: American-style 1x12"
+    },
+    "0x0A000006": {
+      "name": "BogSV",
+      "to": "0x0A000009",
+      "toName": "L-Star 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: boutique 1x12"
+    },
+    "0x0A000007": {
+      "name": "Bad-KT",
+      "to": "0x0A000008",
+      "toName": "Foxy 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: British-voiced class A 1x12"
+    },
+    "0x0A00000A": {
+      "name": "TOM OPEN",
+      "to": "0x0A000004",
+      "toName": "Dark VIT 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: American-style 1x12"
+    },
+    "0x0A00000B": {
+      "name": "TWD LUX",
+      "to": "0x0A000004",
+      "toName": "Dark VIT 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by maker and layout: Fender 1x12"
+    },
     "0x0A00000C": {
       "name": "US STO",
       "to": "0x0A000009",
       "toName": "L-Star 1x12",
       "why": "Mesa/Boogie 1x12"
     },
+    "0x0A00000D": {
+      "name": "ACE",
+      "to": "0x0A000008",
+      "toName": "Foxy 1x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: Vox-style 1x12"
+    },
     "0x0A00000E": {
       "name": "UK G12",
       "to": "0x0A000013",
       "toName": "UK GRN 2x12",
       "why": "Marshall, 1x12 / 2x12"
+    },
+    "0x0A000010": {
+      "name": "Match",
+      "to": "0x0A00000F",
+      "toName": "Foxy 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: class A 2x12"
+    },
+    "0x0A000014": {
+      "name": "TWD SUP",
+      "to": "0x0A00001B",
+      "toName": "Dark CS 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by maker and layout: Fender, two speakers"
+    },
+    "0x0A000015": {
+      "name": "BOUTI",
+      "to": "0x0A00001B",
+      "toName": "Dark CS 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: custom 2x12"
+    },
+    "0x0A000017": {
+      "name": "SUP",
+      "to": "0x0A00001B",
+      "toName": "Dark CS 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: American 2x12"
+    },
+    "0x0A000018": {
+      "name": "MATT TWD",
+      "to": "0x0A00000F",
+      "toName": "Foxy 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: class A 2x12"
+    },
+    "0x0A00001A": {
+      "name": "Freed",
+      "to": "0x0A000019",
+      "toName": "SUP Star 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: closed 2x12"
+    },
+    "0x0A00001C": {
+      "name": "DB Rock",
+      "to": "0x0A00001B",
+      "toName": "Dark CS 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: American 2x12"
+    },
+    "0x0A00001D": {
+      "name": "Blue SK",
+      "to": "0x0A00000F",
+      "toName": "Foxy 2x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: 2x12 with Alnico Blue speakers (as an AC30)"
     },
     "0x0A00001E": {
       "name": "Bellman 2",
@@ -268,11 +780,35 @@
       "toName": "Bog 4x12",
       "why": "Bogner 4x12"
     },
+    "0x0A00002A": {
+      "name": "H-WAY",
+      "to": "0x0A000022",
+      "toName": "UK GRN 4x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: British 4x12"
+    },
     "0x0A00002B": {
       "name": "UK Dark",
       "to": "0x0A000022",
       "toName": "UK GRN 4x12",
       "why": "Marshall 4x12 (1968)"
+    },
+    "0x0A00002C": {
+      "name": "Way",
+      "to": "0x0A000022",
+      "toName": "UK GRN 4x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: British 4x12"
+    },
+    "0x0A00002D": {
+      "name": "Dumb",
+      "to": "0x0A000022",
+      "toName": "UK GRN 4x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: 4x12"
+    },
+    "0x0A00002F": {
+      "name": "TRP",
+      "to": "0x0A000026",
+      "toName": "Eagle 4x12",
+      "why": "Developer's rule, 2026-11-23: cab by layout: German high-gain 4x12 (H&K / ENGL)"
     },
     "0x0A000030": {
       "name": "UK 75",
@@ -286,6 +822,36 @@
       "toName": "Mess 4x12",
       "why": "Mesa/Boogie 4x12 (Road King / Rectifier)"
     },
+    "0x0A000032": {
+      "name": "ADM 1",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Developer's rule, 2026-11-23: bass cab"
+    },
+    "0x0A000033": {
+      "name": "Workman 1",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Developer's rule, 2026-11-23: bass cab"
+    },
+    "0x0A000034": {
+      "name": "F-TOP",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Developer's rule, 2026-11-23: bass cab, same maker (Ampeg)"
+    },
+    "0x0A000035": {
+      "name": "US BASS",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Developer's rule, 2026-11-23: bass cab"
+    },
+    "0x0A000036": {
+      "name": "MATT",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Developer's rule, 2026-11-23: bass cab"
+    },
     "0x0A000037": {
       "name": "ADM 2",
       "to": "0x0A000038",
@@ -297,6 +863,12 @@
       "to": "0x0A000038",
       "toName": "AMPG 4x10",
       "why": "Bass 4x10"
+    },
+    "0x0A00003A": {
+      "name": "HACK",
+      "to": "0x0A000038",
+      "toName": "AMPG 4x10",
+      "why": "Developer's rule, 2026-11-23: bass cab"
     },
     "0x0A00003B": {
       "name": "AMPG 2",
@@ -334,11 +906,59 @@
       "toName": "AC",
       "why": "Acoustic guitar body (the GP-50 has one, a dreadnought)"
     },
+    "0x0A000042": {
+      "name": "Classic AC",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Developer's rule, 2026-11-23: acoustic body (the GP-50 has one)"
+    },
+    "0x0A000043": {
+      "name": "Mandolin",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Developer's rule, 2026-11-23: acoustic body (the GP-50 has one)"
+    },
+    "0x0A000044": {
+      "name": "Fretless Bass",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Developer's rule, 2026-11-23: acoustic body (the GP-50 has one)"
+    },
+    "0x0A000045": {
+      "name": "Double Bass",
+      "to": "0x0A00003C",
+      "toName": "AC",
+      "why": "Developer's rule, 2026-11-23: acoustic body (the GP-50 has one)"
+    },
+    "0x0B000003": {
+      "name": "Dual Echo",
+      "to": "0x0B000004",
+      "toName": "Ping Pong",
+      "why": "Developer's rule, 2026-11-23: same kind: two-sided delay (its A side kept)",
+      "controls": {
+        "Mix A": "Mix",
+        "Time A": "Time",
+        "Feedback A": "F.Back",
+        "Sync A": "Sync"
+      }
+    },
+    "0x0B00000C": {
+      "name": "M-Echo",
+      "to": "0x0B000002",
+      "toName": "Tape",
+      "why": "Developer's rule, 2026-11-23: same kind: tape echo"
+    },
     "0x0B000012": {
       "name": "999 Echo",
       "to": "0x0B000001",
       "toName": "Analog",
       "why": "Analog delay (Maxon AD900)"
+    },
+    "0x0B000014": {
+      "name": "Vintage Rack",
+      "to": "0x0B000000",
+      "toName": "Pure",
+      "why": "Developer's rule, 2026-11-23: same kind: digital delay"
     },
     "0x0B00001D": {
       "name": "BBD Delay S",
@@ -358,11 +978,41 @@
       "toName": "Tape",
       "why": "Tape delay; stereo on the GP-200"
     },
+    "0x0B000026": {
+      "name": "Lofi Echo",
+      "to": "0x0B000001",
+      "toName": "Analog",
+      "why": "Developer's rule, 2026-11-23: same kind: dark delay"
+    },
     "0x0B000028": {
       "name": "Rev Echo",
       "to": "0x0B000013",
       "toName": "Rev Echo",
       "why": "Same name; another code on the GP-50 (reverse delay on both)"
+    },
+    "0x0B00002A": {
+      "name": "Ambience 1",
+      "to": "0x0B000000",
+      "toName": "Pure",
+      "why": "Developer's rule, 2026-11-23: same kind: delay"
+    },
+    "0x0B00002E": {
+      "name": "Ambience 2",
+      "to": "0x0B000000",
+      "toName": "Pure",
+      "why": "Developer's rule, 2026-11-23: same kind: delay"
+    },
+    "0x0B000032": {
+      "name": "Broken Delay",
+      "to": "0x0B000000",
+      "toName": "Pure",
+      "why": "Developer's rule, 2026-11-23: same kind: delay"
+    },
+    "0x0B000033": {
+      "name": "Ice Delay",
+      "to": "0x0B000000",
+      "toName": "Pure",
+      "why": "Developer's rule, 2026-11-23: same kind: delay (its pitch slices are lost)"
     },
     "0x0C000003": {
       "name": "Plate",
@@ -378,6 +1028,12 @@
       "to": "0x0C000015",
       "toName": "Sweet Space",
       "why": "Same name; another code on the GP-50 (modulated reverb on both)"
+    },
+    "0x0C000009": {
+      "name": "Shimmer",
+      "to": "0x0C000006",
+      "toName": "N-Star",
+      "why": "Developer's rule, 2026-11-23: same kind: bright, lush reverb (no octave)"
     },
     "0x0C00000C": {
       "name": "Club",

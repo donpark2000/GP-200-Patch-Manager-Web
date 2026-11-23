@@ -397,6 +397,14 @@ Stage 1 done 2026-11-23 (journal, "GP-50 Edge run with a power cycle").
   *conflict* (listen first), *none* (can't be copied as it is), *out of
   scope* (NAM/SnapTone, user IRs). A control the source lacks gets the
   target's default.
+- **Near matches by kind** (developer, 2026-11-23): an effect the other
+  pedal lacks goes to one of the same kind (a compressor to a compressor, a
+  high-gain amp to a high-gain amp, a cab of the same maker and speaker
+  layout), since changing one module is easier than building a patch. Only
+  effects with nothing like them stay *none*. Between two different effects
+  controls pair by name only, never by position.
+- **The user is told** what was substituted, dropped or limited in each
+  converted patch; how, is for the UI (stage 4).
 
 **Working rules:** Claude works through a stage without approval at each
 step and reports at the end of each, or when hands, ears or a decision are
