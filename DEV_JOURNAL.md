@@ -4934,3 +4934,10 @@ stored either.** So the converter is ruled out; the GP-200 isn't storing the
 app's writes in its present state. Next: a save from Valeton's GP-200 editor,
 with nothing else changed, to see whether the pedal takes writes from any
 tool.
+- **Valeton's GP-200 editor** (developer, nothing else changed): it reported
+  the patch imported successfully, but the name on the pedal didn't change.
+  So the pedal isn't storing writes from any tool. The GP-50 was plugged in
+  the whole time, switched off and charging; its USB ports still show up
+  (the app's log lists "GP-50" in and out).
+- Next, before any factory reset: unplug the GP-50, power-cycle the GP-200,
+  then repeat the one-patch restore from the app.
