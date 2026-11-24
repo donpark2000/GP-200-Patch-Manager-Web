@@ -5259,3 +5259,42 @@ second, the second saved as `...22-46-57-2`.
 to the GP-200 from 50-B; then CTRL on a pair or two, e.g. GP-50 56 (from 1-C:
 PRE + DLY / DST) against the GP-200's 1-C.
 
+
+## 2026-11-24: More than one module per CTRL: data, a GP-50 test, heuristics
+
+**The developer:** does Claude need more GP-50 data (the CTRL test had one
+module per switch, a GP-50 CTRL takes up to 3)? And the heuristic for a
+GP-200 CTRL with more than 3 needs discussing.
+
+**What the data has** (reads of files only):
+- GP-50 factory 0-54: 110 CTRLs; 20 empty, 84 one module, **6 two** (01 Neo
+  Soul CTRL 2 DLY+RVB; 02 Star Night CTRL 1 PRE+MOD, CTRL 2 DLY+RVB; 11 Flow,
+  21 Eddie Solo, 43 Nebula), **none three**. So two modules are seen only in
+  the bytes, three not at all.
+- GP-200 September backup: 2,048 CTRLs (8 per patch); 496 one module, 12
+  two, **2 three** (28-C and 28-D, CTRL 2 DST+EQ+DLY), **none over 3**. The
+  over-3 rule never applies to the developer's patches; it's for others'.
+  Common pairs: DST+NR (6), PRE+DLY (3).
+
+**GP-50 test, set up:** GP-50 backup as the reference
+(`ctrl3-test_2026-11-24\gp50_all_2026-11-24T22-57-28.zip`, 100), then patch
+99 (the converted 12-B Hard Rock) rewritten as **"CTRL Test"**: CTRL 1 =
+PRE + DST + DLY (`0x86`), CTRL 2 = MOD + RVB (`0x140`); against the original,
+only the name, the header CRC and bytes 542 and 547 differ. Written and read
+back identical, 0.9 s; selected 99 before and after. Patch writes: **1,793**.
+For the developer: read CTRL 1 and 2 of patch 99 off the GP-50 (select
+another patch and come back first), and of factory 02 Star Night (the bytes
+say PRE+MOD / DLY+RVB). That checks three modules written by this tool and
+two in a patch Valeton made.
+
+**Heuristic options for over 3** (for the developer to choose; the converter
+now keeps the first 3 in playing order):
+- A. Playing order (now): predictable; keeps early modules (PRE, DST, AMP),
+  drops late ones (DLY, RVB), which a lead CTRL is often about.
+- B. Utility modules go first: drop NR, then CAB, then EQ (small audible
+  change; NR often rides along with DST), then playing order.
+- C. A fixed rank by how much the switch is heard, e.g. DST, AMP, PRE, MOD,
+  DLY, RVB, WAH, EQ, CAB, NR.
+- D. All or nothing: carry no module of that CTRL, so a switch never does
+  half of what it did.
+Every option reports what was dropped. Claude's recommendation: B.
