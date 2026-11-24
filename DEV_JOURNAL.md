@@ -28,6 +28,13 @@ This journal records only what's new or different for the browser.
   aren't stored, in Valeton's editor too; switching it back in Device Manager
   fixes it. Help's troubleshooting could say so, with the symptoms; for the
   developer to decide (stage 4, or sooner for the live GP-200 app).
+- **Q14. Where is the GP-200's CTRL?** (2026-11-24.) The converter reads it
+  from three one-module records at 0x448, but the developer says a GP-200
+  CTRL can switch many modules, and the data points to four bit masks at
+  0x460 (CTRL 1-4) instead. Settled by the developer reading CTRL 1-4 off
+  the GP-200 for 1-C, 3-B and 7-B (entry "GP-200 CTRL: probably four masks").
+  Also open there: what bits 11-15 of a mask mean, and what the 0x448
+  records are.
 
 ## Resolved
 
@@ -968,6 +975,12 @@ entry of that date). The skill's source now lives in the private repo
    this app and the maker's editor alike; a factory reset didn't help; a
    Windows update had put back a driver the developer had replaced long
    before, and switching it back fixed both.
+9. **Ask what the device's own screens allow before reading a layout from
+   data alone.** One question ("how many of X can a Y hold?") can rule a
+   reading in or out at once. Evidence: the GP-200's CTRL was read as one
+   module per switch from 192 patches; the developer said at once that a
+   CTRL can switch many modules, which pointed to four masks the reading
+   had missed (Valeton's editor names CTRL 1-4).
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -5127,3 +5140,62 @@ one (2 tests fail), the playing order reversed (1), masks written one byte off
 to the GP-200 from 50-B, then check CTRL on a few pairs, including one of
 the GP-200's own (1-B to 12-B) against the pedal's screen, to confirm the
 GP-200 side.
+
+## 2026-11-24: GP-200 CTRL: probably four masks, not the 0x448 records
+
+**The developer (2026-11-24):** a CTRL switch can turn several modules on or
+off together. On the GP-200 all 11 modules look assignable to one CTRL; on the
+GP-50 up to 3 per switch. So GP-200 to GP-50 can't always be exact, the other
+way should be; heuristics needed when a GP-200 CTRL has more than 3. The
+GP-50 test (entry above) had one module on each CTRL.
+
+**What that showed (Claude, reads of files only):** the converter's GP-200
+CTRL (three 8-byte records at 0x448, one module byte each) can't hold several
+modules, so that reading is in doubt. Scanning which bytes vary across the
+September backup (`GP-200\Backups\2026-09-30_full-backup.zip`, 256 patches)
+found **four 12-byte records at 0x460**: `0f 00 08 00`, an index 0-3,
+`00 00 00`, then a u32 whose low 11 bits read as one bit per GP-200 module
+(PRE 0, WAH 1, DST 2 ... VOL 10). Valeton's GP-200 editor names "CTRL 1" to
+"CTRL 4" (`English.lng`, beside "Stomp Mode" and "Footswitch"). So these are
+very probably CTRL 1-4, and the 0x448 records something else (record 2's
+module is always 11, which isn't a module).
+- In 1,024 masks: at most **3 modules on one CTRL**; 14 have 2 or more (e.g.
+  1-C Clean FUZZ CTRL 1 = PRE + DLY, 7-B Dizzy Devil CTRL 1 = EQ + RVB). 72
+  patches have no CTRL at all.
+- **Bits 11-15 are set in 73 masks**, all in patches 1-4 and 33-35 (A-D),
+  the empty patch "It's GP-200" among them (CTRL 1 `0x3001`). Not modules
+  (there are 11); meaning unknown.
+- The two readings disagree often: 1-C old PRE/DST, masks PRE+DLY / DST / MOD
+  / RVB; 3-B old PRE/MOD, masks PRE / EQ+MOD / DLY / none; 7-B old PRE/RVB,
+  masks EQ+RVB / none / none / none.
+- On the pedal now, 50-B to 63-D (converted before CTRL was carried) have
+  no CTRL in either reading: the masks are 0, as in the converter's skeleton.
+- **So yesterday's CTRL conversion is probably wrong in the GP-200 half:**
+  GP-200 to GP-50 took CTRL from the 0x448 records; GP-50 to GP-200 wrote
+  there. The GP-50 half (tag 3, bit per module) stands: confirmed on the
+  pedal, and 8 factory patches already hold two modules on one CTRL.
+
+**To settle it (asked of the developer, reads only, nothing saved):** CTRL 1
+to 4 on the GP-200 for 1-C, 3-B and 7-B (they're as in the September backup
+on the pedal now). The masks predict the lists above; the old records predict
+one module on CTRL 1 and 2 only.
+
+**Proposed rules if the masks are confirmed** (for the developer's OK):
+- GP-200 to GP-50: CTRL 1 and 2 go to the GP-50's CTRL 1 and 2; CTRL 3 and 4
+  have nowhere to go (the GP-50 has two) and are reported. Each module goes to
+  the module its effect went to, left out as now (not carried, a stand-in, a
+  wah switched off for EXP); two that land on one GP-50 module (PRE and WAH)
+  count once. **More than 3 left: the first 3 in playing order are kept**, the
+  rest reported. Never needed in the backup (at most 3), so a simple rule is
+  enough.
+- GP-50 to GP-200: every module carried bit for bit (a GP-200 mask holds
+  them all); CTRL 3 and 4 none; bits 11-15 as the skeleton has them until
+  their meaning is known.
+- The old 0x448 records left as the skeleton has them.
+- No more GP-50 samples needed for the format: bit per module is confirmed,
+  and factory patches already hold two per CTRL.
+
+**Held:** the restore of `ctrl_2026-11-24\gp200_converted_...22-19-50.zip`
+(yesterday's next step) until this is settled; it would write CTRL into the
+wrong place. Tool fault from yesterday (sheets overwritten in the same
+second) still to fix.
