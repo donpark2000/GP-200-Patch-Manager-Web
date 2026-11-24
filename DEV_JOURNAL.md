@@ -4954,3 +4954,10 @@ tool.
   doesn't (still USB). Firmware 1.8.0, unchanged. The developer recalls a
   similar fault long before these apps (the software said done, the pedal
   didn't have it); what fixed it then isn't remembered.
+- **Factory reset** (developer): didn't help; writes from the app and
+  Valeton's editor still not stored, after a power cycle and another USB port.
+  But the reset itself did rewrite the patches (the names went back to the
+  defaults), so the pedal can still write its own storage: the fault looks
+  like the pedal's handling of writes over USB, not its memory. Reads still
+  work in both tools. Next: the developer is considering reinstalling
+  firmware 1.8.0 with Valeton's own updater.
