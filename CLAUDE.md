@@ -58,7 +58,14 @@ this is the short version:
   Claude's command-line test runner may write patches to any GP-50 slot
   without confirmation in the app, within that section's rules. The GP-50
   write page (`gp50/write.html`, unpublished) stays at slots 55-99, after
-  confirmation in the app. No GP-200 write from this exception.
+  confirmation in the app. A third (developer, 2026-11-24: "remove the
+  block, safely"): in the same stages, the runner may write GP-200 patches
+  too, only with `gp200-restore` (the web app's restore, gated: planned
+  slots only, each still holding what a fresh reference backup has, and
+  read again at the end). Take a full GP-200 backup first, tell the
+  developer which GP-200 slots will change, and never touch their own
+  patches (1-A to 50-A) unless they name them. No firmware, global
+  settings or other GP-200 commands.
 
 ## Files: repo vs. test output vs. backups
 

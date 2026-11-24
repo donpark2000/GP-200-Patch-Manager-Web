@@ -14,10 +14,15 @@
 //     convert   <files or zips> --start <n | 50-B>   no pedal: converts each
 //               file for the other pedal, numbered from start
 //   Both save the source and converted patches and a listening sheet (CSV).
+//   The GP-200 (gp200.js; developer, 2026-11-24: the runner may write it):
+//     gp200-backup  [--from 1-A] [--to 64-D]   reads only; a .zip
+//     gp200-restore <files or one zip> --start 63-A --reference <gp200 zip> --write
+//               the web app's restore; only slots that still hold what the
+//               reference has are overwritten
 //
 // Only patches whose contents are in the reference zip are overwritten.
-// Nothing is ever written to the GP-200 (CLAUDE.md): it's opened read-only,
-// and its messages are checked here and in midi_bridge.py.
+// The GP-200 is written only by gp200-restore; every other command opens it
+// read-only. Its messages are checked in gp200.js / copy.js and midi_bridge.py.
 // Ctrl+C stops after the patch being written. Exit code 0 only if all passed.
 
 import { closeSync, existsSync, openSync, readFileSync, statSync, writeFileSync, writeSync } from "node:fs";
@@ -33,11 +38,13 @@ import { parseReference } from "../write-steps.js";
 import { Gp50Writer } from "../writer.js";
 import { ANY_PATCH, backup, check, restore, roundTrip, shifted } from "./commands.js";
 import { convertFiles, readGp200Slots, sheet } from "./copy.js";
+import { ALL_GP200_SLOTS, gp200Backup, gp200Reference, gp200Restore } from "./gp200.js";
 import { connect } from "./winmm.js";
 
 const OPTIONS = Object.fromEntries(["out", "from", "to", "reference", "shift", "start", "times"].map((k) => [k, { type: "string" }]));
 const WRITES = ["restore", "roundtrip", "copy"];
-const COMMANDS = ["info", "backup", "check", "convert", ...WRITES];
+const GP200_COMMANDS = ["gp200-backup", "gp200-restore"];
+const COMMANDS = ["info", "backup", "check", "convert", ...WRITES, ...GP200_COMMANDS];
 export const MAP_FILE = new URL("../effect-map.json", import.meta.url);
 const loadMap = () => JSON.parse(readFileSync(MAP_FILE, "utf8"));
 
@@ -70,8 +77,9 @@ async function parse(argv) {
   const { values: v, positionals: [command, ...files] } = parseArgs({ args: argv, allowPositionals: true, options: { ...OPTIONS, write: { type: "boolean" } } });
   if (!COMMANDS.includes(command)) throw new Error(`Commands: ${COMMANDS.join(", ")}`);
   if (!v.out || !statSync(v.out, { throwIfNoEntry: false })?.isDirectory()) throw new Error("--out must be an existing folder (the test session's)");
-  if (["check", ...WRITES].includes(command) && !v.reference) throw new Error("--reference <zip> is needed");
-  if (WRITES.includes(command) && !v.write) throw new Error(`"${command}" writes to the pedal; add --write to say so`);
+  if (["check", ...WRITES, "gp200-restore"].includes(command) && !v.reference) throw new Error("--reference <zip> is needed");
+  if ([...WRITES, "gp200-restore"].includes(command) && !v.write) throw new Error(`"${command}" writes to the pedal; add --write to say so`);
+  if (GP200_COMMANDS.includes(command)) return parseGp200(command, v, files);
   const shift = number(v.shift, "shift", command === "roundtrip" ? 1 : 0);
   if (shift > 99) throw new Error(`--shift ${shift} is more than 99`);
   // convert's start is a GP-50 patch number or a GP-200 label ("50-B"): which, the files say.
@@ -98,6 +106,47 @@ async function parse(argv) {
     reference: v.reference ? await loadReference(v.reference) : null,
     files: command === "convert" ? read : files.map((name) => ({ name: path.basename(name), data: new Uint8Array(readFileSync(name)) })),
   };
+}
+
+/** gp200-backup and gp200-restore: slots are GP-200 labels ("63-A"). */
+async function parseGp200(command, v, files) {
+  const out = { command, out: v.out };
+  if (command === "gp200-backup") {
+    const [from, to] = [labelToSlot(v.from ?? "1-A"), labelToSlot(v.to ?? "64-D")];
+    if (to < from) throw new Error(`--to ${v.to} comes before --from ${v.from}`);
+    return { ...out, from, to };
+  }
+  if (!v.start) throw new Error("gp200-restore needs --start (a GP-200 label, e.g. 63-A)");
+  if (!files.length) throw new Error("gp200-restore needs files");
+  return {
+    ...out,
+    start: labelToSlot(v.start),
+    reference: gp200Reference(await readZip(new Uint8Array(readFileSync(v.reference)))),
+    files: files.map((name) => ({ name: path.basename(name), data: new Uint8Array(readFileSync(name)) })),
+  };
+}
+
+/** The GP-200 commands: only the GP-200 is opened; patch writes only for gp200-restore. */
+async function runGp200(a, { open, log, isCancelled, timing }) {
+  const writes = a.command === "gp200-restore";
+  const connection = await open(log, { pedal: "gp200", gp200Writes: writes });
+  try {
+    const opts = { log, isCancelled, timeoutMs: timing.gp200TimeoutMs, ...(timing.gp200Write ? { timing: timing.gp200Write } : {}) };
+    if (writes) return (await gp200Restore(connection, a.files, a.start, a.reference, opts)).ok;
+    const slots = Array.from({ length: a.to - a.from + 1 }, (_, i) => a.from + i);
+    const r = await gp200Backup(connection, slots, opts);
+    const all = slots.length === ALL_GP200_SLOTS.length;
+    const complete = r.entries.length === slots.length && !r.cancelled;
+    if (r.entries.length) {
+      const what = all ? "all" : `${slotToLabel(a.from).replace("-", "")}_to_${slotToLabel(a.to).replace("-", "")}`;
+      const name = `gp200_${complete ? what : "INCOMPLETE"}_${stamp()}.zip`;
+      writeFileSync(path.join(a.out, name), createZip(r.entries.map((e) => ({ name: e.fileName, data: e.data }))));
+      log.info(`Saved ${name} (${r.entries.length} patches)`);
+    }
+    return complete;
+  } finally {
+    await connection.close();
+  }
 }
 
 /**
@@ -155,9 +204,14 @@ export async function main(argv, { open = connect, print = console.log, timing =
   let writer = null;
   try {
     const a = await parse(argv);
-    log = fileLogger(path.join(a.out, `gp50_${a.command}_${stamp()}.log`), print);
+    log = fileLogger(path.join(a.out, `${GP200_COMMANDS.includes(a.command) ? "" : "gp50_"}${a.command}_${stamp()}.log`), print);
     log.info(`GP-50 runner: ${argv.join(" ")}`);
     log.info(`Node ${process.version}, ${os.type()} ${os.release()}, ${new Date().toISOString()}`);
+    if (GP200_COMMANDS.includes(a.command)) {
+      const ok = await runGp200(a, { open, log, isCancelled, timing });
+      log[ok ? "info" : "error"](`${a.command}: ${ok ? "PASSED" : "FAILED"}`);
+      return ok ? 0 : 1;
+    }
     if (a.command === "convert") {
       const r = convertFiles(a.files, a.start, loadMap(), { log });
       saveConversion(a, null, r, log);

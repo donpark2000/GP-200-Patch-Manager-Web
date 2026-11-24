@@ -62,7 +62,8 @@ test("GP-200 gate: reads and the identity query pass; uploads, preset changes an
   // The bridge refuses the same (midi_bridge.py gp200_read_only).
   const py = readFileSync(new URL("../gp50/cli/midi_bridge.py", import.meta.url), "utf8");
   assert.match(py, /GP200_READS = \{0x04, 0x10, 0x20\}/);
-  assert.match(py, /if PEDAL == "gp200" and not gp200_read_only\(data\):/);
+  assert.match(py, /if PEDAL == "gp200" and not gp200_allowed\(data\):/);
+  assert.match(py, /GP200_PATCH_WRITES = False/, "writes only when the runner asks (gp200-restore)");
 });
 
 test("copy: GP-200 1-A to 1-B read (reads only), converted, written to GP-50 55-56, and saved with a sheet", async (t) => {

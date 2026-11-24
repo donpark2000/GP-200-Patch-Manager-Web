@@ -5326,3 +5326,47 @@ fail: the ranking reversed (1 test), playing order back (1), MOD and RVB
 swapped (1). Re-converting both directions gives files identical to
 `ctrl8_2026-11-24\`'s (45 of 45, 55 of 55), as expected (no patch has more
 than 3), so GP-50 55-99 and the GP-200 zip there stay valid.
+
+## 2026-11-24: The runner writes GP-200 patches (gp200-restore), safely
+
+**The developer's next step** (instead of the restore): a couple of patches
+with CTRL from each pedal, converted, and all put in the same order on both
+pedals (each original copied too), so the developer can step from pedal to
+pedal. Permission to write to both pedals. Claude raised that the runner
+had blocked GP-200 writes on purpose (CLAUDE.md, a gate in `copy.js` and
+`midi_bridge.py`, tests on both) and suggested the web app for the GP-200
+half; **the developer:** "I would rather remove the block. Safely. We
+already have a well tested working webapp that writes to the GP-200."
+
+**Built** (`gp50/cli/gp200.js`, two runner commands):
+- `gp200-restore <files> --start 63-A --reference <zip> --write` runs the
+  web app's restore code unchanged: `GP200.connect()` (identity query, editor
+  mode), `planUpload()`, `writeSlots()` with the fast pacing and its verify.
+- **Gate** (`patchWriteGate`): reads, the identity query and editor mode
+  pass; uploads only whole (7 chunks in order, nothing else in between), to a
+  slot in the plan (read from inside the first chunk); preset changes only
+  to planned slots; anything else throws before it's sent.
+- **Bridge:** sends write-kind messages (editor mode, upload chunks, preset
+  change) only when opened `--pedal gp200 --gp200-patch-writes`, which only
+  `gp200-restore` asks for; otherwise read-only as before. Checked by hand in
+  Python: read-only lets through only the read; with the flag, read, editor
+  mode, upload and preset change, not an unknown command or a GP-50 message.
+- **Before writing:** every target slot is read and must match the reference
+  backup's patch for it (the write verify's rule), else nothing is written.
+  **After:** every written slot is read again and must still match its file.
+- `gp200-backup [--from 1-A] [--to 64-D]`: reads only, saves
+  `gp200_all_<stamp>.zip` (entries named as the CLI).
+- CLAUDE.md and DESIGN.md carry the permission and the rules. Claude added
+  one rule of its own for the developer to check: the developer's own patches
+  (1-A to 50-A) aren't touched unless the developer names them.
+
+**Tests** (`tests/gp200-runner.test.js`, 5; one check in `gp50-copy.test.js`
+updated): the gate (planned slot, unplanned slot, chunk order, a message
+mid-upload, an unknown command, backup's empty plan), the bridge flag, a
+backup, a restore to two slots (only they written, editor mode on, verified,
+end check, then read back in label order), and the refusals (a slot changed
+since the reference, a slot not in it, no `--write`: nothing written, not
+even editor mode). Suite **270 pass**. Each shown to fail: any slot allowed
+(1 test), chunk order unchecked (1), the reference unchecked (1), no editor
+mode (1: the fake drops uploads, as the pedal does), the end check always
+failing (1), the backup opened with writes (2).

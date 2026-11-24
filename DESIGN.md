@@ -479,7 +479,15 @@ needed (power cycles and listening are saved up).
 - **GP-50:** patch writes only, any slot: no firmware, global settings or
   unknown commands. About 2,000 patch writes in all, counted in the
   journal. The reference zip's patches are put back after each stage.
-- **GP-200:** no writes before stage 3, and then only after asking.
+- **GP-200:** no writes before stage 3, and then only after asking. From
+  2026-11-24 (developer) the runner writes GP-200 patches with
+  `gp200-restore` (`gp50/cli/gp200.js`): the web app's own restore code
+  (connect, plan, fast write with verify), behind a gate that lets through
+  only reads, the identity query and editor mode, and whole uploads and
+  preset changes to the planned slots; the bridge sends write messages only
+  when opened for it. A slot is overwritten only if it still holds what the
+  reference backup has, and every written slot is read again at the end.
+  `gp200-backup` reads only. Rules in CLAUDE.md.
 - Commit and push to the branch; never merge or publish without the
   developer's OK.
 - **Stop and report** if the pedal stops answering, or if any patch changes

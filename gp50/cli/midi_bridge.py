@@ -7,10 +7,14 @@ Opens the one port named GP-50 and passes SysEx through, a line each:
 Never opens another pedal's port, and can send nothing but SysEx. What may be
 sent is decided by the gates in ../protocol.js and ../write-protocol.js.
 
-With --pedal gp200 it opens the one GP-200 port instead, to READ only
-(CLAUDE.md: no GP-200 writes from the runner): it refuses to send anything
-but the GP-200's identity query and read requests, whatever it is given
-(also gated in gp200-read.js).
+With --pedal gp200 it opens the one GP-200 port instead, to READ only: it
+refuses to send anything but the GP-200's identity query and read requests,
+whatever it is given (also gated in copy.js).
+
+With --pedal gp200 --gp200-patch-writes (gp200-restore only; developer,
+2026-11-24) it also sends enter editor mode, upload chunks and preset
+changes: the kinds of message the web app's restore sends, nothing else.
+Which slots, and whole uploads in order, are checked in gp200.js.
 """
 import ctypes
 import json
@@ -37,8 +41,23 @@ GP200_HEADER = bytes([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32])
 GP200_READS = {0x04, 0x10, 0x20}
 
 
+GP200_PATCH_WRITES = False
+
+
 def gp200_read_only(data):
     return bytes(data[:8]) == GP200_HEADER and len(data) > 10 and data[8] == 0x11 and data[9] in GP200_READS
+
+
+def gp200_patch_write(data):
+    """Editor mode (11 12), an upload chunk (12 20 09) or a preset change (12 08)."""
+    if bytes(data[:8]) != GP200_HEADER or len(data) <= 10:
+        return False
+    cmd, sub = data[8], data[9]
+    return (cmd == 0x11 and sub == 0x12) or (cmd == 0x12 and sub == 0x20 and data[10] == 0x09) or (cmd == 0x12 and sub == 0x08)
+
+
+def gp200_allowed(data):
+    return gp200_read_only(data) or (GP200_PATCH_WRITES and gp200_patch_write(data))
 
 
 class Caps(ctypes.Structure):
@@ -136,8 +155,8 @@ class Bridge:
     def send(self, data):
         if len(data) < 2 or data[0] != 0xF0 or data[-1] != 0xF7 or any(b > 0x7F for b in data[1:-1]):
             raise RuntimeError("refused to send: not exactly one SysEx message")
-        if PEDAL == "gp200" and not gp200_read_only(data):
-            raise RuntimeError(f"refused to send to the GP-200: not a read ({data[:12].hex()}...)")
+        if PEDAL == "gp200" and not gp200_allowed(data):
+            raise RuntimeError(f"refused to send to the GP-200: not a read{' or a patch write' if GP200_PATCH_WRITES else ''} ({data[:12].hex()}...)")
         buf = ctypes.create_string_buffer(bytes(data), len(data))
         hdr = Header(data=ctypes.addressof(buf), length=len(data))
         t0 = time.perf_counter()
@@ -195,14 +214,16 @@ class Bridge:
 
 
 def main():
-    global PEDAL
+    global PEDAL, GP200_PATCH_WRITES
     args = sys.argv[1:]
     if args == ["--list"]:
         say("ports " + json.dumps({"in": names("In"), "out": names("Out")}))
         return 0
     if args[:1] == ["--pedal"]:
-        if len(args) != 2 or args[1] not in PEDALS:
-            say(f"fatal --pedal takes one of {', '.join(PEDALS)}")
+        if args[2:] == ["--gp200-patch-writes"] and args[1] == "gp200":
+            GP200_PATCH_WRITES = True
+        elif len(args) != 2 or args[1] not in PEDALS:
+            say(f"fatal --pedal takes one of {', '.join(PEDALS)}; --gp200-patch-writes only after --pedal gp200")
             return 1
         PEDAL = args[1]
     elif args:

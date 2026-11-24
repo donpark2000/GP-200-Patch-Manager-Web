@@ -41,10 +41,13 @@ export class SysexStream {
  * @param {(reason: string) => void} [opts.onGone] the connection ended by itself
  * @param {"gp50"|"gp200"} [opts.pedal] which pedal's port; the GP-200's is
  *   opened read-only (midi_bridge.py refuses anything but reads)
+ * @param {boolean} [opts.gp200Writes] GP-200 only: also let patch writes
+ *   through the bridge (gp200-restore; gp200.js checks each one)
  * @returns {Promise<{input, output, ports, close: () => Promise<void>}>}
  */
-export function connect(log, { command = BRIDGE, onGone = () => {}, pedal = "gp50" } = {}) {
-  const args = [...command.slice(1), ...(pedal === "gp50" ? [] : ["--pedal", pedal])];
+export function connect(log, { command = BRIDGE, onGone = () => {}, pedal = "gp50", gp200Writes = false } = {}) {
+  if (gp200Writes && pedal !== "gp200") throw new Error("gp200Writes is for the GP-200 only");
+  const args = [...command.slice(1), ...(pedal === "gp50" ? [] : ["--pedal", pedal]), ...(gp200Writes ? ["--gp200-patch-writes"] : [])];
   const child = spawn(command[0], args, { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
   const input = { name: null, onmidimessage: null };
   let gone = null; // why the connection ended
