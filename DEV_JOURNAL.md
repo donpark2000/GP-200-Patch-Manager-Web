@@ -5425,9 +5425,13 @@ the developer checks the 4 pairs.**
 - Open: Q11 (copy pedal to pedal in the app), Q13 (driver note for users),
   Q14 (3-B's CTRL 3; mask bits 11-15; the 0x448 records).
 
-**Next:**
-1. The developer steps through 63-A..D / 96..99 (table above) and reports.
-2. Then: 50-B to 62-D could get the ctrl8 conversions (the runner can do it
+**Checked (developer, end of session):** stepped through all 4 pairs:
+"Everything looks as you described. So I think we have a good handle on
+mapping CTRL settings now."
+
+**Next** (developer: start the next session by reviewing next steps):
+1. Review the next steps with the developer, starting from the list below.
+2. 50-B to 62-D could get the ctrl8 conversions (the runner can do it
    now, with the developer's OK), and more listening if wanted.
 3. Stage 3's "done when": tests pass, patches read back right on both
    pedals, the developer has listened. Then stage 4 (one app).
