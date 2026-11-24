@@ -18,9 +18,19 @@ This journal records only what's new or different for the browser.
   and the converter works on patch bytes, so a direct copy is read, convert,
   write. Limits now: Claude's runner may write only the GP-50 (CLAUDE.md), so
   GP-200 to GP-50 could be direct, the other way only through the app's
-  Restore screen. Not yet tried: both pedals plugged in at once (port names,
-  the app's pedal detection). For the app: decide in stage 4 (DESIGN.md
-  plans the GP-50 in the GP-200 screens, not a copy screen).
+  Restore screen. Both plugged in at once: tried 2026-11-23 from the runner
+  (ports "GP-50" and "Valeton GP-200 Subdevice", each opened on its own,
+  no trouble); the app's pedal detection with both not yet tried. For the
+  app: decide in stage 4 (DESIGN.md plans the GP-50 in the GP-200 screens,
+  not a copy screen).
+- **Q12. GP-200 reads from the runner: 4 of 256 got no answer at first.**
+  (2026-11-23, the overnight read.) 14-B, 15-B, 19-B, 62-B each timed out
+  with 0 of 7 chunks, then read fine on the second attempt; the result
+  matched the September backup. The runner reads without the handshake
+  (so the pedal isn't put in editor mode) and with the GP-50 also plugged
+  in; the app's reads have the handshake. Not yet known whether either
+  matters, or whether the app sees the same; harmless as it is (retries
+  are in the rules), but worth one look before stage 4 relies on it.
 
 ## Resolved
 
@@ -4802,6 +4812,78 @@ tested; next, the listening run.**
    suggests delay and reverb, which would confirm its CTRL layout.
 5. Afterwards: the reference back on the GP-50 (Claude); the GP-200's 50-B to
    63-D back from the backup if wanted (the developer).
+
+Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1`,
+`2026-11-23_gp50-speed` or `2026-11-23_stage3-listening`.
+
+## 2026-11-23: Overnight: GP-200 1-B to 12-B on the GP-50; listening roadmap
+
+The developer, leaving for the night with both pedals plugged in: nothing on
+either needs keeping ("a factory reset of either or both would be fine");
+asked for whatever progress could be made towards tomorrow's listening, and a
+roadmap of which patches to compare.
+
+**Change of plan, and why:** the listening plan had the developer take the
+GP-200 backup in the app first. With both pedals plugged in and the
+developer away, Claude read the GP-200 itself through the runner's
+read-only path (`readGp200Slots` in `gp50/cli/copy.js`, from a scratchpad
+script). Everything else is the plan's commands. No GP-200 write (CLAUDE.md):
+the GP-50 to GP-200 restore stays the developer's, in the app.
+
+**Session `2026-11-23_stage3-listening`:**
+- Ports: in "GP-50", "Valeton GP-200 Subdevice"; out "", "GP-50", "Valeton
+  GP-200 Subdevice" (`midi_bridge.py --list`).
+- GP-200 read, all 256: 8.5 s, 4 re-reads (Q12), 0 skipped:
+  `gp200_all_patches.zip`. `compare-zips` against
+  `GP-200\Backups\2026-09-30_full-backup.zip`: **251 identical**; 36-D to
+  37-D differ, named "Template" now vs "JCM800 Recipe"/"DefaultName" then
+  (the Template-screen tests of October). So the runner's GP-200 read gives
+  the same bytes as the CLI-checked backup. 50-B to 63-D: 55, all "It's
+  GP-200".
+- `convert` of 1-B to 12-B (`gp200_1B-12B\`, 45 files) `--start 55`:
+  PASSED, 45 converted, 0 refused: `gp50_converted_convert_2026-11-24T02-26-51.zip`,
+  sheet `listening_convert_2026-11-24T02-26-51.csv`.
+- `restore` of that zip `--start 55` with the 2026-11-22 reference: **45 of 45
+  written and read back identical**, 26.5 s, 0 started again, selected 6
+  before and after. One "patch list changed" (`12 1b 02`) per write, as in
+  stage 1. `info` afterwards: 0-54 the factory names, 55 "50s Plexi" to 99
+  "Hard Rock".
+- Patch writes: **1,701** of about 2,000.
+- `ROADMAP_listening.md` in the folder: the one step left for the developer
+  (Restore `gp200_converted_convert_2026-11-23T22-31-05.zip` from 50-B), what
+  differs by design (CTRL, EXP wahs, stand-ins), and a table per direction,
+  pair by pair, with what to listen for (scratchpad script over the two
+  sheets). Part A (GP-200 to GP-50): every pair has swapped modules; 3
+  EXP-wah patches (2-B, 4-A, 6-D), stand-ins in 8-C, 9-C, 10-C, Detune left
+  out of 4-C. Part B (GP-50 to GP-200): **42 of 55 are control pairs** (only
+  CTRL not carried), so a difference there points at the converter or a
+  global setting.
+
+## 2026-11-23: Status (start here next session)
+
+Supersedes the status entries above. Topic: **stage 3: listening run ready;
+the developer listens.**
+
+**Known:**
+- Stages 1 and 2 done. Stage 3: converter built, suite 258 pass; GP-200 1-B
+  to 12-B converted and on GP-50 55-99 (entry above). Branch
+  `gp50-experiments`, pushed, not merged; live site unchanged at `58c0117`.
+- **On the GP-50 now:** 0-54 factory (the reference), 55-99 the converted
+  GP-200 patches; on patch 6. **On the GP-200:** as in `gp200_all_patches.zip`
+  (50-B to 63-D empty) until the developer's restore.
+- Patch writes: 1,701 of about 2,000.
+- Open questions: Q11 (copy pedal to pedal in the app), Q12 (GP-200 reads
+  from the runner needing re-reads).
+
+**Next, from `ROADMAP_listening.md` in
+`C:\Users\dpark\Documents\GP-200-testing\2026-11-23_stage3-listening`:**
+1. The developer: Restore `gp200_converted_convert_2026-11-23T22-31-05.zip`
+   from 50-B in the web app.
+2. The developer: listen, part B (control pairs first, to level-match), then
+   part A; verdicts in the sheets or in chat. CTRL on GP-50 patch 9.
+3. Claude: look into anything "off"; record verdicts here.
+4. Then: another run (33-D to 44-D) if wanted; the GP-50 reference back
+   (optional now, developer: nothing needs keeping).
 
 Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1`,
 `2026-11-23_gp50-speed` or `2026-11-23_stage3-listening`.
