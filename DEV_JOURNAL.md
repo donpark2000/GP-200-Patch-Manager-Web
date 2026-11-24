@@ -4926,3 +4926,11 @@ storing writes in its present state (both pedals plugged in, reads failing
 now where they never did). One test tells them apart: restore one patch the
 pedal itself made (`gp200_1B-12B\1B_50s Plexi.prst`, read from it overnight)
 to the empty 50-B, nothing else changed.
+
+**Follow-up (developer, same day):** the patch list loaded every name on
+connect (the timeouts were first attempts; every slot read on a retry). The
+developer then restored one of their own old `.prst` files to 50-B: **not
+stored either.** So the converter is ruled out; the GP-200 isn't storing the
+app's writes in its present state. Next: a save from Valeton's GP-200 editor,
+with nothing else changed, to see whether the pedal takes writes from any
+tool.
