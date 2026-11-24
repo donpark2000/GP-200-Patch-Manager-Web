@@ -31,6 +31,15 @@ This journal records only what's new or different for the browser.
   in; the app's reads have the handshake. Not yet known whether either
   matters, or whether the app sees the same; harmless as it is (retries
   are in the rules), but worth one look before stage 4 relies on it.
+  **2026-11-24: probably the Windows driver** (entry "GP-200 writes not
+  stored: the Windows driver"): the app's reads had the same timeouts until
+  the developer switched the driver back, then were much quicker. To close:
+  one runner read of all 256 with the fixed driver, 0 re-reads expected.
+- **Q13. Tell users about the driver?** (2026-11-24.) Windows (an update) can
+  switch the pedals to a driver under which Web MIDI reads slowly and writes
+  aren't stored, in Valeton's editor too; switching it back in Device Manager
+  fixes it. Help's troubleshooting could say so, with the symptoms; for the
+  developer to decide (stage 4, or sooner for the live GP-200 app).
 
 ## Resolved
 
@@ -947,6 +956,13 @@ entry of that date). The skill's source now lives in the private repo
    Evidence: Valeton's two editors held every effect and control of both
    pedals; checked against 368 real patches (15,016 values, all in range),
    they settled questions two other projects' lists had left open.
+8. **When something that worked fails in every tool, check what changed
+   around it first.** Before suspecting the device or the code, check the
+   environment: an operating-system update, a driver, a cable, a setting
+   that may have been reset. Evidence: a GP-200 stopped storing writes from
+   this app and the maker's editor alike; a factory reset didn't help; a
+   Windows update had put back a driver the developer had replaced long
+   before, and switching it back fixed both.
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -4961,3 +4977,36 @@ tool.
   like the pedal's handling of writes over USB, not its memory. Reads still
   work in both tools. Next: the developer is considering reinstalling
   firmware 1.8.0 with Valeton's own updater.
+
+## 2026-11-24: GP-200 writes not stored: the Windows driver (fixed)
+
+**Cause and fix (developer):** a known incompatibility between the driver
+Windows usually gives the Valeton pedals and Web MIDI. The developer had
+switched the driver by hand in Device Manager long ago; a Windows update
+seems to have put the old one back. Switching it again fixed the GP-200:
+writes are stored again from Valeton's editor and from this app, and the
+patch list on connect fills much quicker. The developer switched the GP-50's
+driver too. (Journal 2026-11-22 has VLTN's note on the same thing: Windows 11
+can give the pedal the "USB MIDI 2.0" driver; the one to use is Microsoft's
+"USB Audio Device", `usbaudio`.) The earlier, similar fault the developer
+remembers was probably the same.
+
+**So the troubleshooting above was chasing the wrong thing.** The converter
+and the app were never at fault; the factory reset wasn't needed.
+
+**What still holds, and why:**
+- The overnight GP-200 read (`gp200_all_patches.zip`) was made under the
+  wrong driver, but it matched the September backup in 251 of 256 patches and
+  the 5 others are the October Template tests. Its data is good.
+- The GP-50 writes overnight were each read back identical (and the GP-50
+  sounds were never in doubt). The converted files of both directions were
+  made from good data and stay valid.
+- **Changed:** the GP-200 was factory reset, so its patches are now the
+  factory set, not those in `gp200_all_patches.zip`, and part A of the
+  listening needs the GP-200's 1-B to 12-B back as they were.
+
+**Signs to remember** if it comes back: the list on connect slow (about 10 s
+instead of under a second) with first-attempt read timeouts, and every write
+"not verified" with the read-back still the old patch, in Valeton's editor
+too (it says done; the pedal doesn't change). Check the driver in Device
+Manager first. Open questions: Q12 (probably this), Q13 (tell users).
