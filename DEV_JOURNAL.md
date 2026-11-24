@@ -4875,6 +4875,10 @@ the developer listens.**
 - Open questions: Q11 (copy pedal to pedal in the app), Q12 (GP-200 reads
   from the runner needing re-reads).
 
+**At the start of the next session** (developer, 2026-11-24, before a
+reboot): repeat to the developer, step by step, what they are to do (1 and 2
+below, with the file names and the roadmap's "Before listening" points).
+
 **Next, from `ROADMAP_listening.md` in
 `C:\Users\dpark\Documents\GP-200-testing\2026-11-23_stage3-listening`:**
 1. The developer: Restore `gp200_converted_convert_2026-11-23T22-31-05.zip`
