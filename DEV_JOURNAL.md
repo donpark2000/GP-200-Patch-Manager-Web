@@ -5370,3 +5370,68 @@ even editor mode). Suite **270 pass**. Each shown to fail: any slot allowed
 (1 test), chunk order unchecked (1), the reference unchecked (1), no editor
 mode (1: the fake drops uploads, as the pedal does), the end check always
 failing (1), the backup opened with writes (2).
+
+## 2026-11-24: CTRL pairs on both pedals, in step (first GP-200 writes from the runner)
+
+Session folder `C:\Users\dpark\Documents\GP-200-testing\2026-11-24_ctrl-pairs\`.
+- **Backups first:** `gp200_all_2026-11-24T23-17-12.zip` (the new
+  `gp200-backup`: 256 in 0.4 s, 0 re-reads), `gp50_all_2026-11-24T23-17-21.zip`.
+  The GP-200 one against this afternoon's read (`compare-zips`): MATCH, with
+  pedal-managed bytes changed in 4 (5-D, 13-C, 17-C ..., all 0x456). 0x456
+  is the third byte of the second 0x448 record; the developer had pressed
+  CTRLs while checking, so these records may hold the switches' states
+  (a guess, for Q14).
+- **The four** (two of each pedal's, with CTRL): GP-200 1-C Clean FUZZ and
+  12-B Hard Rock, GP-50 02 Star Night and 21 Eddie Solo, converted by the
+  runner's `convert` (sheets `listening_convert_2026-11-24T23-17-47.csv` and
+  `...-48.csv`), originals copied from the backups.
+- **GP-200 63-A to 63-D** (`gp200-restore`, reference the backup above):
+  "4 slot(s) hold what the reference has", 4 of 4 verified in 0.3 s, end
+  check: all 4 match. A second backup (`after\`) against the first:
+  **exactly 63-A to 63-D differ, the other 252 identical** (313,344 bytes
+  compared). First GP-200 writes from the runner: 4.
+- **GP-50 96 to 99:** 4 of 4 read back identical, 2.7 s. GP-50 patch writes:
+  **1,797**.
+
+**For the developer to step through** (module states are as each patch is
+selected):
+
+| Step | GP-200 | GP-50 |
+|---|---|---|
+| 63-A / 96 | Clean FUZZ (original): CTRL 1 PRE off + DLY off; 2 DST on; 3 MOD on; 4 RVB on | converted: CTRL 1 PRE off + DLY off; 2 DST on (3 and 4 have no GP-50 switch) |
+| 63-B / 97 | Hard Rock (original): CTRL 1 DST off; 2 MOD off; 3 DLY off | converted: CTRL 1 DST off; 2 MOD off |
+| 63-C / 98 | Star Night converted: CTRL 1 MOD on; 2 DLY on + RVB on | original: CTRL 1 PRE on + MOD on; 2 DLY on + RVB on (its PRE effect has no GP-200 match, so CTRL 1 lost PRE) |
+| 63-D / 99 | Eddie Solo converted: CTRL 1 DST on + MOD on; 2 DLY on | original: CTRL 1 DST on + MOD on; 2 DLY on |
+
+## 2026-11-24: Status (start here next session)
+
+Supersedes the status entries above. Topic: **stage 3: CTRL on both pedals;
+the developer checks the 4 pairs.**
+
+**Known:**
+- GP-200 CTRL is 8 masks at 0x460 (confirmed on the pedal); GP-50 CTRL 2
+  masks, up to 3 modules (confirmed). The converter carries CTRL 1 and 2 both
+  ways; over 3 on a GP-200 CTRL: the developer's ranking. Suite 270 pass.
+- **The runner writes the GP-200** now (`gp200-restore`, gated; CLAUDE.md has
+  the rules) and backs it up (`gp200-backup`). First use: 63-A to 63-D, 4
+  verified, nothing else changed.
+- Branch `gp50-experiments`, pushed, not merged; live site unchanged at
+  `58c0117`.
+- **On the GP-200:** 1-A to 50-A the developer's; 50-B to 62-D the converted
+  GP-50 factory patches (from before CTRL); 63-A to 63-D the 4 pairs; 64 as
+  before. **On the GP-50:** 0-54 factory, 55-95 converted GP-200 1-B to 12-A
+  (ctrl8, with CTRL), 96-99 the 4 pairs.
+- Writes: GP-50 1,797 of about 2,000; GP-200 4 from the runner.
+- Open: Q11 (copy pedal to pedal in the app), Q13 (driver note for users),
+  Q14 (3-B's CTRL 3; mask bits 11-15; the 0x448 records).
+
+**Next:**
+1. The developer steps through 63-A..D / 96..99 (table above) and reports.
+2. Then: 50-B to 62-D could get the ctrl8 conversions (the runner can do it
+   now, with the developer's OK), and more listening if wanted.
+3. Stage 3's "done when": tests pass, patches read back right on both
+   pedals, the developer has listened. Then stage 4 (one app).
+
+Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1`,
+`2026-11-23_gp50-speed`, `2026-11-23_stage3-listening` or
+`2026-11-24_ctrl-pairs`.
