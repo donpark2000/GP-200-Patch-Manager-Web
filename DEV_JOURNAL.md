@@ -4891,3 +4891,38 @@ below, with the file names and the roadmap's "Before listening" points).
 
 Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1`,
 `2026-11-23_gp50-speed` or `2026-11-23_stage3-listening`.
+
+## 2026-11-24: GP-200 restore of the converted GP-50 patches: nothing stored
+
+The developer ran step 1 of the listening roadmap: the live site (58c0117),
+Edge, Restore from 50-B, `gp200_converted_convert_2026-11-23T22-31-05.zip`
+(55 patches). Both pedals plugged in. Log:
+`2026-11-23_stage3-listening\gp200_web_2026-11-24T19-36-14.log`.
+
+**Seen:**
+- **0 of 55 verified.** Each patch took the full 3 s of read-backs; every
+  read-back still held the empty patch ("It's GP-200": name, chain order
+  0..10, all modules off), so the pedal stored none of them. 50-B was the same
+  in all 106 reads; others varied between reads (an "unreadable" read, and
+  some bytes), as a slot being read with errors would.
+- No patch name changed, on the pedal or in the app's list.
+- **Reads were flaky too:** the patch list on connect needed 9 re-reads
+  (timeouts with 0 of 7 chunks), the one after the restore 17. The app's
+  reads had 0 re-reads in every run of September and October. Q12 (4
+  re-reads from the runner overnight) is the same kind of thing.
+
+**The converted files, against a real GP-200 export** (scratchpad script):
+the same 1224 bytes, the same header and tail, a valid checksum. They differ
+from the pedal's own empty patch only in the PC-software stamp (never sent),
+the slot mirrors (the upload sets them), the name, the chain order and the
+effect blocks. Block headers (`14 00 44 00 k on 0f 00`) are as in real
+patches; no parameter is NaN or infinite. 49 of 55 have the chain order
+`04 00 01 02 03 05 06 07 08 09 0a`, which one real patch (from 1-B to 12-B)
+also has. Nothing in the files explains a pedal refusing them.
+
+**Two explanations left:** (a) something in the converted patches' content
+the pedal rejects, which a byte-level look doesn't show; (b) the GP-200 isn't
+storing writes in its present state (both pedals plugged in, reads failing
+now where they never did). One test tells them apart: restore one patch the
+pedal itself made (`gp200_1B-12B\1B_50s Plexi.prst`, read from it overnight)
+to the empty 50-B, nothing else changed.
