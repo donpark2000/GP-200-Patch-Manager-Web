@@ -23,18 +23,6 @@ This journal records only what's new or different for the browser.
   no trouble); the app's pedal detection with both not yet tried. For the
   app: decide in stage 4 (DESIGN.md plans the GP-50 in the GP-200 screens,
   not a copy screen).
-- **Q12. GP-200 reads from the runner: 4 of 256 got no answer at first.**
-  (2026-11-23, the overnight read.) 14-B, 15-B, 19-B, 62-B each timed out
-  with 0 of 7 chunks, then read fine on the second attempt; the result
-  matched the September backup. The runner reads without the handshake
-  (so the pedal isn't put in editor mode) and with the GP-50 also plugged
-  in; the app's reads have the handshake. Not yet known whether either
-  matters, or whether the app sees the same; harmless as it is (retries
-  are in the rules), but worth one look before stage 4 relies on it.
-  **2026-11-24: probably the Windows driver** (entry "GP-200 writes not
-  stored: the Windows driver"): the app's reads had the same timeouts until
-  the developer switched the driver back, then were much quicker. To close:
-  one runner read of all 256 with the fixed driver, 0 re-reads expected.
 - **Q13. Tell users about the driver?** (2026-11-24.) Windows (an update) can
   switch the pedals to a driver under which Web MIDI reads slowly and writes
   aren't stored, in Valeton's editor too; switching it back in Device Manager
@@ -43,6 +31,23 @@ This journal records only what's new or different for the browser.
 
 ## Resolved
 
+- **Q12. GP-200 reads from the runner needing re-reads: closed 2026-11-24**
+  (entry "GP-200 back as planned"): the Windows driver. With the driver
+  switched back, the runner read all 256 in 0.4 s with 0 re-reads (8.5 s and
+  4 re-reads the night before); the app's slow list went too. Original
+  question below.
+  - **Q12. GP-200 reads from the runner: 4 of 256 got no answer at first.**
+    (2026-11-23, the overnight read.) 14-B, 15-B, 19-B, 62-B each timed out
+    with 0 of 7 chunks, then read fine on the second attempt; the result
+    matched the September backup. The runner reads without the handshake
+    (so the pedal isn't put in editor mode) and with the GP-50 also plugged
+    in; the app's reads have the handshake. Not yet known whether either
+    matters, or whether the app sees the same; harmless as it is (retries
+    are in the rules), but worth one look before stage 4 relies on it.
+    **2026-11-24: probably the Windows driver** (entry "GP-200 writes not
+    stored: the Windows driver"): the app's reads had the same timeouts until
+    the developer switched the driver back, then were much quicker. To close:
+    one runner read of all 256 with the fixed driver, 0 re-reads expected.
 - **Q10. GP-50 patch changes during the Edge run: closed 2026-11-23**
   (developer): they stepped through all the patches on the pedal to see
   their names on its screen, ending on 6; that explains the patch changes
@@ -5010,3 +5015,29 @@ instead of under a second) with first-attempt read timeouts, and every write
 "not verified" with the read-back still the old patch, in Valeton's editor
 too (it says done; the pedal doesn't change). Check the driver in Device
 Manager first. Open questions: Q12 (probably this), Q13 (tell users).
+
+## 2026-11-24: GP-200 back as planned; Q12 closed
+
+With the driver fixed, the developer ran the two restores in the web app:
+`gp200_all_patches.zip` (last night's read) from 1-A, then
+`gp200_converted_convert_2026-11-23T22-31-05.zip` from 50-B. Both without
+errors and fast; the names changed on the pedal and in the app.
+
+**Claude's check, reads only** (scratchpad script over `readGp200Slots`, as
+overnight), into `2026-11-23_stage3-listening\after-driver-fix_2026-11-24\`:
+- Ports now "GP-200" in and out (was "Valeton GP-200 Subdevice" under the
+  other driver); the app and the runner both found it.
+- **All 256 read in 0.4 s, 0 re-reads, 0 skipped** (8.5 s and 4 re-reads
+  last night): `gp200_all_patches.zip`. Q12 closed.
+- Against the expected state (last night's read with 50-B to 63-D replaced by
+  the 55 converted files), by the write verify's rule (PC-software stamp, slot
+  mirrors, tail live bytes and dead bytes ignored; 302,592 bytes): **252
+  identical, 4 with pedal-managed bytes only, 0 different.** The check can
+  fail: against last night's read it reports the 55 converted slots.
+- Small, harmless: the converter's GP-200 files carry the skeleton's
+  PC-software stamp (`4d 52 41 50 94 04`) and slot mirrors (`0x92`), not a
+  patch's (`00 00 04 00 01 00`); neither is sent in an upload. Left as is.
+
+**Now on the pedals:** GP-200 1-A to 50-A and 64 as last night (1-B to 12-B
+the sources of part A), 50-B to 63-D the converted GP-50 factory patches.
+GP-50 as last night (0-54 factory, 55-99 converted). Ready for listening.
