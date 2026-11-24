@@ -4941,3 +4941,12 @@ tool.
   (the app's log lists "GP-50" in and out).
 - Next, before any factory reset: unplug the GP-50, power-cycle the GP-200,
   then repeat the one-patch restore from the app.
+- **GP-50 unplugged, GP-200 power-cycled, other USB cables and power
+  supplies** (developer): still not stored, from the app or Valeton's editor.
+  The app's patch list took about 10 s to fill on connect (it took 0.3 s in
+  October: journal, Resolved). So the GP-200 itself is slow to answer reads and
+  doesn't store writes, with nothing else plugged in.
+- Next: save a patch from the pedal's own controls (no USB involved). If that
+  fails too, the fault is in the pedal's storage; factory reset next. Backups:
+  `gp200_all_patches.zip` (2026-11-23, this folder) and
+  `GP-200\Backups\2026-09-30_full-backup.zip`.
