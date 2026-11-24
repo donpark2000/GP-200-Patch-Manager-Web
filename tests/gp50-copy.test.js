@@ -9,7 +9,7 @@ import path from "node:path";
 import test from "node:test";
 import { slotFileName } from "../gp50/backup.js";
 import { isGp200Read, readOnly } from "../gp50/cli/copy.js";
-import { main } from "../gp50/cli/run.js";
+import { freeTag, main } from "../gp50/cli/run.js";
 import { gp200ToGp50, gp50EmptyPrst, readGp200, readGp50, writeGp50 } from "../gp50/convert.js";
 import { FakeGp50 } from "../gp50/fake-gp50.js";
 import { buildPrst, toHex } from "../gp50/protocol.js";
@@ -127,6 +127,25 @@ test("convert: GP-50 patches to a GP-200 zip numbered from 50-B, no pedal opened
   writeFileSync(bad, new Uint8Array(40));
   assert.equal(await s.run("convert", bad, "--start", "55"), 1);
   assert.match(s.text(), /junk\.prst: can't be converted: not a GP-200 or GP-50 patch/);
+});
+
+test("convert: two runs in the same second keep both sheets and zips (a suffix, not an overwrite)", async (t) => {
+  const s = setup(t);
+  const zip = path.join(s.dir, "gp50_some.zip");
+  const p = readGp50(gp50EmptyPrst());
+  p.name = "Fake 00";
+  writeFileSync(zip, createZip([{ name: "00-Fake 00.prst", data: writeGp50(p) }]));
+  assert.equal(await s.run("convert", zip, "--start", "50-B"), 0, s.text());
+  const [first] = s.saved(/^listening_convert_.*\.csv$/);
+  // The second run is made to land in the same second: the first's names are taken.
+  const tag = first.replace(/^listening_|\.csv$/g, "");
+  assert.equal(freeTag(s.dir, tag, (x) => [`listening_${x}.csv`]), `${tag}-2`);
+  assert.equal(freeTag(s.dir, `${tag}-x`, (x) => [`listening_${x}.csv`]), `${tag}-x`, "a free name is kept as it is");
+  writeFileSync(path.join(s.dir, `listening_${tag}-2.csv`), "");
+  assert.equal(freeTag(s.dir, tag, (x) => [`listening_${x}.csv`]), `${tag}-3`);
+  assert.equal(await s.run("convert", zip, "--start", "50-B"), 0, s.text());
+  assert.ok(s.saved(/^listening_convert_.*\.csv$/).length >= 2, "both sheets kept");
+  assert.equal(s.saved(/^gp200_converted_convert_.*\.zip$/).length, 2, "both zips kept");
 });
 
 test("convert: two different names that come out the same are both kept, and the sheet says so", async (t) => {

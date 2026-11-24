@@ -20,7 +20,7 @@
 // and its messages are checked here and in midi_bridge.py.
 // Ctrl+C stops after the patch being written. Exit code 0 only if all passed.
 
-import { closeSync, openSync, readFileSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, statSync, writeFileSync, writeSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -100,14 +100,26 @@ async function parse(argv) {
   };
 }
 
+/**
+ * `tag`, or `tag-2`, `tag-3` ... when a file it would name is already in `dir`:
+ * names carry the time to the second, and two runs in one second overwrote
+ * the first's sheet (journal 2026-11-24, "CTRL confirmed on the GP-50").
+ */
+export function freeTag(dir, tag, namesFor) {
+  for (let k = 1; ; k++) {
+    const t = k === 1 ? tag : `${tag}-${k}`;
+    if (!namesFor(t).some((n) => existsSync(path.join(dir, n)))) return t;
+  }
+}
+
 /** Converted patches, their sources and the listening sheet, saved in the session folder. */
 function saveConversion(a, sources, r, log) {
   const kinds = r.files.length && r.files[0].name.includes("_") ? "GP-200" : "GP-50";
-  const tag = `${a.command}_${stamp()}`;
-  if (sources) writeFileSync(path.join(a.out, `gp200_source_${tag}.zip`), createZip(sources));
-  const zip = `${kinds === "GP-50" ? "gp50" : "gp200"}_converted_${tag}.zip`;
+  const names = (t) => ({ source: `gp200_source_${t}.zip`, zip: `${kinds === "GP-50" ? "gp50" : "gp200"}_converted_${t}.zip`, csv: `listening_${t}.csv` });
+  const tag = freeTag(a.out, `${a.command}_${stamp()}`, (t) => Object.values(names(t)));
+  const { zip, csv } = names(tag);
+  if (sources) writeFileSync(path.join(a.out, names(tag).source), createZip(sources));
   writeFileSync(path.join(a.out, zip), createZip(r.files));
-  const csv = `listening_${tag}.csv`;
   writeFileSync(path.join(a.out, csv), sheet(r.rows, kinds));
   log.info(`Saved ${zip} (${r.files.length} patches) and ${csv}${sources ? `, and the GP-200 originals` : ""}`);
 }

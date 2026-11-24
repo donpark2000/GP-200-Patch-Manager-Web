@@ -28,13 +28,13 @@ This journal records only what's new or different for the browser.
   aren't stored, in Valeton's editor too; switching it back in Device Manager
   fixes it. Help's troubleshooting could say so, with the symptoms; for the
   developer to decide (stage 4, or sooner for the live GP-200 app).
-- **Q14. Where is the GP-200's CTRL?** (2026-11-24.) The converter reads it
-  from three one-module records at 0x448, but the developer says a GP-200
-  CTRL can switch many modules, and the data points to four bit masks at
-  0x460 (CTRL 1-4) instead. Settled by the developer reading CTRL 1-4 off
-  the GP-200 for 1-C, 3-B and 7-B (entry "GP-200 CTRL: probably four masks").
-  Also open there: what bits 11-15 of a mask mean, and what the 0x448
-  records are.
+- **Q14. GP-200 CTRL: two loose ends.** (2026-11-24; the layout itself is
+  settled: entry "GP-200 CTRL: eight masks".) (a) 3-B Vintage OD's CTRL 3
+  mask has DLY's bit, but the developer saw nothing on CTRL 3; (b) bits 11-15
+  of a mask, set in 73 masks (patches 1-4 and 33-35), meaning unknown. Neither
+  matters to copying now (CTRL 3-8 aren't carried; bits 11-15 aren't either).
+  Settle if it ever does: the developer looks at 3-B's CTRL 3 again and at
+  the empty patch's CTRL 3 and 4 (masks DLY and RVB, with high bits).
 
 ## Resolved
 
@@ -5199,3 +5199,63 @@ one module on CTRL 1 and 2 only.
 (yesterday's next step) until this is settled; it would write CTRL into the
 wrong place. Tool fault from yesterday (sheets overwritten in the same
 second) still to fix.
+
+## 2026-11-24: GP-200 CTRL: eight masks, confirmed on the pedal; converter changed
+
+**The developer's readings** (GP-200, nothing saved): all 8 footswitches can
+be CTRL switches; in patch select mode (the only mode the developer uses)
+just two, the others being bank up/down and the bank's 4 patches.
+- 1-C Clean FUZZ: CTRL 1 PRE + DLY (both off when the patch is selected),
+  CTRL 2 DST (on), CTRL 3 MOD (on), CTRL 4 RVB (on), CTRL 5-8 nothing.
+- 3-B Vintage OD: CTRL 1 PRE (off), CTRL 2 EQ + MOD (both off), 3-8 nothing.
+- 7-B Dizzy Devil: CTRL 1 EQ + RVB (on), 2-8 nothing.
+
+**Against the two readings:** the masks predicted every one of these except
+3-B's CTRL 3; the 0x448 records got 7-B's and 1-C's CTRL 1 wrong. So the
+masks are CTRL, and there are **eight records, not four** (the entry above
+missed CTRL 5-8: `0f 00 08 00 n` at 0x460 + 12n for n 0-7; 5-8 are empty in
+all 256 patches of the backup). The on/off states the developer gave match
+the module blocks' on bits. The 0x448 records' meaning stays unknown; kept
+as they are.
+- **Not explained: 3-B's CTRL 3** is `0x9900`, DLY's bit plus bits 11, 12,
+  15, but the developer saw nothing there. Its CTRL 1 and 2 have high bits too
+  and read right. Open (Q14); it doesn't touch copying, which carries CTRL 1
+  and 2 only.
+
+**Converter** (`gp50/convert.js`; DESIGN.md "Converter rules", CTRL):
+GP-200 CTRL is read from and written to the eight masks; GP-200 to GP-50
+carries CTRL 1 and 2, up to 3 modules each (the first in playing order),
+reports CTRL 3-8 and any module over 3; bits 11-15 are logged, not carried.
+GP-50 to GP-200 carries every module of CTRL 1 and 2; CTRL 3-8 none.
+**Tests:** 4 CTRL tests rewritten, 2 new (the developer's three patches as
+read; more than 3 on one CTRL); suite **265 pass**. Each new check shown to
+fail: records 4 bytes off (15 tests fail), a cap of 4 (1), a mask bit off by
+one (4), the playing order reversed (1), only the low byte written (4).
+(A first try at that showed 0 failures for every one: the count looked for
+TAP's "not ok" in Node's other report format. Counted again with
+`--test-reporter=tap`.)
+
+**Tool fault fixed:** a sheet or zip name already in the folder gets `-2`,
+`-3` ... (`freeTag` in `gp50/cli/run.js`; test in `gp50-copy.test.js`, shown
+to fail). It happened at once in the real run below: both converts in one
+second, the second saved as `...22-46-57-2`.
+
+**Re-converted** into `2026-11-23_stage3-listening\ctrl8_2026-11-24\`:
+- GP-200 1-B to 12-B -> GP-50: `gp50_converted_convert_2026-11-24T22-46-57.zip`,
+  45, 0 refused. CTRL 1/2 notes only for 4-C (MOD's effect didn't go over),
+  6-D (PRE lost to the wah), 8-C and 9-C (PRE a stand-in). E.g. 1-C is now
+  GP-50 56 with CTRL 1 PRE + DLY, CTRL 2 DST. 70 notes for CTRL 3-8 (most
+  patches have CTRL 3 or 4 set).
+- GP-50 0-54 -> GP-200: `gp200_converted_convert_2026-11-24T22-46-57-2.zip`,
+  55, 0 refused; CTRL notes only 02 and 43 (CTRL 1 on PRE, which didn't go
+  over).
+- GP-50 backup as the reference (`gp50_all_2026-11-24T22-47-25.zip`, 100, 0
+  retries), then the 45 to **GP-50 55-99: 45 of 45 read back identical**,
+  28.4 s. Patch writes: **1,792**.
+- Supersedes `ctrl_2026-11-24\` (CTRL from the wrong place on the GP-200
+  side); don't use its GP-200 zip.
+
+**For the developer:** restore `ctrl8_2026-11-24\gp200_converted_convert_2026-11-24T22-46-57-2.zip`
+to the GP-200 from 50-B; then CTRL on a pair or two, e.g. GP-50 56 (from 1-C:
+PRE + DLY / DST) against the GP-200's 1-C.
+

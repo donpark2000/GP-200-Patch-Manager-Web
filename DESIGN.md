@@ -450,12 +450,17 @@ going to get without sound tests").
   skeleton's.
 - **CTRL 1 and 2 are carried** (developer, 2026-11-24: both pedals have two
   CTRL switches by default; the developer's own patches use CTRL 1 for DST,
-  CTRL 2 for MOD). Each goes to the module its effect went to; it's left out,
-  and reported, when that module's effect didn't go over, is a stand-in, or is
-  a wah switched off for the expression pedal. A GP-50 CTRL can switch several
-  modules, a GP-200 patch holds one per CTRL: the first in playing order is
-  kept, the others reported. GP-50 layout confirmed on the pedal (journal
-  2026-11-24, "CTRL confirmed").
+  CTRL 2 for MOD). Each module on a CTRL goes to the module its effect went
+  to; it's left out, and reported, when that module's effect didn't go over,
+  is a stand-in, or is a wah switched off for the expression pedal. A CTRL
+  switches several modules on both pedals (developer, 2026-11-24): any of the
+  11 on the GP-200, up to 3 on the GP-50. GP-200 to GP-50: more than 3 left,
+  the first 3 in playing order are kept and the rest reported (never needed
+  in the developer's backup: at most 3). The GP-200 has CTRL 1-8 (all 8
+  footswitches can be CTRLs; in patch select mode, the developer's only mode,
+  just CTRL 1 and 2): CTRL 3-8 have nowhere to go on the GP-50 and are
+  reported; from the GP-50 they're none. Layouts confirmed on both pedals
+  (journal 2026-11-24, "CTRL confirmed" and "GP-200 CTRL: eight masks").
 - **A tempo-synced Time or Rate** is carried as the note length it holds
   when the target is synced too, otherwise set to the target's default.
 - All of these are in the patch's report, in playing order. A same or

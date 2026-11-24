@@ -12,7 +12,10 @@
 //                15 float32 values
 //   0x3B8 + 16*i: 9 EXP records 0C 00 0C 00, id, module (FF none), control, 00,
 //                f32, f32 (ids 00-02, 10-12, 20-22)
-//   0x448 + 8*i: 3 CTRL records 10 00 04 00, n, module (FF none), v, 00
+//   0x448 + 8*i: 3 records 10 00 04 00, n, module (FF none), v, 00: not CTRL
+//                (read as CTRL until 2026-11-24); meaning unknown, kept as is
+//   0x460 + 12*i: 8 CTRL records 0F 00 08 00, n, 00 00 00, u32: CTRL n+1,
+//                bit m = module m switched (bits 0-10); bits 11-15 unknown
 // GP-50 .prst (552 bytes): records [u16 tag, u16 length, value] from 0x29, at
 // the same offsets in every patch seen:
 //   tag 1 { 2001 u8 patch volume, 2002 u32 tempo, 2003-200A (all patches the
@@ -22,7 +25,8 @@
 //   module m (NR, PRE, DST, ...); 2 bytes, not known, kept as they are }.
 // CTRL on the GP-50 confirmed 2026-11-24 (DEV_JOURNAL.md, "CTRL confirmed"):
 // the developer changed patch 99 from PRE/DST (2/4) to NR/EQ (1/32), nothing
-// else changed. GP-200 CTRL 1 and 2 are records 0 and 1 (the September backup).
+// else changed. GP-200 CTRL confirmed 2026-11-24 (journal, "GP-200 CTRL: eight
+// masks"): the developer read CTRL 1-8 of 1-C, 3-B and 7-B off the pedal.
 // Not yet confirmed on the pedal: which 3001 bit is which module (taken in
 // module order, as CTRL's are), the GP-50's tempo and volume fields.
 
@@ -76,7 +80,10 @@ const same = (d, i, bytes) => bytes.every((b, k) => d[i + k] === b);
 const GP200_ORDER = 0x94;
 const GP200_BLOCK = (m) => 0xa0 + 72 * m;
 const GP200_EXP = (i) => 0x3b8 + 16 * i;
-const GP200_CTRL = (i) => 0x448 + 8 * i;
+const GP200_REC448 = (i) => 0x448 + 8 * i;
+const GP200_CTRL = (i) => 0x460 + 12 * i;
+export const GP200_CTRLS = 8;
+export const GP50_CTRL_MAX = 3; // modules one GP-50 CTRL can switch (developer, 2026-11-24)
 const EXP_IDS = [0x00, 0x01, 0x02, 0x10, 0x11, 0x12, 0x20, 0x21, 0x22];
 const NO_MODULE = 0xff;
 
@@ -99,16 +106,19 @@ export function readGp200(prst) {
     if (!same(prst, o, [0x0c, 0x00, 0x0c, 0x00, id])) throw new Error(`GP-200 EXP record ${i} isn't laid out as expected`);
     return { id, module: prst[o + 5], control: prst[o + 6], a: f32(prst, o + 8), b: f32(prst, o + 12) };
   });
-  const ctrl = [0, 1, 2].map((n) => {
+  for (let n = 0; n < 3; n++) {
+    if (!same(prst, GP200_REC448(n), [0x10, 0x00, 0x04, 0x00, n])) throw new Error(`GP-200 record ${n} at 0x448 isn't laid out as expected`);
+  }
+  const ctrlMasks = Array.from({ length: GP200_CTRLS }, (_, n) => {
     const o = GP200_CTRL(n);
-    if (!same(prst, o, [0x10, 0x00, 0x04, 0x00, n])) throw new Error(`GP-200 CTRL record ${n} isn't laid out as expected`);
-    return { n, module: prst[o + 5], v: prst[o + 6] };
+    if (!same(prst, o, [0x0f, 0x00, 0x08, 0x00, n, 0, 0, 0])) throw new Error(`GP-200 CTRL ${n + 1}'s record isn't laid out as expected`);
+    return u32(prst, o + 8);
   });
-  return { name: text(prst, 0x44, 0x54), tempo: u16(prst, 0x36), volume: u16(prst, 0x38), order, modules, exp, ctrl };
+  return { name: text(prst, 0x44, 0x54), tempo: u16(prst, 0x36), volume: u16(prst, 0x38), order, modules, exp, ctrlMasks };
 }
 
 // What every GP-200 patch seen has (250 and 256 of 256): EXP 1 on the volume
-// module, EXP 2 on the wah's control 3, nothing else; CTRL record 2 on 0B.
+// module, EXP 2 on the wah's control 3, nothing else; the 0x448 record 2 on 0B.
 const GP200_DEFAULT_EXP = { 0x00: [10, 0], 0x10: [1, 3] };
 
 /** A GP-200 .prst from the parts readGp200 returns (the skeleton supplies the rest). */
@@ -126,8 +136,8 @@ export function writeGp200(p) {
     put32(out, o + 8, m.code);
     m.values.forEach((v, k) => putF32(out, o + 12 + 4 * k, v));
   }
-  // CTRL: only the module; the third byte is the pedal's (journal 2026-10-01).
-  if (p.ctrl) for (const c of p.ctrl) out[GP200_CTRL(c.n) + 5] = c.module;
+  // CTRL 1-8: the whole u32 as given (the 0x448 records stay the skeleton's).
+  if (p.ctrlMasks) p.ctrlMasks.forEach((mask, n) => put32(out, GP200_CTRL(n) + 8, mask));
   const c = prstChecksum(out);
   out[CHECKSUM_OFF] = c >> 8;
   out[CHECKSUM_OFF + 1] = c & 0xff;
@@ -358,18 +368,30 @@ export function gp200ToGp50(prst, map, { log = () => {} } = {}) {
   const last = notes.at(LAST);
   const extraExp = p.exp.filter((e) => e.module !== NO_MODULE && !(GP200_DEFAULT_EXP[e.id]?.[0] === e.module && GP200_DEFAULT_EXP[e.id]?.[1] === e.control));
   for (const e of extraExp) last(`EXP: its assignment to ${GP200_MODULES[e.module] ?? `module ${e.module}`} not carried (the GP-50 has no expression pedal)`);
+  // CTRL (DESIGN.md): 1 and 2 only (the GP-50 has two), at most 3 modules
+  // each, the first in playing order kept.
   const ctrlMasks = [0, 0];
-  for (const c of p.ctrl) {
-    if (c.n > 1 || c.module === NO_MODULE) continue;
-    const what = `CTRL ${c.n + 1}: ${GP200_MODULES[c.module] ?? `module ${c.module}`}`;
-    const hit = [...won].find(([, w]) => w.src.index === c.module);
-    if (!hit) { last(`${what} not carried: that module isn't in the GP-50 patch`); continue; }
-    const [at, w] = hit;
-    if (w.entry.match === "stand-in") { last(`${what} not carried: its stand-in stays off`); continue; }
-    if (w.on && !modules[at].on) { last(`${what} not carried: the wah stays off (the expression pedal worked it)`); continue; }
-    ctrlMasks[c.n] |= 1 << at;
-    if (GP50_MODULES[at] !== GP200_MODULES[c.module]) last(`${what} switches the GP-50's ${GP50_MODULES[at]} module`);
-  }
+  p.ctrlMasks.forEach((raw, n) => {
+    if (raw >>> 11) log(`GP-200 CTRL ${n + 1}: bits above the modules set (0x${raw.toString(16)}), meaning unknown, not carried`);
+    const mods = GP200_MODULES.map((_, i) => i).filter((i) => (raw >>> i) & 1).sort((a, b) => p.order.indexOf(a) - p.order.indexOf(b));
+    if (!mods.length) return;
+    if (n > 1) { last(`CTRL ${n + 1}: ${mods.map((i) => GP200_MODULES[i]).join(" + ")} not carried: the GP-50 has CTRL 1 and 2 only`); return; }
+    const kept = [];
+    for (const i of mods) {
+      const what = `CTRL ${n + 1}: ${GP200_MODULES[i]}`;
+      const hit = [...won].find(([, w]) => w.src.index === i);
+      if (!hit) { last(`${what} not carried: that module isn't in the GP-50 patch`); continue; }
+      const [at, w] = hit;
+      if (w.entry.match === "stand-in") { last(`${what} not carried: its stand-in stays off`); continue; }
+      if (w.on && !modules[at].on) { last(`${what} not carried: the wah stays off (the expression pedal worked it)`); continue; }
+      if (!kept.includes(at)) {
+        if (kept.length === GP50_CTRL_MAX) { last(`${what} not carried: a GP-50 CTRL switches ${GP50_CTRL_MAX} modules at most, and CTRL ${n + 1} has ${kept.map((k) => GP50_MODULES[k]).join(", ")}`); continue; }
+        kept.push(at);
+      }
+      if (GP50_MODULES[at] !== GP200_MODULES[i]) last(`${what} switches the GP-50's ${GP50_MODULES[at]} module`);
+    }
+    ctrlMasks[n] = kept.reduce((m, at) => m | (1 << at), 0);
+  });
   const volume = Math.min(100, p.volume);
   if (volume !== p.volume) last(`Patch volume limited ${p.volume} -> ${volume}`);
   const list = notes.sorted();
@@ -419,24 +441,23 @@ export function gp50ToGp200(prst, map, { log = () => {} } = {}) {
   const order = chainOrder(p.order, won, GP200_DEFAULT_ORDER);
   const empty = readGp50(gp50EmptyPrst());
   const last = notes.at(LAST);
-  const ctrl = base.ctrl.map((c) => ({ ...c }));
+  // CTRL 1 and 2 to the GP-200's CTRL 1 and 2, every module (a GP-200 CTRL
+  // holds them all); CTRL 3-8 stay the skeleton's (none).
+  const ctrlMasks = [...base.ctrlMasks];
   p.ctrlMasks.forEach((mask, n) => {
-    let carried = null;
     for (const m of p.modules.filter((x) => (mask >>> x.index) & 1).sort((a, b) => pos(a) - pos(b))) {
       const what = `CTRL ${n + 1}: ${m.module}`;
       const hit = [...won].find(([, w]) => w.src.index === m.index);
       if (!hit) { last(`${what} not carried: that module isn't in the GP-200 patch`); continue; }
       const [at, w] = hit;
       if (w.entry.match === "stand-in") { last(`${what} not carried: its stand-in stays off`); continue; }
-      if (carried !== null) { last(`${what} not carried: a GP-200 patch holds one module per CTRL, and CTRL ${n + 1} has ${GP200_MODULES[carried]}`); continue; }
-      carried = at;
+      ctrlMasks[n] |= 1 << at;
       if (GP200_MODULES[at] !== m.module) last(`${what} switches the GP-200's ${GP200_MODULES[at]} module`);
     }
-    if (carried !== null) ctrl[n].module = carried;
   });
   if (p.exp.some((b, i) => b.join() !== empty.exp[i].join())) last("EXP: settings not carried (where the GP-50 keeps them isn't confirmed yet)");
   const name = p.name.trim();
   const list = notes.sorted();
   log(`Convert GP-50 "${p.name}" -> GP-200 "${name}": ${list.length} note(s); order ${order.map((i) => GP200_MODULES[i]).join(" ")}; on ${modules.filter((m) => m.on).map((m) => m.module).join(" ") || "none"}`);
-  return { prst: writeGp200({ name, tempo: p.tempo, volume: p.volume, order, modules, ctrl }), name, source: p.name.trim(), notes: list };
+  return { prst: writeGp200({ name, tempo: p.tempo, volume: p.volume, order, modules, ctrlMasks }), name, source: p.name.trim(), notes: list };
 }
