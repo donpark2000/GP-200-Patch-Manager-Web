@@ -5419,7 +5419,7 @@ the developer checks the 4 pairs.**
   `58c0117`.
 - **On the GP-200:** 1-A to 50-A the developer's; 50-B to 62-D the converted
   GP-50 factory patches (from before CTRL); 63-A to 63-D the 4 pairs; 64 as
-  before. **On the GP-50:** 0-54 factory, 55-95 converted GP-200 1-B to 12-A
+  before. **On the GP-50:** 0-54 factory, 55-95 converted GP-200 1-B to 11-B
   (ctrl8, with CTRL), 96-99 the 4 pairs.
 - Writes: GP-50 1,797 of about 2,000; GP-200 4 from the runner.
 - Open: Q11 (copy pedal to pedal in the app), Q13 (driver note for users),
