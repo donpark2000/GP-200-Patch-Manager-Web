@@ -5041,3 +5041,34 @@ overnight), into `2026-11-23_stage3-listening\after-driver-fix_2026-11-24\`:
 **Now on the pedals:** GP-200 1-A to 50-A and 64 as last night (1-B to 12-B
 the sources of part A), 50-B to 63-D the converted GP-50 factory patches.
 GP-50 as last night (0-54 factory, 55-99 converted). Ready for listening.
+
+## 2026-11-24: First listening verdicts; CTRL wanted
+
+**Verdicts (developer):** the first 4 pairs tried: "the feel and vibe of the
+conversions is great". Not expected to be perfect ("the two units will always
+have their own colour"), "but the algorithm is definitely working". Swapping
+the guitar between the pedals is slow and risks loud pops (volume down before
+every swap); there's no A/B switch here.
+
+**CTRL (developer):** both pedals have two CTRL switches by default. The
+developer's own convention: CTRL 1 switches the DST module, CTRL 2 the MOD
+module. Asked why the converter doesn't at least carry CTRL 1 and 2.
+
+**Why it doesn't yet, and what's known** (Claude): the converter leaves CTRL
+out because the GP-50's CTRL layout is a guess (stage 3 entry: tag 3, two
+u32 that look like module masks), and so is which bit of a mask is which
+module. A wrong guess would put a switch on the wrong module, silently.
+Claude should have put this to the developer as a question, not only a note.
+The GP-200 side reads plainly from the September backup (192 patches with a
+CTRL, scratchpad tally): three records at 0x448, each naming **one module**
+(record 3 always module 11); records 1 and 2 are CTRL 1 and 2: PRE/DST 43,
+PRE/DLY 14, DST/DLY 14, DST/MOD 13 (the developer's convention), PRE/MOD 9,
+and 18 other pairs. Their third byte (0, 1 or 2) is the pedal-managed byte of
+2026-10-01, so probably the switch's state, not a setting.
+
+**To confirm the GP-50 side:** one patch on the GP-50 with CTRL 1 = DST and
+CTRL 2 = MOD, saved by the developer (on the pedal or in Valeton Suite); Claude
+reads it (reads only) and compares it with the file written there. That shows
+both masks and two modules' bits; factory patch 09 (DLY and RVB, if the guess
+is right) is a second check. Then the converter carries CTRL 1 and 2 both ways,
+reporting any it can't (a module the other pedal lacks, a stand-in).
