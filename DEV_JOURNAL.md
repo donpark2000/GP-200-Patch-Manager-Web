@@ -5072,3 +5072,11 @@ reads it (reads only) and compares it with the file written there. That shows
 both masks and two modules' bits; factory patch 09 (DLY and RVB, if the guess
 is right) is a second check. Then the converter carries CTRL 1 and 2 both ways,
 reporting any it can't (a module the other pedal lacks, a stand-in).
+- **Developer's better plan, taken:** start from a GP-50 patch that already
+  has CTRL assignments, copied to a free patch; the developer reads its CTRL
+  settings off the pedal, changes them, saves; the diff gives two known states
+  instead of one. Claude: GP-50 backup of all 100 as the reference
+  (`after-driver-fix_2026-11-24\gp50_all_2026-11-24T22-05-39.zip`, 0
+  retries), then factory **47 Bass Drive copied to patch 99** (was the
+  converted 12-B Hard Rock): written and read back identical, 1.0 s, selected
+  47 before and after. Patch writes: 1,702.
