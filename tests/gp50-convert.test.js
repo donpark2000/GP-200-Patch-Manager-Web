@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { GP200_CTRLS, GP50_CTRL_MAX, gp200ToGp50, gp50EmptyPrst, gp50ToGp200, readGp200, readGp50, shortenName, writeGp200, writeGp50 } from "../gp50/convert.js";
+import { CTRL_RANK, GP200_CTRLS, GP50_CTRL_MAX, gp200ToGp50, gp50EmptyPrst, gp50ToGp200, readGp200, readGp50, shortenName, writeGp200, writeGp50 } from "../gp50/convert.js";
 import { GP200_MODULES, GP50_MODULES } from "../gp50/effect-map.js";
 import { fileProblem } from "../gp50/restore.js";
 import { CHECKSUM_OFF, prstChecksum, prstFileName } from "../src/core/prst.js";
@@ -226,12 +226,19 @@ test("CTRL, GP-200 to GP-50: the developer's DST/MOD and two modules on one CTRL
   assert.deepEqual(readGp50(none.prst).ctrlMasks, [0, 0], "no CTRL stays no CTRL");
 });
 
-test("CTRL, GP-200 to GP-50: more than 3 on one CTRL keeps the first 3 in playing order; CTRL 3-8 reported", () => {
+test("CTRL, GP-200 to GP-50: more than 3 on one CTRL keeps the 3 highest in the developer's ranking; CTRL 3-8 reported", () => {
+  assert.deepEqual(CTRL_RANK, ["DST", "EQ", "DLY", "MOD", "RVB", "PRE", "CAB", "AMP", "NR", "VOL", "WAH"]);
+  assert.deepEqual([...CTRL_RANK].sort(), [...GP200_MODULES].sort(), "every GP-200 module ranked once");
   const r = gp200ToGp50(withMasks([bit("RVB", "DLY", "MOD", "DST", "AMP"), 0, bit("DLY"), 0, 0, 0, 0, bit("EQ", "RVB")]), map);
-  assert.deepEqual(ctrlOf(r.prst), [["DST", "AMP", "MOD"], []], "skeleton order: DST, AMP, MOD before DLY, RVB");
+  assert.deepEqual(ctrlOf(r.prst), [["DST", "MOD", "DLY"], []], "DST, DLY, MOD outrank RVB and AMP");
   assert.equal(GP50_CTRL_MAX, 3);
-  assert.ok(r.notes.includes("CTRL 1: DLY not carried: a GP-50 CTRL switches 3 modules at most, and CTRL 1 has DST, AMP, MOD"), r.notes.join("\n"));
-  assert.ok(r.notes.includes("CTRL 1: RVB not carried: a GP-50 CTRL switches 3 modules at most, and CTRL 1 has DST, AMP, MOD"), r.notes.join("\n"));
+  assert.ok(r.notes.includes("CTRL 1: RVB not carried: a GP-50 CTRL switches 3 modules at most, and CTRL 1 has DST, DLY, MOD"), r.notes.join("\n"));
+  assert.ok(r.notes.includes("CTRL 1: AMP not carried: a GP-50 CTRL switches 3 modules at most, and CTRL 1 has DST, DLY, MOD"), r.notes.join("\n"));
+  const r2 = gp200ToGp50(withMasks([0, bit("NR", "CAB", "PRE", "EQ", "DST")]), map);
+  assert.deepEqual(ctrlOf(r2.prst)[1].sort(), ["DST", "EQ", "PRE"].sort(), "DST, EQ, PRE outrank CAB and NR");
+  const vol = gp200ToGp50(withMasks([bit("VOL", "DST", "EQ", "DLY", "MOD")]), map);
+  assert.deepEqual(ctrlOf(vol.prst)[0].sort(), ["DLY", "DST", "EQ"].sort());
+  assert.ok(vol.notes.includes("CTRL 1: VOL not carried: that module isn't in the GP-50 patch"), vol.notes.join("\n"));
   assert.ok(r.notes.includes("CTRL 3: DLY not carried: the GP-50 has CTRL 1 and 2 only"), r.notes.join("\n"));
   assert.ok(r.notes.includes("CTRL 8: EQ + RVB not carried: the GP-50 has CTRL 1 and 2 only"), r.notes.join("\n"));
   const high = gp200ToGp50(withMasks([0xf800 | bit("DST")]), map);

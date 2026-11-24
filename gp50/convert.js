@@ -84,6 +84,9 @@ const GP200_REC448 = (i) => 0x448 + 8 * i;
 const GP200_CTRL = (i) => 0x460 + 12 * i;
 export const GP200_CTRLS = 8;
 export const GP50_CTRL_MAX = 3; // modules one GP-50 CTRL can switch (developer, 2026-11-24)
+// Which GP-200 modules a GP-50 CTRL keeps when more than 3 could go over, most
+// important first (developer, 2026-11-24).
+export const CTRL_RANK = ["DST", "EQ", "DLY", "MOD", "RVB", "PRE", "CAB", "AMP", "NR", "VOL", "WAH"];
 const EXP_IDS = [0x00, 0x01, 0x02, 0x10, 0x11, 0x12, 0x20, 0x21, 0x22];
 const NO_MODULE = 0xff;
 
@@ -369,11 +372,11 @@ export function gp200ToGp50(prst, map, { log = () => {} } = {}) {
   const extraExp = p.exp.filter((e) => e.module !== NO_MODULE && !(GP200_DEFAULT_EXP[e.id]?.[0] === e.module && GP200_DEFAULT_EXP[e.id]?.[1] === e.control));
   for (const e of extraExp) last(`EXP: its assignment to ${GP200_MODULES[e.module] ?? `module ${e.module}`} not carried (the GP-50 has no expression pedal)`);
   // CTRL (DESIGN.md): 1 and 2 only (the GP-50 has two), at most 3 modules
-  // each, the first in playing order kept.
+  // each: the carried ones highest in the developer's ranking are kept.
   const ctrlMasks = [0, 0];
   p.ctrlMasks.forEach((raw, n) => {
     if (raw >>> 11) log(`GP-200 CTRL ${n + 1}: bits above the modules set (0x${raw.toString(16)}), meaning unknown, not carried`);
-    const mods = GP200_MODULES.map((_, i) => i).filter((i) => (raw >>> i) & 1).sort((a, b) => p.order.indexOf(a) - p.order.indexOf(b));
+    const mods = GP200_MODULES.map((_, i) => i).filter((i) => (raw >>> i) & 1).sort((a, b) => CTRL_RANK.indexOf(GP200_MODULES[a]) - CTRL_RANK.indexOf(GP200_MODULES[b]));
     if (!mods.length) return;
     if (n > 1) { last(`CTRL ${n + 1}: ${mods.map((i) => GP200_MODULES[i]).join(" + ")} not carried: the GP-50 has CTRL 1 and 2 only`); return; }
     const kept = [];

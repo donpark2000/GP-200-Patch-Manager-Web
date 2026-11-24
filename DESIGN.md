@@ -454,9 +454,11 @@ going to get without sound tests").
   to; it's left out, and reported, when that module's effect didn't go over,
   is a stand-in, or is a wah switched off for the expression pedal. A CTRL
   switches several modules on both pedals (developer, 2026-11-24): any of the
-  11 on the GP-200, up to 3 on the GP-50. GP-200 to GP-50: more than 3 left,
-  the first 3 in playing order are kept and the rest reported (never needed
-  in the developer's backup: at most 3). The GP-200 has CTRL 1-8 (all 8
+  11 on the GP-200, up to 3 on the GP-50. GP-200 to GP-50: of the modules that
+  can go over, the 3 highest in the developer's ranking are kept and the rest
+  reported: DST, EQ, DLY, MOD, RVB, PRE, CAB, AMP, NR, VOL, WAH (developer,
+  2026-11-24; never needed in the developer's backup: at most 3). A module
+  that can't go over doesn't take a place. The GP-200 has CTRL 1-8 (all 8
   footswitches can be CTRLs; in patch select mode, the developer's only mode,
   just CTRL 1 and 2): CTRL 3-8 have nowhere to go on the GP-50 and are
   reported; from the GP-50 they're none. Layouts confirmed on both pedals

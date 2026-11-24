@@ -5308,3 +5308,21 @@ toggles each of its modules from the state the patch stores. Nothing more
 needed from the GP-50 for CTRL. (02 Star Night not looked at; not needed
 now.) Patch 99 stays "CTRL Test" for now (a test patch; nothing there to
 keep, developer 2026-11-23). Over-3 rule: still the developer's choice.
+
+## 2026-11-24: Over 3 modules on a CTRL: the developer's ranking
+
+**The developer's rule** (instead of options A-D above): keep the most
+important, in this order: DST, EQ, DLY, MOD, RVB, PRE, CAB, AMP, NR, VOL,
+WAH. Claude agreed: it keeps what a lead or boost switch is usually for (the
+drive, an EQ boost, the delay) and drops what changes the sound least. Two
+points, both built in: a module that can't go over (VOL, a stand-in, a module
+whose effect wasn't carried, an EXP wah) is dropped first and takes no place,
+so the next in the ranking moves up; and VOL never goes over anyway (no GP-50
+module), so its place in the ranking only matters for completeness.
+
+**Built:** `CTRL_RANK` in `gp50/convert.js`; the over-3 test rewritten (two
+sets of five modules, and VOL with four others); suite **265 pass**. Shown to
+fail: the ranking reversed (1 test), playing order back (1), MOD and RVB
+swapped (1). Re-converting both directions gives files identical to
+`ctrl8_2026-11-24\`'s (45 of 45, 55 of 55), as expected (no patch has more
+than 3), so GP-50 55-99 and the GP-200 zip there stay valid.
