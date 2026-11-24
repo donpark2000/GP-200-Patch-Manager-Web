@@ -448,8 +448,14 @@ going to get without sound tests").
   volume are carried. The GP-200's volume module (a volume pedal) has
   nowhere to go and isn't reported; a GP-50 patch gets the GP-200
   skeleton's.
-- **CTRL isn't carried yet:** its GP-50 layout isn't confirmed. Every patch
-  with a CTRL assignment says so.
+- **CTRL 1 and 2 are carried** (developer, 2026-11-24: both pedals have two
+  CTRL switches by default; the developer's own patches use CTRL 1 for DST,
+  CTRL 2 for MOD). Each goes to the module its effect went to; it's left out,
+  and reported, when that module's effect didn't go over, is a stand-in, or is
+  a wah switched off for the expression pedal. A GP-50 CTRL can switch several
+  modules, a GP-200 patch holds one per CTRL: the first in playing order is
+  kept, the others reported. GP-50 layout confirmed on the pedal (journal
+  2026-11-24, "CTRL confirmed").
 - **A tempo-synced Time or Rate** is carried as the note length it holds
   when the target is synced too, otherwise set to the target's default.
 - All of these are in the patch's report, in playing order. A same or

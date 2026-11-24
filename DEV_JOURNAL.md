@@ -5080,3 +5080,50 @@ reporting any it can't (a module the other pedal lacks, a stand-in).
   retries), then factory **47 Bass Drive copied to patch 99** (was the
   converted 12-B Hard Rock): written and read back identical, 1.0 s, selected
   47 before and after. Patch writes: 1,702.
+
+## 2026-11-24: CTRL confirmed on the GP-50; the converter carries CTRL 1 and 2
+
+**The test (developer's plan):** GP-50 patch 99 held a copy of factory 47
+Bass Drive. The developer read its CTRL off the pedal: CTRL 1 = PRE, CTRL 2
+= DST, the same as 47 itself (so the copy carried CTRL). They changed it to
+CTRL 1 = NR, CTRL 2 = EQ and saved. Claude read 99 back (reads only;
+`after-driver-fix_2026-11-24\99-Bass Drive.prst`) and compared it with the
+factory file: **3 bytes differ**: 0x14 (the header CRC), 542 `02 -> 01`, 546
+`04 -> 20`. So tag 3 is CTRL 1 and CTRL 2 as u32 masks, **bit m = module m**
+in the GP-50's module order (NR 1, PRE 2, DST 4, AMP 8, CAB 16, EQ 32, MOD 64,
+DLY 128, RVB 256). Factory 09 Solo Wah is 128/256, DLY and RVB, as guessed
+before. 8 of the 55 factory patches put two modules on one CTRL (e.g. 01 Neo
+Soul: CTRL 2 = DLY + RVB). The 2 bytes after the masks (5 or 6) didn't change;
+not known, kept as they are.
+
+**GP-200 side** (from the September backup, entry above): records 0 and 1 at
+0x448 are CTRL 1 and 2, one module each. Not yet checked on the pedal; 7
+patches have PRE on both (e.g. 9-C Step Up 1), which is odd but may be real.
+
+**Converter** (`gp50/convert.js`; rule in DESIGN.md): CTRL 1 and 2 go to the
+module the effect went to. Left out, with a note: a module whose effect didn't
+go over, a stand-in, a wah switched off for EXP; and on the GP-200, every
+module after the first (in playing order) on one CTRL. **Tests:** 4 new, 1
+changed; suite **262 pass**. Each new check shown to fail: a mask bit off by
+one (2 tests fail), the playing order reversed (1), masks written one byte off
+(4).
+
+**Re-converted** into `2026-11-23_stage3-listening\ctrl_2026-11-24\`:
+- GP-200 1-B to 12-B -> GP-50: `gp50_converted_convert_2026-11-24T22-19-57.zip`,
+  45, 0 refused. CTRL notes: only 6-D (CTRL 1 on PRE, which lost the GP-50's
+  PRE to the wah) and 9-C (both on PRE, a stand-in).
+- GP-50 0-54 -> GP-200: `gp200_converted_convert_2026-11-24T22-19-50.zip`, 55, 0
+  refused. CTRL notes: 01, 02, 11, 21, 43 (a second module on one CTRL), 02 and
+  43 (CTRL 1 on PRE, not carried over).
+- **Tool fault:** both converts ran in the same second and the second
+  overwrote the first's sheet (the names carry a stamp to the second; the log
+  is appended to). The first was run again a few seconds later. To fix: a
+  name that's taken gets a suffix.
+- GP-50 backup (100, 0 retries) as the reference, then the 45 written to
+  **GP-50 55-99: 45 of 45 read back identical**, 27.9 s. Patch writes: 1,747.
+  (Patch 99 is Hard Rock again; the CTRL test patch is kept as the file above.)
+
+**For the developer:** restore `ctrl_2026-11-24\gp200_converted_convert_2026-11-24T22-19-50.zip`
+to the GP-200 from 50-B, then check CTRL on a few pairs, including one of
+the GP-200's own (1-B to 12-B) against the pedal's screen, to confirm the
+GP-200 side.

@@ -164,11 +164,53 @@ test("tempo sync: a synced Time is carried as a note length, not clamped as a ti
   assert.equal(out(false).values[time.to], time.clamp[0], "not synced: 4 ms limited to the GP-50's least");
 });
 
-test("CTRL and extra EXP assignments are reported, not carried", () => {
-  const r = gp200ToGp50(gp200(() => {}, (out) => { out[0x448 + 5] = 2; out[0x3b8 + 16 * 1 + 5] = 8; }), map);
-  assert.ok(r.notes.includes("CTRL 1: switching DST not carried (the GP-50's CTRL layout isn't confirmed yet)"), r.notes.join("\n"));
-  assert.ok(r.notes.some((t) => t.startsWith("EXP: its assignment to DLY not carried")));
+test("extra EXP assignments are reported, not carried; pedal notes come last", () => {
+  const r = gp200ToGp50(gp200(() => {}, (out) => { out[0x448 + 5] = 2; out[0x3b8 + 16 * 1 + 5] = 8; out[0x448 + 8 + 5] = 10; }), map);
+  assert.ok(r.notes.some((t) => t.startsWith("EXP: its assignment to DLY not carried")), r.notes.join("\n"));
+  assert.ok(r.notes.includes("CTRL 2: VOL not carried: that module isn't in the GP-50 patch"), r.notes.join("\n"));
   assert.equal(r.notes.at(-1).startsWith("CTRL") || r.notes.at(-1).startsWith("EXP"), true, "pedal notes come last");
+});
+
+// The GP-50's CTRL layout, from the pedal (journal 2026-11-24, "CTRL
+// confirmed"): patch 99 read back with CTRL 1 = NR, CTRL 2 = EQ had 01 00 00 00
+// and 20 00 00 00 at 542 and 546 (factory 47 Bass Drive, PRE/DST: 2 and 4).
+const GP50_CTRL_AT = 542;
+const ctrlOf = (prst) => [0, 1].map((n) => GP50_MODULES.filter((_, m) => (readGp50(prst).ctrlMasks[n] >>> m) & 1));
+
+test("GP-50 CTRL: read where the pedal keeps it, a bit per module", () => {
+  const raw = gp50EmptyPrst();
+  assert.deepEqual(readGp50(raw).ctrlMasks, [0, 0], "the empty patch has no CTRL");
+  raw.set([1, 0, 0, 0, 0x20, 0, 0, 0], GP50_CTRL_AT);
+  assert.deepEqual(ctrlOf(raw), [["NR"], ["EQ"]]);
+  raw.set([2, 0, 0, 0, 4, 0, 0, 0], GP50_CTRL_AT);
+  assert.deepEqual(ctrlOf(raw), [["PRE"], ["DST"]]);
+  const written = writeGp50({ ...readGp50(gp50EmptyPrst()), ctrlMasks: [0x180, 0x42] });
+  assert.deepEqual([...written.slice(GP50_CTRL_AT, GP50_CTRL_AT + 10)], [0x80, 1, 0, 0, 0x42, 0, 0, 0, ...gp50EmptyPrst().slice(GP50_CTRL_AT + 8, GP50_CTRL_AT + 10)], "the 2 bytes after the masks are kept");
+});
+
+test("CTRL 1 and 2, GP-200 to GP-50: the developer's DST/MOD carried, nothing reported", () => {
+  const r = gp200ToGp50(gp200((p) => { p.ctrl[0].module = 2; p.ctrl[1].module = 7; }), map);
+  assert.deepEqual(ctrlOf(r.prst), [["DST"], ["MOD"]]);
+  assert.ok(!r.notes.some((t) => t.startsWith("CTRL")), r.notes.join("\n"));
+  const none = gp200ToGp50(gp200(), map);
+  assert.deepEqual(readGp50(none.prst).ctrlMasks, [0, 0], "no CTRL stays no CTRL");
+});
+
+test("CTRL 1 and 2, GP-50 to GP-200: carried; two modules on one CTRL keep the first in playing order", () => {
+  const r = gp50ToGp200(gp50((p) => { p.ctrlMasks = [0b11, 1 << 5]; }), map);
+  const c = readGp200(r.prst).ctrl;
+  assert.equal(GP200_MODULES[c[0].module], "NR", "NR plays before PRE on the GP-50");
+  assert.equal(GP200_MODULES[c[1].module], "EQ");
+  assert.ok(r.notes.includes("CTRL 1: PRE not carried: a GP-200 patch holds one module per CTRL, and CTRL 1 has NR"), r.notes.join("\n"));
+  assert.equal(c[2].module, readGp200(skeletonBytes()).ctrl[2].module, "the third record is the skeleton's");
+  const none = readGp200(gp50ToGp200(gp50(), map).prst).ctrl;
+  assert.deepEqual(none.map((x) => x.module), readGp200(skeletonBytes()).ctrl.map((x) => x.module), "no CTRL: the skeleton's records");
+});
+
+test("CTRL round trip GP-200 -> GP-50 -> GP-200 keeps DST/MOD", () => {
+  const there = gp200ToGp50(gp200((p) => { p.ctrl[0].module = 2; p.ctrl[1].module = 7; }), map);
+  const back = readGp200(gp50ToGp200(there.prst, map).prst).ctrl;
+  assert.deepEqual(back.slice(0, 2).map((x) => GP200_MODULES[x.module]), ["DST", "MOD"]);
 });
 
 test("names on the way over: shortened and reported, and a GP-50 name fits the GP-200 as it is", () => {
