@@ -4950,3 +4950,7 @@ tool.
   fails too, the fault is in the pedal's storage; factory reset next. Backups:
   `gp200_all_patches.zip` (2026-11-23, this folder) and
   `GP-200\Backups\2026-09-30_full-backup.zip`.
+- Valeton's editor's slot-to-slot copy: the editor shows it done, the pedal
+  doesn't (still USB). Firmware 1.8.0, unchanged. The developer recalls a
+  similar fault long before these apps (the software said done, the pedal
+  didn't have it); what fixed it then isn't remembered.
