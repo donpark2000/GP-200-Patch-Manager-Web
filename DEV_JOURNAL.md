@@ -5298,3 +5298,13 @@ now keeps the first 3 in playing order):
 - D. All or nothing: carry no module of that CTRL, so a switch never does
   half of what it did.
 Every option reports what was dropped. Claude's recommendation: B.
+
+**Result (developer, GP-50 patch 99 "CTRL Test"):** "looks good". CTRL 1
+switches PRE, DST and DLY (all off when the patch is selected; all three come
+on with the switch); CTRL 2 switches MOD (off) and RVB (on), each changing
+state when the switch is pressed. So a GP-50 CTRL written by this tool with
+**three modules works, and two too**, exactly as the masks say; a CTRL
+toggles each of its modules from the state the patch stores. Nothing more
+needed from the GP-50 for CTRL. (02 Star Night not looked at; not needed
+now.) Patch 99 stays "CTRL Test" for now (a test patch; nothing there to
+keep, developer 2026-11-23). Over-3 rule: still the developer's choice.
