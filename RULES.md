@@ -16,26 +16,21 @@ outside the repo).
   the ones to decide: keep, change or drop.
 - **Not traced:** the record doesn't show who proposed it.
 
-## 1. To decide now
+## 1. Reviewed 2026-11-25 (developer)
 
-| # | Rule | Where | Set by | Note |
-|---|---|---|---|---|
-| 1 | Defer a write run when a usage limit is over **85%** | CLAUDE.md | The check: developer, 2026-11-25. The 85%: Claude, not confirmed | Is 85% right, or another number? |
-| 2 | **Conflict:** no backup before a write run, but both runner write paths refuse to overwrite a patch that doesn't match a reference backup | CLAUDE.md vs. `gp50/cli` and `gp200-restore` | No backup: developer, 2026-11-25. The reference check: Claude, built 2026-11-22 (GP-50) and 2026-11-24 (GP-200) under "safely" | As things stand, a write run needs a backup or fails. See the options below the table |
-| 3 | GP-200 writes only through `gp200-restore`, which allows planned patches only and reads every written patch again at the end | CLAUDE.md, DESIGN.md | Developer: "remove the block. Safely." (2026-11-24). The gate's details: Claude, not separately confirmed | Keep the gate? |
-| 4 | The GP-50 write page (`gp50/write.html`) stays at patches 55-99, after confirmation | CLAUDE.md | Claude, not confirmed ("added by Claude while recording", journal 2026-11-22) | An unpublished developer page. Keep, widen, or drop the limit? |
-| 5 | GP-50 writes: a patch whose write isn't acknowledged is started again, up to 3 times; any other problem stops the run | DESIGN.md "GP-50 writes" | Claude, from hardware tests (stage 1), under the agreed plan; not separately confirmed | |
-| 6 | Converter: which effect gets a module two effects want; chain order follows the source | DESIGN.md "Converter rules", `gp50/CONVERSION_RULES.md` 4.2-4.3 | Claude (stage 3); the developer listened to the results ("the algorithm is definitely working", 2026-11-24) but didn't rule on these two specifically | |
-| 7 | A periodic review of this list, at each checkpoint (end of a stage, before a fresh session) | Proposed | Claude, not confirmed (the developer suggested "maybe" a periodic review) | When, if at all? |
+| # | Rule | Decision |
+|---|---|---|
+| 1 | Usage before a write run | **Developer's goal: never begin a write run that can't finish within both the 5-hour and the weekly limit.** A fixed percentage doesn't fit: 15% of the weekly limit is worth far more than 15% of the 5-hour one, and which resets first differs from day to day. Claude reads both limits and their reset times before every write run. **How Claude judges "can finish": still to agree.** Claude's proposal: measure a run's cost by reading usage before and after a few runs, then start only when both limits have room for it with a margin, and ask when unsure. |
+| 2 | The runner's reference check (a patch is overwritten only if it matches a backup) | **Too hard for now.** It dates from before there was any confidence in the writes. Change it to **ask for confirmation**: a run with no backup to check against, or a patch that doesn't match, stops and asks. It **can be overridden by explicit instruction** (the developer says to write without checking). Code change still to make (both runner write paths). |
+| 3 | `gp200-restore`'s gate: planned patches only, written patches read again at the end | **Keep** (developer). |
+| 4 | The GP-50 write page stays at patches 55-99 | **Open.** The developer doesn't know why it's a rule. Claude added it while recording the stage plan (2026-11-22). The page was the only way to write the GP-50 then; once the runner could write anywhere, Claude kept the page at the old limit "since only the runner needs more". There's no other reason. |
+| 5 | GP-50 writes: an unacknowledged patch is started again, up to 3 times; any other problem stops the run | **Agreed** (developer). |
+| 6 | Converter: which effect gets a module two effects want; chain order follows the source | **Agreed** (developer). |
+| 7 | A periodic review of this list | **Agreed for now**, to refine with experience (developer). **Also: revisit rules when a milestone passes.** A rule set before there was confidence (row 2) should be looked at again once there is. |
 
-**Options for row 2** (the developer's choice):
-- **A.** Drop the reference check. A write run overwrites whatever is there.
-  This matches "no patch is precious".
-- **B.** Keep the check against the newest backup already on file. No new
-  backup is taken, but a patch changed since that backup stops the run.
-- **C.** Keep a fresh backup only for the patches a run will overwrite. It's
-  part of the run, takes a fraction of a second, and Claude doesn't ask
-  about it.
+**A principle from this review** (developer): rules made early, before
+anything was proven, get too strict. Review them at each milestone (the end
+of a stage), not only when one gets in the way.
 
 ## 2. CLAUDE.md
 

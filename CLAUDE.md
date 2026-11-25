@@ -61,11 +61,21 @@ this is the short version:
   pedal without asking first: the GP-50 with the runner's writes, the
   GP-200 only with `gp200-restore` (the web app's restore, gated). No
   backup before a run (developer, 2026-11-25: it has costs; ask first if
-  one seems worth it). Before each write run, **check usage**
-  (`get_usage`) and defer the run, saying when the limit resets, if
-  either the 5-hour or weekly limit is nearly used up (developer,
-  2026-11-25; the threshold, 85% as Claude proposed, is still to be
-  confirmed). A run cut off partway through is the risk this avoids.
+  one seems worth it). **Never begin a write run that can't finish
+  within both the 5-hour and the weekly limit** (developer, 2026-11-25):
+  read both limits and their reset times (`get_usage`) before every
+  run. Weigh each by what is left in it, not by one percentage: the
+  weekly limit's last 15% is worth far more than the 5-hour limit's.
+  When in doubt, defer the run and say when the limits reset. How to
+  judge "can finish" is still to agree (RULES.md row 1).
+- **The runner's reference check** (a patch is overwritten only if it
+  matches a backup) **asks instead of refusing** (developer,
+  2026-11-25): with no backup to check against, or a patch that
+  doesn't match, Claude asks the developer first. An explicit
+  instruction from the developer overrides it. Until the code is
+  changed, the runner still refuses (RULES.md row 2).
+- **Revisit rules when a milestone passes** (developer, 2026-11-25),
+  using RULES.md.
   Patch writes only, never firmware, global settings or unknown commands
   (Claude's, in the stage plan the developer agreed on 2026-11-22: "yes
   to the plan").

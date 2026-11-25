@@ -356,6 +356,11 @@ explanation.
 | 3. Copying | A converter that refuses with a reason, or lists what it changed | Tests pass; patches read back right on both pedals; the developer has listened |
 | 4. One app | Detects the pedal; GP-50 in the GP-200 screens | Suite passes; a full round trip on each pedal; one run in Edge |
 
+**Design note for copying in the app** (developer, 2026-11-25; not for now,
+to bring forward when copying reaches the UI): show the user the mapping
+rules (`gp50/CONVERSION_RULES.md`), and let them change them, with their
+choices kept in the browser between visits.
+
 Stage 1 done 2026-11-23 (journal, "GP-50 Edge run with a power cycle").
 Stage 2 done 2026-11-23: the developer reviewed the map ("as good as it is
 going to get without sound tests").

@@ -5561,3 +5561,29 @@ CLAUDE.md's history. **Found while tracing:**
   the 64-A to 64-D limit; "work in stages": its write limits). Left as they
   are until the developer's review.
 Seven items to decide, in RULES.md section 1. No pedal writes.
+
+## 2026-11-25: Rules reviewed by the developer
+
+Decisions on RULES.md's seven items (now in its section 1):
+1. **Usage:** a fixed 85% doesn't fit. The weekly limit's last 15% is worth
+   far more than the 5-hour limit's, and which resets first changes by day.
+   Goal: never begin a write run that can't finish within both limits. How to
+   judge that is still to agree (Claude's proposal: measure a run's cost from
+   usage read before and after, then keep a margin; ask when unsure).
+2. **Reference check:** too hard, from before there was confidence. It is to
+   ask for confirmation instead of refusing, and an explicit instruction
+   overrides it. The code (both runner write paths) still refuses: to change,
+   after the weekly reset (93% used at this entry, resets 2026-11-25 07:00
+   UTC).
+3. `gp200-restore`'s gate: keep. 5, 6: agreed. 7: periodic review agreed for
+   now, to refine.
+4. **The GP-50 write page's 55-99 limit:** the developer doesn't know its
+   intent. Claude's explanation is in RULES.md (kept when the runner got
+   wider rights; no other reason). Still open.
+
+**Principle (developer):** rules made before anything was proven get too
+strict; revisit them when a milestone passes (CLAUDE.md).
+
+**Design note (developer, for later):** when copying reaches the app, show
+the user the mapping rules and let them change them, kept in the browser
+(DESIGN.md "Both pedals", after the stages table).
