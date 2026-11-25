@@ -11,8 +11,11 @@ being asked (the developer's first message may just be "start"):
    next session)" entry**; the journal is long, so read older entries only
    when a task needs them.
 3. Check `git status` and that the branch matches GitHub (`git fetch`).
-4. Reply with a short summary: where things stand, the next step, and
-   anything needed from the developer. Then wait for the go-ahead.
+4. Reply with a short summary: where things stand, **why we're doing the
+   current work** (a line or two; the developer works across days with no
+   easy way to look back), **any rules that changed since the last
+   session** (RULES.md), the next step, and anything needed from the
+   developer. Then wait for the go-ahead. (Developer, 2026-11-25.)
 5. Name the session in the sidebar as `<Mon D> · <topic>` (e.g. "Oct 2 ·
    Designed UI: build"), once the developer's go-ahead makes the topic
    clear, so sessions can be told apart (they all start as "start").

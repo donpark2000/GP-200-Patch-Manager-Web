@@ -36,7 +36,7 @@ of a stage), not only when one gets in the way.
 
 | Rule | Set by |
 |---|---|
-| Session start routine: load the skill, read DESIGN.md and the journal's status, `git fetch`, summary, wait for the go-ahead; name the session | Not traced (added 2026-10-02; in the developer's CLAUDE.md template) |
+| Session start routine: load the skill, read DESIGN.md and the journal's status, `git fetch`, summary, wait for the go-ahead; name the session | Not traced (added 2026-10-02; in the developer's CLAUDE.md template). The summary's "why we're doing this" and "rules changed": developer, 2026-11-25 |
 | Working standards (debug output, a test per feature, one-command suite, journal, propose lessons) | Developer's standards skill |
 | The CLI is the reference implementation; its PROTOCOL files are the spec | Not traced (initial setup, 2026-09-30) |
 | `src/core/` has no DOM code; plain JS modules, no build step | Not traced (initial setup) |
