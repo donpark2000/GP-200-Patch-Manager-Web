@@ -71,7 +71,13 @@ this is the short version:
   run. Weigh each by what is left in it, not by one percentage: the
   weekly limit's last 15% is worth far more than the 5-hour limit's.
   When in doubt, defer the run and say when the limits reset. How to
-  judge "can finish" is still to agree (RULES.md row 1).
+  judge "can finish" (developer agreed, 2026-11-25; RULES.md row 1):
+  measure a run's cost by reading both limits before and after, the
+  turns reading its logs included, and record it in the journal. Until
+  there are figures, start only when both limits have at least 10
+  points left, otherwise ask. With figures, start only when each limit
+  has at least twice the run's cost left. In the weekly limit's last
+  15%, always ask first.
 - **The runner's reference check** (a patch is overwritten only if it
   matches a backup) **asks instead of refusing** (developer,
   2026-11-25): with no backup to check against, or a patch that

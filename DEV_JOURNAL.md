@@ -5676,3 +5676,23 @@ the first read finding nothing (1 test), the guard during the write off
 (1), the GP-200 mismatch ignored (1), exit 2 dropped (3), both options
 allowed (2). Not run on either pedal. CLAUDE.md, DESIGN.md (GP-50 writes,
 GP-200) and RULES.md row 2 updated.
+
+## 2026-11-25: How to judge whether a write run can finish (RULES.md row 1)
+
+**Claude proposed, the developer agreed ("Yes, agreed"):**
+- Read both limits (`get_usage`) before every write run.
+- Measure a run's cost: both limits read before and after, Claude's turns
+  reading the logs included; recorded in the journal. The figures are whole
+  percents, so it may take a few runs to show a cost.
+- Until there are figures: start only when both limits have at least 10
+  points left; otherwise ask.
+- With figures: start only when each limit has at least twice the run's
+  cost left.
+- In the weekly limit's last 15%: always ask first.
+
+Not checked, noted with the proposal: a run is one local command of under a
+minute, so a limit reached mid-run probably wouldn't stop it, only Claude
+reading the result; the margin matters most for runs spread over several
+commands. At the time: 5-hour 6% used (resets 22:30 UTC), weekly 1% (resets
+2026-12-02 07:00 UTC). CLAUDE.md, RULES.md row 1 and Claude's memory
+updated.
