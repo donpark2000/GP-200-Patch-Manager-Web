@@ -5600,3 +5600,43 @@ is on a patch the step writes. That keeps the guard's purpose (from before
 writing the selected patch was known to be safe, 2026-11-22) without the
 range. Tests: 3 changed; suite 270 pass. Shown to fail: the gate at 55-99
 again (2 tests), the guard switched off (1). Not run on the pedal.
+
+## 2026-11-25: Status (start here next session)
+
+Supersedes the status entries above. Topic: **mapping rules in one
+document; the working rules reviewed and loosened.**
+
+**Why this work:** copying patches between the GP-200 and GP-50 (stage 3)
+works and sounds right to the developer. Before more write tests, the
+mapping heuristics needed one place (`gp50/CONVERSION_RULES.md`), and the
+working rules, many set before there was confidence, needed a review.
+
+**Rules changed this session** (all in RULES.md, with who set each):
+- The runner may write patches anywhere on both pedals without asking, and
+  with no backup first (developer: no patch is precious; a factory reset is
+  the safety net).
+- Never begin a write run that can't finish within both the 5-hour and the
+  weekly limit. How to judge that: still to agree (RULES.md row 1).
+- The runner's reference check is to ask for confirmation instead of
+  refusing, overridable by explicit instruction. **The code still refuses**
+  (RULES.md row 2).
+- The GP-50 write page's 55-99 limit is dropped (done).
+- Rules come from the developer; Claude proposes, doesn't infer; revisit
+  rules at milestones. The session-start summary now includes why and rules
+  changed (here, in the ai-dev-practices template, and in Web Games).
+
+**Known:** suite 270 pass. Branch `gp50-experiments`, pushed, not merged;
+live site unchanged at `58c0117`. Pedals as in the 2026-11-24 status. No
+pedal writes this session. Open: Q11, Q13, Q14, and the new unmappables
+Q15-Q20.
+
+**Next** (developer: start with next steps):
+1. Change the reference check in both runner write paths to ask, with an
+   override (RULES.md row 2); tests.
+2. Agree how to judge whether a write run can finish (RULES.md row 1).
+3. Then stage 3's remaining items: 50-B to 62-D could get the conversions
+   with CTRL; pick from Q15-Q20 (Q15 needs no pedal); then stage 4.
+4. Two memories are partly stale (RULES.md section 4); review with the
+   developer.
+
+Don't purge the folders listed in the 2026-11-24 status entry.
