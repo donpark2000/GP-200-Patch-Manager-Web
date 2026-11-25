@@ -5842,3 +5842,65 @@ to 56-B, from the 2026-09-30 backup (read only; no pedal touched).
 start at 51-A (or any A patch: each pair then stays in one bank; it writes
 22 patches from there), and fill in the sheet's verdict column. No pedal
 writes by Claude.
+
+## 2026-11-25: The developer's decisions on the round-trip findings
+
+Taken one by one with the developer (the list in the entry above; item 5,
+Q22, stays open).
+1. **Plate L: keep as is** (developer). The GP-200's Plate goes to the
+   GP-50's Plate (Small Plate): the only GP-50 plate with a Damp, so every
+   setting carries. A GP-50 Large Plate patch comes back as Small Plate
+   after a round trip (2 factory patches); changing it would only move the
+   loss to Small Plate patches and drop the GP-200's High Damp.
+2. **Detune: keep as is** (developer). Left out, and reported, when the
+   GP-50 patch's MOD is in use (Star Night: V-Roto; Nebula: A-Chorus; both
+   Detunes on). Checked: the GP-200's Pitch (PRE) can't stand in, it shifts
+   by semitones (0-24), Detune by cents (-50 to 50).
+3. **Rank by the state on the target pedal** (developer: "keep an effect the
+   pedal supports (and its state) and just document the effect that was
+   dropped. Keeping something that can't be heard seems less useful";
+   Claude's reading, agreed: on the target, not the source; stand-ins
+   included, agreed). When two effects want one module, one that will be on
+   there wins; a stand-in, and a wah the expression pedal worked going to
+   the GP-50, are off there, so they rank as off. Their note: "left out (on,
+   but would be off on the GP-50, the expression pedal worked it)". Off
+   against off is unchanged (the module's own effect). Before asking, Claude
+   checked: in the developer's backup no CTRL switches a wah that is lost
+   (0 of 249).
+4. **Cab cut filters: note only when set** (developer). Counted in the
+   2026-09-30 backup: 137 of 256 patches have both off, 119 have one set
+   (Low Cut in 66, High Cut in 61; the cab on in 74). At the off ends (19 /
+   20001 Hz) they're dropped, or set (GP-50 to GP-200), with no note; one
+   that is set is noted with its value ("Low Cut (120 Hz) dropped"). A cab
+   that is a close match only for them, with no reason given in the map, is
+   said no more about than a rename. Claude also applied it to the GP-50 to
+   GP-200 side ("set to 19 / 20001"), the same noise.
+
+**Code:** `gp50/convert.js` (`place()` ranks by `onThere`; `wasState()` for
+the note; `atOffEnd()` for the cuts); `gp50/ab-pairs.js` (`cutsOffOnly()`
+reads the new cab note, which names no change when the cuts are off);
+DESIGN.md (converter rules).
+
+**Tests:** 284 pass (2 new: a stand-in loses the PRE to a wah that will be
+on; cut filters off, set, a cab mapped to another, and the GP-50 side; 3
+changed for decision 3). Shown to fail with each change put back, one at a
+time: ranking by the source state (3 tests), off cuts noted (3), the value
+left out (1), stand-ins counted on (1).
+
+**Round trips rerun** (session folder, the `21-53-17` / `21-53-18` files):
+- GP-50 factory backup: 0 unexplained, 100/100 settle, 52 unchanged (as
+  before).
+- GP-200 2026-09-30 backup: 0 unexplained, **256/256 settle** (251 before).
+  The rule changed 7 patches, all wahs on the expression pedal (Wild Fruit,
+  CAT CAT, Fart Voice, Fat Bird, Pair Of Pandas1, both Specials): the GP-50
+  copy keeps the off PRE effect. No stand-in competed for a module.
+  "Cut" in the log: 169 lines (316 before).
+- **A/B pairs:** the pick is now 9 pairs (`gp200_ab_pairs_2026-11-25T21-53-18.zip`,
+  `listening_ab_2026-11-25T21-53-18.csv`, 51-A to 55-B). Every patch the two
+  zips share is byte for byte the same (A and B); the new one drops Funky,
+  Hard Rock (their cab notes are gone, so fewer are needed for coverage) and
+  Special (its "wah switched off" kind is gone), and adds Summer Bass.
+  Checked as Restore reads it: 18 items from 51-A, no warnings, every A the
+  backup's, every B valid. The 18-13-29 zip is still a fair test for the
+  pairs it shares; its Special B differs from today's converter (the wah
+  off, not left out: sounds the same).

@@ -17,7 +17,7 @@
 // Not heard (Claude's call): a module that's off, and a cab that is the same
 // cab on both pedals (its match comes back to it exactly) whose Low Cut and
 // High Cut, which the GP-50 lacks, are at their off ends (19 and 20001 Hz):
-// the converter still notes those as dropped.
+// the converter drops those silently (decision 4, 2026-11-25).
 
 import { CHECKSUM_OFF, prstChecksum } from "../src/core/prst.js";
 import { slotToLabel } from "../src/core/slots.js";
@@ -43,10 +43,15 @@ const KINDS = [
 export const WANT_TWICE = ["close match: AMP", "close match: CAB", "close match: DST"];
 const VOLUME_KIND = "volume module at full (Q18)";
 
-/** A cab note that only drops Low Cut / High Cut, both off, on a cab whose match comes back to it. */
+/**
+ * A cab note with nothing heard: a close match on a cab whose match comes back
+ * to it, its Low Cut / High Cut both off. Since decision 4 (2026-11-25) the
+ * converter drops off cut filters without naming them, so such a note names
+ * no change (only the reason for the match); before, it named them dropped.
+ */
 function cutsOffOnly(note, a, map) {
-  const m = note.match(/a close match(?: \([^)]*\))?: (.*)$/);
-  if (!m || !m[1].split(", ").every((c) => /^(Low|High) Cut dropped$/.test(c))) return false;
+  const m = note.match(/a close match(?: \(.*\))?(?:: (.*))?$/);
+  if (!m || (m[1] !== undefined && !m[1].split(", ").every((c) => /^(Low|High) Cut dropped$/.test(c)))) return false;
   const cab = a.modules.find((x) => x.module === "CAB");
   const k = hex(cab.code);
   const fwd = map.toGp50[k], fx = map.gp200[k];

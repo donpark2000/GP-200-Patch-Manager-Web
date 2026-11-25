@@ -253,15 +253,25 @@ function convertEffect(src, srcFx, entry, target, note, fxName) {
     values[mv.to] = v;
   }
   const close = entry.match === "close";
-  for (const d of entry.dropped ?? []) changes.push(`${d.name} dropped`);
+  // A cab's Low Cut or High Cut at its off end (19 / 20001 Hz) cuts nothing:
+  // dropped or set there silently (developer, 2026-11-25, decision 4). One
+  // that is set is noted with its value.
+  const srcCtl = (pos) => srcFx.controls.find((c) => c.pos === pos);
+  const dropped = (entry.dropped ?? []).filter((d) => !atOffEnd(srcCtl(d.pos), src.values[d.pos]));
+  const filled = (entry.filled ?? []).filter((f) => !atOffEnd(target.effect.controls.find((c) => c.pos === f.pos), f.def));
+  for (const d of dropped) changes.push(CUT.test(d.name) ? `${d.name} (${round(src.values[d.pos])} Hz) dropped` : `${d.name} dropped`);
   // Same or renamed: the effect is the one it was; a control the source lacks
   // starts at its default, which changes nothing worth telling.
-  if (close) for (const f of entry.filled ?? []) changes.push(`${f.name} set to ${round(f.def)}`);
+  if (close) for (const f of filled) changes.push(`${f.name} set to ${round(f.def)}`);
+  // A close match only for cut filters at their off ends, with no reason given:
+  // the same effect in this patch, so said no more than a rename.
+  const onlyCutsOff = close && !entry.why && (entry.dropped?.length || entry.filled?.length) && !dropped.length && !filled.length
+    && [...(entry.dropped ?? []), ...(entry.filled ?? [])].every((c) => CUT.test(c.name));
   // Same or renamed is the same effect under the other pedal's name: nothing
   // substituted, nothing to tell. Nor a close match that loses nothing in this
   // patch, keeps its name and has no reason to give (a range this patch stays
   // inside).
-  if (changes.length || (close && (target.effect.name !== fxName || entry.why))) {
+  if (changes.length || (close && !onlyCutsOff && (target.effect.name !== fxName || entry.why))) {
     const head = target.effect.name !== fxName ? `${fxName} -> ${target.effect.name}` : fxName;
     const why = close && entry.why ? ` (${entry.why})` : "";
     note(`${src.module}: ${head}${close ? ", a close match" : ""}${why}${changes.length ? `: ${changes.join(", ")}` : ""}`);
@@ -269,15 +279,20 @@ function convertEffect(src, srcFx, entry, target, note, fxName) {
   return values;
 }
 const round = (v) => Math.round(v * 100) / 100;
+const CUT = /^(low|high) cut$/i;
+/** A Low Cut at its lowest or a High Cut at its highest: the filter cuts nothing. */
+const atOffEnd = (c, v) => !!c && CUT.test(c.name) && v === (/^low/i.test(c.name) ? c.min : c.max);
 
 /**
- * Who gets a target module when several want it: one that's on before one
- * that's off, then one coming from the module of the same name, then the
- * earlier in the chain.
+ * Who gets a target module when several want it: one that will be on on the
+ * target pedal before one that won't (developer, 2026-11-25, decision 3: a
+ * stand-in, or a wah the expression pedal worked going to the GP-50, is off
+ * there whatever it was), then one coming from the module of the same name,
+ * then the earlier in the chain. `onThere`: on, on the target.
  */
 function place(wants, chainPos) {
   const won = new Map(), lost = [];
-  const rank = (w) => [w.on ? 0 : 1, w.natural ? 0 : 1, chainPos(w.src)];
+  const rank = (w) => [w.onThere ? 0 : 1, w.natural ? 0 : 1, chainPos(w.src)];
   const sorted = [...wants].sort((a, b) => { const x = rank(a), y = rank(b); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; });
   for (const w of sorted) {
     const free = w.places.find((p) => !won.has(p));
@@ -318,6 +333,9 @@ function noteList() {
 const FIRST = -1, LAST = 100;
 
 /** Source module name -> target module name, for each effect that went over (gp50/roundtrip.js reads it). */
+/** How a left-out effect was: off, or on but to be off on the target (and why); nothing when it would have been on. */
+const wasState = (w, pedal) => (!w.on ? " (was off)" : w.onThere ? "" : ` (on, but would be off on the ${pedal}, ${w.entry.match === "stand-in" ? "a stand-in" : "the expression pedal worked it"})`);
+
 const placedModules = (won, targetModules) => Object.fromEntries([...won].map(([at, w]) => [w.src.module, targetModules[at]]));
 
 /**
@@ -349,12 +367,13 @@ export function gp200ToGp50(prst, map, { log = () => {} } = {}) {
     const to = entry.inModule?.[m.module]?.to ?? entry.to;
     const target = map.gp50[to];
     if (!target) throw new Error(`${m.module}: ${fx.name} goes to ${to}, which isn't a GP-50 effect`);
-    wants.push({ src: m, entry, to, target, fx, on: m.on, natural: target.module === m.module, places: [GP50_MODULES.indexOf(target.module)] });
+    const expWah = onExp.has(m.index) && fx.modules.includes("WAH");
+    wants.push({ src: m, entry, to, target, fx, on: m.on, onThere: m.on && entry.match !== "stand-in" && !expWah, natural: target.module === m.module, places: [GP50_MODULES.indexOf(target.module)] });
   }
   const { won, lost } = place(wants, pos);
   for (const w of lost) {
     const holder = won.get(w.places[0]);
-    notes.at(pos(w.src))(`${w.src.module}: ${w.fx.name} left out${w.on ? "" : " (was off)"}: the GP-50 has one ${w.target.module} module, taken by ${holder.fx.name} from ${holder.src.module}`);
+    notes.at(pos(w.src))(`${w.src.module}: ${w.fx.name} left out${wasState(w, "GP-50")}: the GP-50 has one ${w.target.module} module, taken by ${holder.fx.name} from ${holder.src.module}`);
   }
   // Modules with no source keep the empty patch's effect, off.
   const empty = readGp50(gp50EmptyPrst());
@@ -431,10 +450,10 @@ export function gp50ToGp200(prst, map, { log = () => {} } = {}) {
     const mods = target.modules.filter((x) => GP200_MODULES.includes(x) && x !== "VOL");
     const natural = mods.includes(m.module);
     const places = (natural ? [m.module, ...mods.filter((x) => x !== m.module)] : mods).map((x) => GP200_MODULES.indexOf(x));
-    wants.push({ src: m, entry, to, target, fx, on: m.on, natural, places });
+    wants.push({ src: m, entry, to, target, fx, on: m.on, onThere: m.on && entry.match !== "stand-in", natural, places });
   }
   const { won, lost } = place(wants, pos);
-  for (const w of lost) notes.at(pos(w.src))(`${w.src.module}: ${w.fx.name} left out${w.on ? "" : " (was off)"}: no free ${w.target.modules.join("/")} module on the GP-200`);
+  for (const w of lost) notes.at(pos(w.src))(`${w.src.module}: ${w.fx.name} left out${wasState(w, "GP-200")}: no free ${w.target.modules.join("/")} module on the GP-200`);
   // Modules with no source keep the skeleton's effect, off; its volume pedal stays as it is.
   const modules = base.modules.map((m) => ({ ...m, on: m.module === "VOL" ? m.on : false }));
   for (const [at, w] of won) {

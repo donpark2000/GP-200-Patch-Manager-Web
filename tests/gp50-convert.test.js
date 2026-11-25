@@ -34,6 +34,9 @@ function gp50(edit = () => {}) {
   return writeGp50(p);
 }
 const codeOf = (k) => Number(k) >>> 0;
+/** No EXP assignment at all (the skeleton has the GP-200's default: EXP 2 on the wah); `raw` for gp200(). */
+const noExp = (out) => { for (let i = 0; i < 9; i++) out[0x3b8 + 16 * i + 5] = 0xff; };
+const cabOf = (p) => p.modules.find((m) => m.module === "CAB");
 const find = (side, test) => Object.entries(map[side]).find(([k, e]) => test(e, k));
 const setFx = (m, code, fx, pick = (c) => c.def) => { m.code = codeOf(code); m.values = m.values.map(() => 0); for (const c of fx.controls) m.values[c.pos] = pick(c); };
 
@@ -113,14 +116,29 @@ test("GP-200 to GP-50: chain order follows the GP-200, the volume module left ou
   assert.deepEqual(b.order.map((i) => GP50_MODULES[i]), ["PRE", "DST", "NAM", "AMP", "NR", "CAB", "EQ", "MOD", "DLY", "RVB"]);
 });
 
-test("GP-200 to GP-50: a wah worked by the expression pedal is switched off and reported", () => {
+// The skeleton's expression pedal works the wah (the GP-200's default).
+test("GP-200 to GP-50: a wah worked by the expression pedal counts as off (decision 3): an off PRE effect keeps the PRE; alone, the wah goes in switched off", () => {
   const wah = find("gp200", (e, k) => e.modules.join() === "WAH" && map.toGp50[k]?.match === "close");
   assert.ok(wah, "a GP-200 wah with a GP-50 match");
+  const comp = readGp200(skeletonBytes()).modules[0];
+  // The skeleton's PRE effect, off, wants the GP-50's PRE too: it keeps it.
   const r = gp200ToGp50(gp200((p) => { setFx(p.modules[1], wah[0], wah[1]); p.modules[1].on = true; }), map);
   const pre = readGp50(r.prst).modules[GP50_MODULES.indexOf("PRE")];
-  assert.equal(pre.code, codeOf(map.toGp50[wah[0]].to));
+  assert.equal(pre.code, comp.code, "the PRE effect, not the wah");
   assert.equal(pre.on, false);
-  assert.ok(r.notes.some((t) => /^WAH: .*switched off: the expression pedal/.test(t)), r.notes.join("\n"));
+  assert.ok(r.notes.some((t) => t.startsWith(`WAH: ${wah[1].name} left out (on, but would be off on the GP-50, the expression pedal worked it): the GP-50 has one PRE module, taken by`)), r.notes.join("\n"));
+  // A PRE effect that goes to the GP-50's DST leaves the PRE to the wah: in, switched off.
+  const od = find("gp200", (e, k) => e.modules.includes("PRE") && map.gp50[map.toGp50[k]?.to]?.module === "DST");
+  assert.ok(od, "a GP-200 PRE effect that goes to the GP-50's DST");
+  const alone = gp200ToGp50(gp200((p) => { setFx(p.modules[0], od[0], od[1]); setFx(p.modules[1], wah[0], wah[1]); p.modules[1].on = true; }), map);
+  const pre2 = readGp50(alone.prst).modules[GP50_MODULES.indexOf("PRE")];
+  assert.equal(pre2.code, codeOf(map.toGp50[wah[0]].to));
+  assert.equal(pre2.on, false);
+  assert.ok(alone.notes.some((t) => /^WAH: .*switched off: the expression pedal/.test(t)), alone.notes.join("\n"));
+  // An on PRE effect against it: the PRE effect, on.
+  const onComp = gp200ToGp50(gp200((p) => { p.modules[0].on = true; setFx(p.modules[1], wah[0], wah[1]); p.modules[1].on = true; }), map);
+  const pre3 = readGp50(onComp.prst).modules[GP50_MODULES.indexOf("PRE")];
+  assert.deepEqual([pre3.code, pre3.on], [comp.code, true]);
 });
 
 test("GP-200 to GP-50: two modules wanting the GP-50's one PRE: the one that's on wins, the other is reported", () => {
@@ -131,10 +149,45 @@ test("GP-200 to GP-50: two modules wanting the GP-50's one PRE: the one that's o
   assert.equal(pre.code, codeOf(comp[0]));
   assert.equal(pre.on, true);
   assert.ok(r.notes.some((t) => t.startsWith(`WAH: ${wah[1].name} left out (was off): the GP-50 has one PRE module, taken by ${comp[1].name} from PRE`)), r.notes.join("\n"));
-  // Both on: the PRE module's own effect keeps the place.
-  const both = gp200ToGp50(gp200((p) => { setFx(p.modules[0], comp[0], comp[1]); setFx(p.modules[1], wah[0], wah[1]); p.modules[0].on = p.modules[1].on = true; }), map);
+  // Both on (the wah not on the expression pedal): the PRE module's own effect keeps the place.
+  const both = gp200ToGp50(gp200((p) => { setFx(p.modules[0], comp[0], comp[1]); setFx(p.modules[1], wah[0], wah[1]); p.modules[0].on = p.modules[1].on = true; }, noExp), map);
   assert.equal(readGp50(both.prst).modules[1].code, codeOf(comp[0]));
-  assert.ok(both.notes.some((t) => t.startsWith(`WAH: ${wah[1].name} left out:`)));
+  assert.ok(both.notes.some((t) => t.startsWith(`WAH: ${wah[1].name} left out:`)), both.notes.join("\n"));
+});
+
+test("GP-200 to GP-50: a stand-in counts as off (decision 3), so a wah that will be on takes the PRE from it", () => {
+  const ring = find("gp200", (e, k) => e.modules.includes("PRE") && map.toGp50[k]?.match === "stand-in" && map.gp50[map.toGp50[k].inModule?.PRE?.to ?? map.toGp50[k].to]?.module === "PRE");
+  const wah = find("gp200", (e, k) => e.modules.join() === "WAH" && map.gp50[map.toGp50[k]?.to]?.module === "PRE");
+  assert.ok(ring && wah, "a PRE stand-in and a wah, both for the GP-50's PRE");
+  const r = gp200ToGp50(gp200((p) => {
+    setFx(p.modules[0], ring[0], ring[1]); setFx(p.modules[1], wah[0], wah[1]); p.modules[0].on = p.modules[1].on = true;
+  }, noExp), map); // the wah not on the expression pedal: on, on the GP-50
+  const pre = readGp50(r.prst).modules[GP50_MODULES.indexOf("PRE")];
+  assert.deepEqual([pre.code, pre.on], [codeOf(map.toGp50[wah[0]].to), true], "the wah, on: it is heard; the stand-in would have been off");
+  assert.ok(r.notes.some((t) => t.startsWith(`PRE: ${ring[1].name} left out (on, but would be off on the GP-50, a stand-in): the GP-50 has one PRE module, taken by ${wah[1].name} from WAH`)), r.notes.join("\n"));
+});
+
+test("cab cut filters (decision 4): at their off ends, dropped or set with no note; one that is set is noted with its value", () => {
+  // A GP-200 cab whose GP-50 match is the same cab: close only for its cut filters, no reason given.
+  const cab = find("gp200", (e, k) => e.modules.includes("CAB") && map.toGp50[k]?.match === "close" && !map.toGp50[k].why
+    && map.toGp50[k].dropped?.every((d) => /Cut/.test(d.name)) && map.toGp200[map.toGp50[k].to]?.to === k);
+  assert.ok(cab, "a same-cab close match");
+  const low = cab[1].controls.find((c) => c.name === "Low Cut"), high = cab[1].controls.find((c) => c.name === "High Cut");
+  const conv = (edit = () => {}) => gp200ToGp50(gp200((p) => { setFx(cabOf(p), cab[0], cab[1]); cabOf(p).on = true; edit(cabOf(p)); }), map);
+  assert.deepEqual([low.def, high.def], [low.min, high.max], "the defaults are the off ends");
+  assert.deepEqual(conv().notes.filter((t) => t.startsWith("CAB")), [], "both off: nothing to tell");
+  const set = conv((m) => { m.values[low.pos] = 120; }).notes.filter((t) => t.startsWith("CAB"));
+  assert.equal(set.length, 1);
+  assert.match(set[0], /a close match: Low Cut \(120 Hz\) dropped$/, "the one set, with its value; the off one not named");
+  assert.match(conv((m) => { m.values[high.pos] = 8000; }).notes.find((t) => t.startsWith("CAB")), /: High Cut \(8000 Hz\) dropped$/);
+  // A cab mapped to another cab, with a reason, still says so, without the off filters.
+  const other = find("gp200", (e, k) => e.modules.includes("CAB") && map.toGp50[k]?.match === "close" && map.toGp50[k].why);
+  const o = gp200ToGp50(gp200((p) => { setFx(cabOf(p), other[0], other[1]); cabOf(p).on = true; }), map).notes.filter((t) => t.startsWith("CAB"));
+  assert.equal(o.length, 1);
+  assert.ok(o[0].includes(map.toGp50[other[0]].why) && !/Cut/.test(o[0]), o[0]);
+  // The other way: a GP-50 cab's GP-200 match gets its cut filters at their off ends, said nothing about.
+  const back = gp50ToGp200(gp50((p) => { const m = p.modules.find((x) => x.module === "CAB"); setFx(m, map.toGp50[cab[0]].to, map.gp50[map.toGp50[cab[0]].to]); m.on = true; }), map);
+  assert.deepEqual(back.notes.filter((t) => t.startsWith("CAB")), [], back.notes.join("\n"));
 });
 
 test("GP-200 to GP-50: a stand-in goes in switched off, at its defaults, and is reported", () => {

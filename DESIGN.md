@@ -451,9 +451,18 @@ unmappables still open: `gp50/CONVERSION_RULES.md`.
   so (duplicate names are allowed). GP-50 names fit the GP-200 unchanged.
 - **Where each effect goes** (Claude, stage 3): to the module its target
   effect belongs in. When two want one module (the GP-200's PRE and WAH both
-  go to the GP-50's PRE), one that's on wins over one that's off, then the
-  module's own effect, then the earlier in the chain; the other is left out
-  and reported.
+  go to the GP-50's PRE), one that will be on, on the target pedal, wins
+  over one that won't, then the module's own effect, then the earlier in the
+  chain; the other is left out and reported. "On, on the target" (developer,
+  2026-11-25, decision 3: keep an effect the pedal can use, in its state):
+  a stand-in, and a wah the expression pedal worked going to the GP-50, are
+  off there whatever they were, so they rank as off; the report says one was
+  on but would be off.
+- **A cab's Low Cut and High Cut** (the GP-50 has neither) at their off ends
+  (19 / 20001 Hz) cut nothing: dropped, or set there, without a note; one
+  that is set is noted with its value (developer, 2026-11-25, decision 4). A
+  cab that is a close match only for those, with no reason given, is then
+  said no more about than a rename.
 - **Chain order follows the source pedal**; a module with no source goes
   after the one before it in the target's default order. The GP-50 lets the
   gate (NR) be moved, and its place hardly matters with digital effects,

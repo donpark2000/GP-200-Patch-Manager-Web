@@ -60,13 +60,12 @@ test("round trip: Plate L comes back as the GP-50's Plate, explained by both rep
   assert.deepEqual(mapAsymmetries(map).filter((a) => a.side === "GP-50").map((a) => `${a.from} -> ${a.via} -> ${a.back}`), ["Plate L -> Plate -> Plate"]);
 });
 
-test("round trip: a wah on the expression pedal is switched off, and then lost on a second trip to an off COMP (doesn't settle)", () => {
+test("round trip: a wah on the expression pedal counts as off (decision 3), so an off COMP keeps the PRE at once, and it settles", () => {
   const prst = gp200((p) => { on(p, "WAH", "gp200", "P-Wah"); setFx(mod(p, "PRE"), "gp200", "COMP"); on(p, "AMP", "gp200", "UK 800"); });
   const r = roundTrip(prst, "GP-200", map);
   assert.ok(r.diffs.every((d) => d.verdict !== "unexplained"), JSON.stringify(r.diffs.filter((d) => d.verdict === "unexplained")));
-  assert.ok(r.diffs.some((d) => d.area === "effect" && d.module === "WAH" && d.to === "C-Wah" && /switched off: the expression pedal/.test(d.why)));
-  assert.equal(r.settles, false);
-  assert.deepEqual(r.again.map((d) => [d.area, d.module, d.from, d.to]).filter((x) => x[0] === "effect"), [["effect", "WAH", "C-Wah", "V-Wah"]]);
+  assert.ok(r.diffs.some((d) => d.area === "effect" && d.module === "WAH" && d.from === "P-Wah" && /left out \(on, but would be off on the GP-50/.test(d.why)), JSON.stringify(r.diffs));
+  assert.equal(r.settles, true, JSON.stringify(r.again));
 });
 
 test("compare finds each kind of change, and says how much; explain sorts them, and an unreported change stays unexplained", () => {
