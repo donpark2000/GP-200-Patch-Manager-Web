@@ -53,8 +53,9 @@ this is the short version:
   without the user's confirmation in the app. The developer-only
   write-timing test (`test.html?dev`, `src/core/tuning.js`) writes only to
   the scratch slots 64A-64D, also after confirmation. The GP-50 write page
-  (`gp50/write.html`, unpublished) stays at slots 55-99, after
-  confirmation in the app.
+  (`gp50/write.html`, unpublished) may write any patch, after
+  confirmation in the app (developer, 2026-11-25: the 55-99 limit
+  dropped).
 - **Claude's command-line runner** (developer, 2026-11-25: no patch on
   either pedal is precious; everything worth keeping is backed up, and a
   factory reset is acceptable) may write patches to any slot on either

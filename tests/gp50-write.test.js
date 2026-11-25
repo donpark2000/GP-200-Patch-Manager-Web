@@ -64,9 +64,9 @@ test("gp50 write message: damaged files and other pedals' files are refused", ()
   assert.throws(() => buildPatchWrite(99, noMark), /ff ff ff ff/);
 });
 
-test("gp50 write safety: slots 55-99 only", () => {
-  for (let s = 55; s <= 99; s++) assert.equal(buildPatchWrite(s, US_LEAD).length, 29);
-  const bad = [...Array(55).keys(), -1, 100, 155, 255, 256 + 60, 60.5, "60", NaN, null, undefined];
+test("gp50 write safety: slots 0-99 only", () => {
+  for (let s = 0; s <= 99; s++) assert.equal(buildPatchWrite(s, US_LEAD).length, 29);
+  const bad = [-1, 100, 155, 255, 256 + 60, 60.5, "60", NaN, null, undefined];
   for (const s of bad) {
     assert.throws(() => buildPatchWrite(s, US_LEAD), /Refused: slot/, `build ${s}`);
     assert.throws(() => new WriteGate(s, US_LEAD), /Refused: slot/, `gate ${s}`);
@@ -335,10 +335,10 @@ test("gp50 steps: a patch that isn't in the reference is never overwritten, exce
   assert.deepEqual([again.problem, again.verified], [null, [99]]);
 });
 
-test("gp50 steps: nothing is written while a slot from 55 to 99 is selected, also when that changes midway", async () => {
-  const { pedal, writer, log, reference } = setup({ slot: 55 });
+test("gp50 steps: nothing is written while a slot the step writes is selected, also when that changes midway", async () => {
+  const { pedal, writer, log, reference } = setup({ slot: 99 });
   let r = await runStage(writer, "first", reference, { log, ...yes });
-  assert.match(r.problem, /on slot 55; select one from 0 to 54/);
+  assert.match(r.problem, /on slot 99, which this step writes/);
   assert.deepEqual([r.written, writesSent(pedal).length], [[], 0]);
   pedal.slot = 54;
   r = await runStage(writer, "copy", reference, { log, ...yes, onProgress: (done) => { if (done === 2) pedal.slot = 80; } });

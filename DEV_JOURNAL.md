@@ -5587,3 +5587,16 @@ strict; revisit them when a milestone passes (CLAUDE.md).
 **Design note (developer, for later):** when copying reaches the app, show
 the user the mapping rules and let them change them, kept in the browser
 (DESIGN.md "Both pedals", after the stages table).
+
+## 2026-11-25: GP-50 write page: the 55-99 limit dropped
+
+**Developer:** "Drop the limit" (RULES.md row 4). **Done:** the write gate's
+default range is every patch, 0-99 (`ALL_PATCHES` in
+`gp50/write-protocol.js`; it was 55-99 unless the runner asked for more).
+The page still asks for confirmation. Its three test steps still write 55-99
+(their layout: copy 0-44 there and put it back). The page's guard used to
+refuse while any of 55-99 was selected; it now refuses only while the pedal
+is on a patch the step writes. That keeps the guard's purpose (from before
+writing the selected patch was known to be safe, 2026-11-22) without the
+range. Tests: 3 changed; suite 270 pass. Shown to fail: the gate at 55-99
+again (2 tests), the guard switched off (1). Not run on the pedal.

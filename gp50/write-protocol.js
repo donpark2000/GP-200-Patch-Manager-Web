@@ -1,7 +1,7 @@
 // The GP-50 patch write and its safety gate. Used by the write test
 // (write.html) and the command-line runner (cli/); the read-only page doesn't
-// load it (tests/gp50-write.test.js). CLAUDE.md: the page may write slots
-// 55-99 only, after confirmation in the app; the runner any slot.
+// load it (tests/gp50-write.test.js). The page and the runner may write any
+// slot, 0-99 (developer, 2026-11-25); the page only after confirmation.
 //
 // Message (facts from drewmerc302/valeton-gp50, MIT, (c) 2026 Andrew
 // Mercurio; a real Suite write is the test fixture):
@@ -12,10 +12,8 @@ import { crc8, diffOffsets, frameToWire, NAME_COUNT, parseFrame, PRST_LEN, toHex
 
 export const KIND_WRITE = 0x11;
 export const WRITE_PATCH = 0x4f;
-export const WRITE_FIRST = 55;
-export const WRITE_LAST = 99;
-/** What may be written unless a wider range is asked for (only the runner does). */
-export const TEST_RANGE = Object.freeze({ first: WRITE_FIRST, last: WRITE_LAST });
+/** What may be written: every patch (the 55-99 limit was dropped, developer 2026-11-25). */
+export const ALL_PATCHES = Object.freeze({ first: 0, last: NAME_COUNT - 1 });
 export const ACK = Object.freeze([0x14, 0x08, 0x00]);
 /** The answer to the last frame when the pedal didn't store the patch (seen when a read came mid-write; journal 2026-11-22). */
 export const REFUSAL = Object.freeze([0x14, 0x08, 0x01]);
@@ -25,10 +23,10 @@ const FRAME_LEN = 19;
 const PAYLOAD_LEN = 6 + PRST_LEN - NAME_OFF;
 export const FRAME_COUNT = Math.ceil(PAYLOAD_LEN / FRAME_LEN);
 
-export const mayWrite = (slot, { first, last } = TEST_RANGE) =>
+export const mayWrite = (slot, { first, last } = ALL_PATCHES) =>
   Number.isInteger(slot) && slot >= 0 && slot < NAME_COUNT && slot >= first && slot <= last;
 
-function assertWritable(slot, range = TEST_RANGE) {
+function assertWritable(slot, range = ALL_PATCHES) {
   if (!mayWrite(slot, range)) throw new Error(`Refused: slot ${slot} isn't one of ${range.first}-${range.last}, the only slots this may write`);
 }
 

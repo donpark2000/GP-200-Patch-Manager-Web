@@ -6,7 +6,7 @@
 
 import { Gp50Reader } from "./device.js";
 import { buildRead, parseFrame, READS, toHex } from "./protocol.js";
-import { ACK, buildPatchWrite, REFUSAL, TEST_RANGE, WriteGate } from "./write-protocol.js";
+import { ACK, buildPatchWrite, REFUSAL, ALL_PATCHES, WriteGate } from "./write-protocol.js";
 
 /**
  * In about 37,000 frames every acknowledgement came within 122 ms (a patch's
@@ -30,7 +30,7 @@ const sleep = (ms) => (ms ? new Promise((r) => setTimeout(r, ms)) : Promise.reso
 const startAgain = (text) => Object.assign(new Error(text), { startAgain: true });
 
 export class Gp50Writer extends Gp50Reader {
-  constructor(input, output, log, { ackTimeoutMs = ACK_TIMEOUT_MS, range = TEST_RANGE, frameGapMs = FRAME_GAP_MS, writeSettleMs = WRITE_SETTLE_MS, ...rest } = {}) {
+  constructor(input, output, log, { ackTimeoutMs = ACK_TIMEOUT_MS, range = ALL_PATCHES, frameGapMs = FRAME_GAP_MS, writeSettleMs = WRITE_SETTLE_MS, ...rest } = {}) {
     super(input, output, log, rest);
     Object.assign(this, { ackTimeoutMs, range, frameGapMs, writeSettleMs });
     this.halted = null; // why writing stopped, once it has

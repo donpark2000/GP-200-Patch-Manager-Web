@@ -3,12 +3,14 @@
 import { readAllSlots, slotRanges } from "./backup.js";
 import { diffOffsets, NAME_COUNT } from "./protocol.js";
 import { writePatches } from "./restore.js";
-import { assertPrst, mayWrite, WRITE_FIRST, WRITE_LAST } from "./write-protocol.js";
+import { assertPrst } from "./write-protocol.js";
 
 /** "US Lead", byte for byte the patch in the captured Suite write. */
 export const FIRST_SOURCE = 15;
 export const FIRST_TARGET = 99;
 
+/** The test's layout: 0-44 are copied into these (its empty patches). */
+const WRITE_FIRST = 55, WRITE_LAST = 99;
 const writable = Array.from({ length: WRITE_LAST - WRITE_FIRST + 1 }, (_, i) => WRITE_FIRST + i);
 
 /**
@@ -67,15 +69,16 @@ export async function checkAll(reader, expected, opts) {
  * Writes a stage's patches, each read back and compared. Stops at the first
  * problem. A slot is written only if what it holds now is in the reference
  * or this page put it there (`touched`), so nothing can be lost, and only
- * while none of 55-99 is selected on the pedal (what a write does to the
- * selected patch isn't known).
+ * while the pedal isn't on a slot this stage writes (what a write does to the
+ * selected patch wasn't known when this was built).
  * @param {import("./writer.js").Gp50Writer} writer
  */
 export async function runStage(writer, stage, reference, { touched = new Set(), ...opts } = {}) {
   const items = STAGES[stage].map.map(([slot, source]) => ({ slot, prst: reference[source] }));
   const inReference = onlyKnown(reference, touched);
+  const targets = new Set(items.map((i) => i.slot));
   const guard = (found) => {
-    if (mayWrite(found.selected)) throw new Error(`The pedal is on slot ${found.selected}; select one from 0 to ${WRITE_FIRST - 1} on the pedal first`);
+    if (targets.has(found.selected)) throw new Error(`The pedal is on slot ${found.selected}, which this step writes; select another on the pedal first`);
     inReference(found);
   };
   return writePatches(writer, items, { ...opts, touched, guard });

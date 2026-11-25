@@ -79,15 +79,15 @@ test("gp50 restore plan: ordered by number if every file has one, else by name; 
   for (const bad of [-1, 100, 1.5, NaN, undefined]) await assert.rejects(planRestore([f("a.prst")], bad), /isn't a patch/);
 });
 
-test("gp50 runner safety: only the runner's range opens every patch; never outside 0-99, never in the pages", () => {
+test("gp50 write safety: every patch 0-99, never outside, in the runner and the pages alike", () => {
   const prst = buildPrst("x", new Array(511).fill(0));
   for (let s = 0; s <= 99; s++) assert.equal(buildPatchWrite(s, prst, ANY_PATCH).length, 29);
   for (const s of [-1, 100, 256, 1.5, "5", null, NaN]) {
     assert.throws(() => buildPatchWrite(s, prst, { first: -1000, last: 1000 }), /Refused/, `${s}`);
     assert.throws(() => new WriteGate(s, prst, ANY_PATCH), /Refused/, `${s}`);
   }
-  assert.throws(() => buildPatchWrite(54, prst), /Refused/);
-  assert.equal(new Gp50Writer({}, {}, new Logger()).range.first, 55);
+  assert.equal(buildPatchWrite(0, prst).length, 29);
+  assert.deepEqual(new Gp50Writer({}, {}, new Logger()).range, { first: 0, last: 99 });
   for (const f of ["write-page.js", "page.js", "page-common.js", "write.html", "index.html"]) assert.doesNotMatch(source(f), /cli\/|range|ANY_PATCH/, f);
 });
 

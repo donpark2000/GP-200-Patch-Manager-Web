@@ -79,7 +79,7 @@ export const describeDiff = (offsets) =>
  *   throws if what the slot holds now mustn't be overwritten
  * @param {Set<number>} [opts.touched] every slot a write was begun on is added
  * @param {boolean} [opts.selectedEach] ask which patch is selected before every
- *   patch (the pages: their guard refuses while one of 55-99 is). False asks
+ *   patch (the pages: their guard refuses while one they write is). False asks
  *   only before the first and after the last (the runner: its guard doesn't
  *   use it, and writing the selected patch is safe; journal 2026-11-22).
  */
