@@ -1008,6 +1008,13 @@ entry of that date). The skill's source now lives in the private repo
    module per switch from 192 patches; the developer said at once that a
    CTRL can switch many modules, which pointed to four masks the reading
    had missed (Valeton's editor names CTRL 1-4).
+10. **Rules come from the person, not inference.** Asked to change a rule,
+   the assistant makes that change only; an extra safeguard is a separate
+   proposal that waits for a yes. Every written rule says who set it, so a
+   review can tell the person's rules from the assistant's. Evidence: asked
+   to loosen pedal write rules and add a usage check, the assistant also
+   wrote in a backup step, a threshold and a report step that the developer
+   hadn't asked for (2026-11-25).
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -5514,3 +5521,29 @@ GP-50 write budget and the GP-200 limits (planned patches only, 1-A to 50-A
 off limits) are gone. The web app's own rules are unchanged (writes only
 from Restore and Template, after confirmation). DESIGN.md "Working rules"
 updated to match.
+
+## 2026-11-25: Rules come from the developer, not inference
+
+**Developer:** "back up the pedal first" has costs and wasn't asked for: skip
+it, or ask first. The other limits in the entry above (85%, report the
+patches changed) "seem to have been inferred rather than specified" too, and
+"this is not the first time". Claude shouldn't add rules by inference without
+confirming first; maybe the rules need a periodic review.
+
+**Claude:** that's right. Asked to loosen the rules and add a usage check,
+Claude added a backup step, a report step and the 85% figure on its own. The
+2026-11-20 entry records another case (statements the developer hadn't made
+written as fact). **Changed:** no backup before a run (CLAUDE.md, DESIGN.md);
+the report step dropped; 85% kept as Claude's proposal, marked "to confirm";
+the "no firmware, global settings or unknown commands" rule kept but marked
+as Claude's wording, source to confirm; a CLAUDE.md rule that Claude proposes
+rules and waits for a yes, and that each rule says who set it. Saved in
+Claude's memory too.
+
+**Proposed addition to the standards skill:** item 10 of the list
+below): *Rules come from the person, not inference.* An assistant asked to
+change a rule makes that change only; any extra safeguard is a separate
+proposal. Every written rule says who set it, so a periodic review can tell
+the developer's rules from the assistant's. *Evidence:* asked to loosen pedal
+write rules, the assistant wrote in a backup step, a threshold and a report
+that the developer hadn't asked for.

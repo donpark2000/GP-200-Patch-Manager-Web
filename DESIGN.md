@@ -481,9 +481,8 @@ step and reports at the end of each, or when hands, ears or a decision are
 needed (power cycles and listening are saved up).
 - **From 2026-11-25 (developer: no patch on either pedal is precious):** the
   runner may write patches anywhere on both pedals without asking first,
-  after a usage check (no write run when the 5-hour or weekly limit is over
-  85% used) and a backup. It reports which patches changed. The rules are in
-  CLAUDE.md. They replace the GP-50's budget of about 2,000 writes and the
+  with no backup before a run (developer: it has costs), after a usage check
+  (no write run when a limit is nearly used up). The rules are in CLAUDE.md. They replace the GP-50's budget of about 2,000 writes and the
   GP-200's limits (planned patches only, the developer's 1-A to 50-A off
   limits).
 - **GP-50:** patch writes only, any slot: no firmware, global settings or

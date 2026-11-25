@@ -59,18 +59,20 @@ this is the short version:
   either pedal is precious; everything worth keeping is backed up, and a
   factory reset is acceptable) may write patches to any slot on either
   pedal without asking first: the GP-50 with the runner's writes, the
-  GP-200 only with `gp200-restore` (the web app's restore, gated). Each
-  write run:
-  1. **Check usage first** (`get_usage`). If the 5-hour or weekly limit
-     is over 85% used, don't start: tell the developer when it resets and
-     do other work meanwhile. A run cut off partway through is the one risk
-     to avoid (the GP-50 keeps a half-sent patch's old contents; the GP-200
-     is untested).
-  2. **Back up that pedal first** (`gp200-backup`, or the GP-50 backup)
-     into the session folder.
-  3. **Report afterwards** which patches changed.
-  Patch writes only: never firmware, global settings or unknown commands,
-  on either pedal.
+  GP-200 only with `gp200-restore` (the web app's restore, gated). No
+  backup before a run (developer, 2026-11-25: it has costs; ask first if
+  one seems worth it). Before each write run, **check usage**
+  (`get_usage`) and defer the run, saying when the limit resets, if
+  either the 5-hour or weekly limit is nearly used up (developer,
+  2026-11-25; the threshold, 85% as Claude proposed, is still to be
+  confirmed). A run cut off partway through is the risk this avoids.
+  Patch writes only, never firmware, global settings or unknown commands
+  (in CLAUDE.md since 2026-11-24, written by Claude; its source is to be
+  confirmed with the developer, since a factory reset or re-flash, the
+  developer's safety net, assumes the firmware is untouched).
+- **Rules come from the developer** (2026-11-25). Claude doesn't add a
+  rule, limit or step by inference; it proposes one and waits for a yes.
+  Each rule here says who set it.
 
 ## Files: repo vs. test output vs. backups
 
