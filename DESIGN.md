@@ -380,6 +380,9 @@ going to get without sound tests").
   bought with a check: every patch is still read back, and a patch is
   overwritten only if its contents are in the reference.
 
+All the mapping and conversion rules below, gathered in one place, with the
+unmappables still open: `gp50/CONVERSION_RULES.md`.
+
 **Effect map** (stage 2; journal 2026-11-23, "GP-50 stage 2"):
 - **From Valeton's own files**, read where the GP-200 editor and Valeton
   Suite install them, by `tools/make-effect-map.js`, into

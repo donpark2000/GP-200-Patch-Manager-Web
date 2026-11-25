@@ -35,6 +35,33 @@ This journal records only what's new or different for the browser.
   matters to copying now (CTRL 3-8 aren't carried; bits 11-15 aren't either).
   Settle if it ever does: the developer looks at 3-B's CTRL 3 again and at
   the empty patch's CTRL 3 and 4 (masks DLY and RVB, with high bits).
+- **Q15. Synced Time/Rate the target can't sync.** (2026-11-25.) Now set to
+  the target's default ("was set by tempo"). The note length and the patch's
+  tempo give the time in ms (a quarter note at 120 BPM is 500 ms), so it
+  could be carried as that, then limited. A rule and a test; no pedal needed.
+- **Q16. Tone controls lost in a close match.** (2026-11-25.) Many close amp
+  matches drop Bass/Middle/Treble or Presence; Hyper EQ's bands are set flat.
+  Where the target's EQ module is free (off, or not in the source), the lost
+  tone could be rebuilt there, approximately. Worth it? Needs a rule and
+  listening.
+- **Q17. The loser of a two-for-one module.** (2026-11-25.) GP-200 PRE and WAH
+  both want the GP-50's PRE; the loser is left out (6-D lost its PRE to the
+  wah). A boost or overdrive that loses could go to DST if DST is free. Count
+  how often first.
+- **Q18. GP-200 Volume module at a fixed level.** (2026-11-25.) Left out
+  (a volume pedal, no GP-50 module). Where it isn't worked by EXP and sits
+  below full, its level could be folded into patch volume. Check how the
+  level adds up, then listen.
+- **Q19. EXP both ways.** (2026-11-25.) GP-200 EXP isn't carried (no built-in
+  pedal on the GP-50), GP-50 EXP isn't carried (fields 2003-200A not
+  confirmed). For someone with an external pedal on the GP-50's jack, the
+  wah and volume could be carried. Needs the GP-50's EXP layout (one patch
+  saved with an EXP change, as for CTRL); and the developer's view on
+  whether it's wanted.
+- **Q20. GP-50 fields taken, not confirmed.** (2026-11-25.) Which 3001 on/off
+  bit is which module (taken in module order; CTRL's are, and listening hasn't
+  contradicted it), 2001 patch volume, 2002 tempo; and whether the two pedals'
+  volume scales mean the same loudness. Small write tests settle the fields.
 
 ## Resolved
 
@@ -5439,3 +5466,31 @@ mapping CTRL settings now."
 Don't purge `2026-11-22_gp50-first`, `-write`, `-stage1`,
 `2026-11-23_gp50-speed`, `2026-11-23_stage3-listening` or
 `2026-11-24_ctrl-pairs`.
+
+## 2026-11-25: Conversion rules in one document; unmappables still open
+
+**Developer (2026-11-25):** neither pedal holds a "precious" patch now. The
+developer has backups of everything worth keeping and is happy to factory-reset
+if it comes to that, so write experiments aren't a concern, as long as a
+factory reset or re-flashing the firmware stays possible. Claude's note: that
+holds for patch writes (a reset puts patches back); firmware, global settings
+and unknown commands stay off limits, since they're what could make a reset
+or re-flash necessary, or not enough. A backup before each run still costs
+under a minute. CLAUDE.md's write rules are unchanged until the developer
+says which to relax.
+
+**Asked for:** every mapping heuristic in one document. Done:
+`gp50/CONVERSION_RULES.md` (written by hand, linked from DESIGN.md "Both
+pedals"): principles, effect classes, near matches by kind, stand-ins,
+settings (positions, name vs. position pairing, defaults, limits, sync),
+module places and the two-for-one rule, chain order, on/off, EXP, CTRL,
+names, tempo and volume, what isn't carried, and the open unmappables.
+Gathered from DESIGN.md, `gp50/convert.js`, `EFFECT_MAP.md` and the entries
+of 2026-11-23 and -24; no rule was changed. Per-effect rows stay in the
+generated `EFFECT_MAP.md`.
+
+**Unmappables still open:** six new questions, Q15-Q20 (list at the top):
+synced times worked out from the tempo, lost tone controls rebuilt in a free
+EQ, a second place for the loser of a shared module, the GP-200 volume
+module folded into patch volume, EXP both ways, and the GP-50 fields taken
+but not confirmed. No pedal writes.
