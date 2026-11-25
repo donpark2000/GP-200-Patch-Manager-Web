@@ -5540,10 +5540,6 @@ as Claude's wording, source to confirm; a CLAUDE.md rule that Claude proposes
 rules and waits for a yes, and that each rule says who set it. Saved in
 Claude's memory too.
 
-**Proposed addition to the standards skill:** item 10 of the list
-below): *Rules come from the person, not inference.* An assistant asked to
-change a rule makes that change only; any extra safeguard is a separate
-proposal. Every written rule says who set it, so a periodic review can tell
-the developer's rules from the assistant's. *Evidence:* asked to loosen pedal
-write rules, the assistant wrote in a backup step, a threshold and a report
-that the developer hadn't asked for.
+**Proposed addition to the standards skill:** item 10 of "Proposed additions
+to the standards skill" (*Rules come from the person, not inference*), for
+the developer's review.
