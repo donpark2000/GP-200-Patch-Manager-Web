@@ -67,9 +67,9 @@ this is the short version:
   2026-11-25; the threshold, 85% as Claude proposed, is still to be
   confirmed). A run cut off partway through is the risk this avoids.
   Patch writes only, never firmware, global settings or unknown commands
-  (in CLAUDE.md since 2026-11-24, written by Claude; its source is to be
-  confirmed with the developer, since a factory reset or re-flash, the
-  developer's safety net, assumes the firmware is untouched).
+  (Claude's, in the stage plan the developer agreed on 2026-11-22: "yes
+  to the plan").
+- Who set each rule, and which ones are still to confirm: `RULES.md`.
 - **Rules come from the developer** (2026-11-25). Claude doesn't add a
   rule, limit or step by inference; it proposes one and waits for a yes.
   Each rule here says who set it.

@@ -5543,3 +5543,21 @@ Claude's memory too.
 **Proposed addition to the standards skill:** item 10 of "Proposed additions
 to the standards skill" (*Rules come from the person, not inference*), for
 the developer's review.
+
+## 2026-11-25: Rules review list (RULES.md)
+
+At the developer's request, `RULES.md` lists every working rule in CLAUDE.md,
+DESIGN.md and Claude's memory, each with who set it (developer; Claude,
+agreed; Claude, not confirmed; not traced), traced through the journal and
+CLAUDE.md's history. **Found while tracing:**
+- The firmware/global settings ban was in the stage plan the developer
+  agreed on 2026-11-22 ("yes to the plan"); CLAUDE.md's "to confirm" note
+  corrected.
+- **A conflict:** "no backup before a run" (developer, 2026-11-25) vs. the
+  runner's reference check (both write paths refuse to overwrite a patch
+  that doesn't match a reference backup). As things stand a write run needs
+  a backup or fails. Options A-C in RULES.md, for the developer.
+- Two memories are partly stale ("reliability over speed": its reason and
+  the 64-A to 64-D limit; "work in stages": its write limits). Left as they
+  are until the developer's review.
+Seven items to decide, in RULES.md section 1. No pedal writes.
