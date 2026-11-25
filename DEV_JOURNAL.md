@@ -5696,3 +5696,16 @@ reading the result; the margin matters most for runs spread over several
 commands. At the time: 5-hour 6% used (resets 22:30 UTC), weekly 1% (resets
 2026-12-02 07:00 UTC). CLAUDE.md, RULES.md row 1 and Claude's memory
 updated.
+
+## 2026-11-25: Two out-of-date memories updated (RULES.md section 4)
+
+**Developer:** "Yes, update both." Claude's memory (outside the repo):
+- *Reliability over speed:* the tuning rule kept (remove a pedal I/O step
+  only when a hardware test proves it unneeded; a fast but flaky restore is
+  worse than a slow reliable one), now for both pedals. Dropped: the reason
+  "the pedal holds the user's real patches" and the limit to 64-A to 64-D
+  (CLAUDE.md's write rules say where to write). The web app's dev timing
+  test is still limited to 64-A to 64-D by CLAUDE.md; that rule is apart.
+- *Work in stages:* working through a stage without asking at each step
+  kept; its write limits replaced by a pointer to CLAUDE.md and RULES.md.
+RULES.md section 4 marks both updated.

@@ -71,8 +71,8 @@ are mostly marked "developer" in DESIGN.md itself, and aren't repeated here.
 
 | Memory | Rule | Set by | Status |
 |---|---|---|---|
-| Reliability over speed | Pedal I/O tuning: remove a step only when hardware proves it unneeded; experiments on 64-A to 64-D | Developer, 2026-10-01 | **Partly stale:** its reason ("the pedal holds the user's real patches") no longer holds, and the runner writes anywhere now. Keep the tuning rule, drop the 64-A to 64-D part? |
-| Work in stages | Unattended stages; follow DESIGN.md's write limits; GP-200 untouched before stage 3 | Developer, 2026-11-22 | **Stale** in its write limits (replaced 2026-11-25); the rest stands |
+| Reliability over speed | Pedal I/O tuning, both pedals: remove a step only when hardware proves it unneeded | Developer, 2026-10-01 | **Updated 2026-11-25** (developer: yes): the old reason ("the pedal holds the user's real patches") and the 64-A to 64-D limit dropped; where to write: CLAUDE.md |
+| Work in stages | Unattended stages; report at stage ends | Developer, 2026-11-22 | **Updated 2026-11-25** (developer: yes): its write limits dropped, pointing to CLAUDE.md and RULES.md instead |
 | Speed goal | Don't offer to drop fast restore; set pass criteria before tests | Developer, 2026-10-01 | Stands |
 | Consistency, explain changes | Reuse the developer's commands and names; say why when changing | Developer, 2026-10-01 | Stands |
 | Clear questions | One plain question, apart from the background | Developer, 2026-10-01 | Stands |
