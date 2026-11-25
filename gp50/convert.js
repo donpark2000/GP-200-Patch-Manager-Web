@@ -317,11 +317,15 @@ function noteList() {
 }
 const FIRST = -1, LAST = 100;
 
+/** Source module name -> target module name, for each effect that went over (gp50/roundtrip.js reads it). */
+const placedModules = (won, targetModules) => Object.fromEntries([...won].map(([at, w]) => [w.src.module, targetModules[at]]));
+
 /**
- * A GP-200 .prst as a GP-50 .prst. Returns { prst, name, source, notes }
- * (source: the name it had): notes say
- * what was substituted, dropped or limited, in playing order. Throws with the
- * reason if the patch can't be converted.
+ * A GP-200 .prst as a GP-50 .prst. Returns { prst, name, source, notes,
+ * placed } (source: the name it had): notes say what was substituted,
+ * dropped or limited, in playing order; placed: each source module whose
+ * effect went over -> the target module it went to. Throws with the reason
+ * if the patch can't be converted.
  */
 export function gp200ToGp50(prst, map, { log = () => {} } = {}) {
   const p = readGp200(prst);
@@ -399,12 +403,12 @@ export function gp200ToGp50(prst, map, { log = () => {} } = {}) {
   if (volume !== p.volume) last(`Patch volume limited ${p.volume} -> ${volume}`);
   const list = notes.sorted();
   log(`Convert GP-200 "${p.name}" -> GP-50 "${name}": ${list.length} note(s); order ${order.map((i) => GP50_MODULES[i]).join(" ")}; on ${modules.filter((m) => m.on).map((m) => m.module).join(" ") || "none"}`);
-  return { prst: writeGp50({ name, volume, tempo: p.tempo, order, modules, ctrlMasks }), name, source: p.name.trim(), notes: list };
+  return { prst: writeGp50({ name, volume, tempo: p.tempo, order, modules, ctrlMasks }), name, source: p.name.trim(), notes: list, placed: placedModules(won, GP50_MODULES) };
 }
 
 // ---------------------------------------------------------------- GP-50 -> GP-200
 
-/** A GP-50 .prst as a GP-200 .prst: { prst, name, notes }, or throws with the reason. */
+/** A GP-50 .prst as a GP-200 .prst: { prst, name, source, notes, placed } (as gp200ToGp50), or throws with the reason. */
 export function gp50ToGp200(prst, map, { log = () => {} } = {}) {
   const p = readGp50(prst);
   const notes = noteList();
@@ -462,5 +466,5 @@ export function gp50ToGp200(prst, map, { log = () => {} } = {}) {
   const name = p.name.trim();
   const list = notes.sorted();
   log(`Convert GP-50 "${p.name}" -> GP-200 "${name}": ${list.length} note(s); order ${order.map((i) => GP200_MODULES[i]).join(" ")}; on ${modules.filter((m) => m.on).map((m) => m.module).join(" ") || "none"}`);
-  return { prst: writeGp200({ name, tempo: p.tempo, volume: p.volume, order, modules, ctrlMasks }), name, source: p.name.trim(), notes: list };
+  return { prst: writeGp200({ name, tempo: p.tempo, volume: p.volume, order, modules, ctrlMasks }), name, source: p.name.trim(), notes: list, placed: placedModules(won, GP200_MODULES) };
 }

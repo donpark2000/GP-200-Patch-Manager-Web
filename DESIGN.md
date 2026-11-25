@@ -482,6 +482,12 @@ unmappables still open: `gp50/CONVERSION_RULES.md`.
 - All of these are in the patch's report, in playing order. A same or
   renamed effect isn't (nothing was substituted). Layouts and what isn't
   confirmed: `gp50/convert.js`, journal 2026-11-23 "Stage 3: patch layouts".
+- **Round trips with no pedal** (`tools/round-trip.js`, `gp50/roundtrip.js`;
+  journal 2026-11-25): a backup sent to the other pedal's format and back,
+  every difference explained by a report line, by a written rule, or
+  listed as unexplained; a second trip must change nothing. For a GP-200
+  backup, `--pairs` makes A/B pairs (A unchanged, B through the GP-50
+  format) for listening on the GP-200 alone.
 - **Copying from the command line** (`gp50/cli/run.js copy`): GP-200
   patches are read with reads only (the bridge and `copy.js` refuse anything
   else), converted, and written to the GP-50; `convert` makes files for the

@@ -58,6 +58,25 @@ This journal records only what's new or different for the browser.
   wah and volume could be carried. Needs the GP-50's EXP layout (one patch
   saved with an EXP change, as for CTRL); and the developer's view on
   whether it's wanted.
+- **Q21. Back up and restore user IRs and SnapTones?** (developer,
+  2026-11-25.) A patch holds only the number of the user IR or SnapTone
+  place it uses, not the sound. Valeton's software has no way to back them
+  up or restore them. The GP-50 has reads for their names (0x20 IR names,
+  0x24 SnapTone names, seen in Valeton Suite's code), not their contents.
+  A restore (uploading the user's own files to the same places) is likely
+  possible by recording what the editor sends; reading the sound back off
+  the pedal is unknown, and finding out by trying unknown commands is
+  against the rules. Uploading one is a write that isn't a patch: needs the
+  developer's OK before any test. The developer may ask the author of the
+  GP-200 custom firmware.
+- **Q22. The two bytes after the GP-50's CTRL masks.** (2026-11-25, round
+  trip.) One per CTRL, it seems: 5 or 6 in the factory patches (6 6 in 20,
+  6 5 in 26, 5 6 in 2, 5 5 in the rest and the empty patch). The converter
+  writes the empty patch's 5 5, so a GP-50 patch copied there and back
+  loses them. Meaning unknown: perhaps a CTRL setting such as toggle or
+  momentary. To settle: the developer compares CTRL 1 and 2's settings in
+  Valeton Suite on patch 00 (6 6) and patch 03 (6 5); then carry them, or
+  set them from the GP-200 if it has the same setting.
 - **Q20. GP-50 fields taken, not confirmed.** (2026-11-25.) Which 3001 on/off
   bit is which module (taken in module order; CTRL's are, and listening hasn't
   contradicted it), 2001 patch volume, 2002 tempo; and whether the two pedals'
@@ -1015,6 +1034,15 @@ entry of that date). The skill's source now lives in the private repo
    to loosen pedal write rules and add a usage check, the assistant also
    wrote in a backup step, a threshold and a report step that the developer
    hadn't asked for (2026-11-25).
+11. **Test a two-way conversion by sending it there and back, and account
+   for every difference with the converter's own report.** Compare in the
+   converter's terms, not raw bytes; a difference no report line explains
+   is a bug or a change the user isn't told about. A second trip must
+   change nothing. It can't see a mistake made the same way both ways.
+   Evidence: 356 patches through the GP-50/GP-200 converter, nothing
+   unexplained once the checker's own two faults were fixed; it found a
+   field the converter resets (two GP-50 bytes in 48 patches) and five
+   patches that change again on a second trip (2026-11-25).
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -5709,3 +5737,108 @@ updated.
 - *Work in stages:* working through a stage without asking at each step
   kept; its write limits replaced by a pointer to CLAUDE.md and RULES.md.
 RULES.md section 4 marks both updated.
+
+## 2026-11-25: Round trips with no pedal; A/B pairs for the GP-200
+
+**Developer's two ideas** (both agreed, with Claude's suggestions):
+1. GP-50 patches to GP-200 and back, compared: a consistency check of the
+   converter, no pedal.
+2. GP-200 patches that exercise the heuristics, each put on the GP-200
+   twice side by side: A unchanged, B converted to the GP-50 format and
+   back. B carries what the GP-50 copy loses or substitutes, so the
+   developer can listen on one pedal. Claude prepares the zip; the
+   developer loads it with the web app's Restore.
+
+**Built:**
+- `gp50/roundtrip.js`: a patch there and back, compared in the converter's
+  terms (name, tempo, volume, each module's effect, on/off and settings,
+  chain order, CTRL, EXP, the unknown GP-50 CTRL bytes), not raw bytes.
+  Each difference is *explained* (a note in one of the two reports names it:
+  the module for an effect, the control for a setting, "left out" for a
+  whole module, the CTRL number), *by rule* (a written rule says it isn't
+  carried and it isn't reported: the GP-200 volume module, CTRL bits 11-15,
+  GP-200 EXP, the GP-50 CTRL bytes) or *unexplained*. A second trip from
+  what came back must change nothing. `mapAsymmetries()` checks the map on
+  its own. `gp50/convert.js` now also returns `placed` (which module each
+  effect went to); conversion itself unchanged.
+- `gp50/ab-pairs.js` and `tools/round-trip.js` (below).
+- Tests: `tests/gp50-roundtrip.test.js`, 9 tests; suite 282 pass. Shown to
+  fail, one at a time: a tempo change explained, "left out" no longer
+  explaining settings, CTRL bits 11-15 not compared, settings compared
+  loosely, map asymmetries not found (2 tests), open cut filters counted as
+  heard, the cleanest patch not taken (caught only after a test was added
+  where the choice arises), user IR patches not skipped, B's checksum not
+  redone, a refused patch passing.
+
+**Two faults in the checker, found on the real backups and fixed:** a module
+left out came back as the blank patch's effect, and when that was the same
+effect its settings showed as unexplained (366 of them, all off wahs); and a
+module left out on the way could move in the chain without being the
+"changed" kind (18). Neither was the converter's.
+
+**Results** (session folder `GP-200-testing\2026-11-25_round-trip`, the
+`18-13-29` files; the `18-11-55` set is an earlier run, superseded):
+- **GP-50, factory backup (2026-11-22), 100 patches:** 0 unexplained, all
+  settle, 52 unchanged. Explained: 2 patches (Star Night, Nebula) lose a
+  Detune in PRE ("no free MOD module on the GP-200": their MOD is taken);
+  2 (70 Britain, SRV) come back with Plate instead of Plate L. By rule: Q22's
+  bytes in 48. The converted-patches backup (2026-11-24) gives the same,
+  plus 3 patches whose off C-Wah in PRE is lost (below).
+- **GP-200, the developer's 2026-09-30 backup (the originals; 36-D to 37-D
+  and 50-B on hold test patches now), 256 patches:** 0 unexplained, 251
+  settle. 911 effect differences, all explained: an effect with no exact
+  GP-50 twin comes back as its near match's own GP-200 twin (G-Chorus ->
+  A-Chorus in 173, mostly off; S-Comp -> COMP4 in 70, 59 on; Digital Delay
+  S -> Pure in 50, all on). No module that is on changes place in the chain
+  (checked apart; the volume module goes to the end, at full).
+- **The map alone:** every exact GP-50 effect comes back as itself (33 come
+  back "close" only because a setting such as a cab's cut filters is
+  dropped). The one GP-50 effect that comes back as another: **Plate L ->
+  Plate -> the GP-50's small Plate** (the GP-200 has one plate).
+
+**For the developer to decide** (mapping choices, not changed):
+1. Plate L: should the GP-200's Plate go to the GP-50's Plate L instead of
+   Plate? Then GP-50 Plate L patches would come back as they went, and
+   Plate ones wouldn't.
+2. A Detune in the GP-50's PRE is left out when the patch's MOD is in use
+   (the GP-200's Detune is a MOD effect only). Nothing to change unless
+   another GP-200 module could hold it.
+3. An off wah loses a shared module to an off effect in its own module (the
+   rule: on before off, then the module's own effect). Five GP-200 wah
+   patches don't settle for it: the first trip switches the wah off (the
+   EXP rule), the second then loses it to an off COMP. And a GP-50 patch
+   with an off wah in PRE loses it on the way back to the blank patch's
+   COMP. Prefer the wah when both are off?
+4. The converter notes a cab's Low Cut / High Cut as "dropped" even when the
+   filter is off (19 / 20001 Hz, the default, in most patches): noise in
+   the report. Only note it when the filter is on?
+5. Q22 (the GP-50 CTRL bytes).
+
+**A/B pairs** (`gp200_ab_pairs_2026-11-25T18-13-29.zip`, sheet
+`listening_ab_2026-11-25T18-13-29.csv`): 11 pairs, 22 patches, labelled 51-A
+to 56-B, from the 2026-09-30 backup (read only; no pedal touched).
+- **Picked by Claude (for review):** every kind of heard change in the
+  reports (18: close matches by module, stand-in, lost shared module, wah
+  off for EXP, synced time, limited, dropped, CTRL 3-8, the volume module at
+  full) at least once; close amps, cabs and drives twice. Rarest kind first,
+  each from the patch where it comes with the fewest other changes. Not
+  heard, so not counted: a module that's off, and a cab that is the same cab
+  on both pedals with its cut filters off. Patches with a user IR or
+  SnapTone left out. First pair: a check pair (Pop Bass, 23-B) with nothing
+  heard changed; A and B should sound alike. B is named with "~50" (not yet
+  seen on the pedal's display).
+- An earlier pick had 5 pairs each changing up to 10 things, and a check
+  pair with every module off; both changed as above.
+- Checked as Restore reads it: ordered by slot label, 22 items from 51-A, no
+  warnings; every A byte for byte the backup's; every B a valid .prst.
+- One pair (14-C Glory Moment) is marked "way back also guessed": its Rev
+  Echo is a close match both ways, so B has two substitutions stacked.
+- **Assumes** the same effect at the same settings sounds alike on both
+  pedals. Can't show: the two pedals' volume scales (Q20), hardware.
+- Close cab matches and dropped settings are in most pairs: nearly every
+  GP-200 cab loses its cut filters on the GP-50.
+
+**For the developer, to listen:** in the web app, Restore, pick the zip,
+start at 51-A (or any A patch: each pair then stays in one bank; it writes
+22 patches from there), and fill in the sheet's verdict column. No pedal
+writes by Claude.
