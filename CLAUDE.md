@@ -76,8 +76,10 @@ this is the short version:
   matches a backup) **asks instead of refusing** (developer,
   2026-11-25): with no backup to check against, or a patch that
   doesn't match, Claude asks the developer first. An explicit
-  instruction from the developer overrides it. Until the code is
-  changed, the runner still refuses (RULES.md row 2).
+  instruction from the developer overrides it. In the code (2026-11-25):
+  the runner stops before writing anything and exits with 2, listing
+  what to ask; Claude adds `--skip-reference-check` only on the
+  developer's explicit instruction (RULES.md row 2).
 - **Revisit rules when a milestone passes** (developer, 2026-11-25),
   using RULES.md.
   Patch writes only, never firmware, global settings or unknown commands

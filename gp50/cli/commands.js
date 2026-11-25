@@ -35,11 +35,50 @@ export async function check(reader, expected, label, { log }) {
   return r;
 }
 
-/** Writes `items`; overwrites only what is in `reference`, or what this run wrote. */
-export async function write(writer, items, reference, { log, label, touched = new Set(), ...opts }) {
+/**
+ * Nothing was written, and Claude asks the developer before going on
+ * (CLAUDE.md, developer 2026-11-25: the reference check asks instead of
+ * refusing). The runner exits with 2 for it, not 1.
+ */
+export class NeedsAnswer extends Error {}
+
+export const SKIP_FLAG = "--skip-reference-check";
+const askTail = `To write anyway, only on the developer's explicit instruction: ${SKIP_FLAG}`;
+
+/** Before any write: the patches `items` would overwrite whose contents aren't in `reference`. Reads only. */
+export async function notInReference(reader, items, reference, { log, isCancelled = () => false }) {
+  const known = new Set(reference.map((p) => p.join()));
+  const unknown = [];
+  for (const { slot } of items) {
+    if (isCancelled()) throw new Error("Stopped before writing anything");
+    const now = await reader.readSlotPatch(slot);
+    if (!known.has(now.prst.join())) unknown.push({ slot, name: now.name });
+  }
+  log.info(`Reference check: ${items.length} patch(es) read, ${items.length - unknown.length} hold a patch in the reference${unknown.length ? `, ${unknown.length} don't` : ""}`);
+  return unknown;
+}
+
+/**
+ * Writes `items`. Unless `skipCheck`: first, every patch to be overwritten is
+ * read, and if any holds a patch that isn't in `reference`, nothing is written
+ * and NeedsAnswer is thrown, listing them (`checked`: the caller has just
+ * compared all 100 with the reference). During the write, a patch is
+ * overwritten only if it is in `reference`, or this run wrote it.
+ */
+export async function write(writer, items, reference, { log, label, touched = new Set(), skipCheck = false, checked = false, ...opts }) {
   const t0 = performance.now();
   log.info(`Write "${label}": ${items.length} patches, to ${slotRanges(items.map((i) => i.slot))}`);
-  const r = await writePatches(writer, items, { log, touched, confirmed: true, guard: onlyKnown(reference, touched), selectedEach: false, ...opts });
+  if (skipCheck) log.warn(`Reference check skipped (${SKIP_FLAG}): any patch may be overwritten`);
+  else if (!reference) throw new Error("No reference, and the check isn't skipped");
+  else if (!checked) {
+    const unknown = await notInReference(writer, items, reference, { log, isCancelled: opts.isCancelled });
+    if (unknown.length) {
+      throw new NeedsAnswer(`Nothing written; ask the developer: ${unknown.map((u) => `patch ${u.slot} "${u.name}"`).join(", ")} ` +
+        `${unknown.length === 1 ? "holds a patch that isn't" : "hold patches that aren't"} in the reference. ${askTail}`);
+    }
+  }
+  const guard = skipCheck ? () => {} : onlyKnown(reference, touched);
+  const r = await writePatches(writer, items, { log, touched, confirmed: true, guard, selectedEach: false, ...opts });
   const ok = !r.problem && r.verified.length === items.length;
   const text = `Write "${label}": ${ok ? "DONE" : "STOPPED"}. ${r.verified.length} of ${items.length} written and read back identical, ` +
     `${((performance.now() - t0) / 1000).toFixed(1)} s; ${r.restarted.length} started again${r.restarted.length ? ` (${slotRanges(r.restarted)})` : ""}; selected ${r.selectedBefore} before, ${r.selectedAfter} after${r.problem ? `; ${r.problem}` : ""}`;
@@ -71,9 +110,10 @@ export async function roundTrip(writer, reference, by, { log, ...opts }) {
   const changed = moved.filter((p, s) => diffOffsets(p, reference[s]).length).length;
   log.info(`Round trip, ${label}: ${changed} of ${NAME_COUNT} patches get different contents`);
   if (!(await check(writer, reference, "as the reference, before", { log })).pass) return false;
-  if (!(await write(writer, items(moved), reference, { log, label, ...opts })).ok) return false;
+  // Both writes: the check just before compared all 100 with the reference.
+  if (!(await write(writer, items(moved), reference, { log, label, checked: true, ...opts })).ok) return false;
   if (!(await check(writer, moved, label, { log })).pass) return false;
-  if (!(await write(writer, items(reference), reference, { log, label: "put back", ...opts })).ok) return false;
+  if (!(await write(writer, items(reference), reference, { log, label: "put back", checked: true, ...opts })).ok) return false;
   if (!(await check(writer, reference, "as the reference, after", { log })).pass) return false;
   log.info(`Round trip, ${label}: PASSED`);
   return true;

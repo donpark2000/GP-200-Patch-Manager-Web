@@ -384,6 +384,12 @@ going to get without sound tests").
   the last; the pages before every patch, for their guard. Speed was never
   bought with a check: every patch is still read back, and a patch is
   overwritten only if its contents are in the reference.
+- **The runner's reference check asks** (developer, 2026-11-25): before the
+  first write, every patch to be overwritten is read; if any isn't in the
+  reference, or there's no reference, nothing is written and the runner
+  exits with 2, listing them, for Claude to ask the developer.
+  `--skip-reference-check` (the developer's explicit instruction only)
+  writes without it. The same for `gp200-restore`.
 
 All the mapping and conversion rules below, gathered in one place, with the
 unmappables still open: `gp50/CONVERSION_RULES.md`.
@@ -499,7 +505,8 @@ needed (power cycles and listening are saved up).
   only reads, the identity query and editor mode, and whole uploads and
   preset changes to the planned slots; the bridge sends write messages only
   when opened for it. A slot is overwritten only if it still holds what the
-  reference backup has, and every written slot is read again at the end.
+  reference backup has (otherwise the runner asks, as above), and every
+  written slot is read again at the end.
   `gp200-backup` reads only. Rules in CLAUDE.md.
 - Commit and push to the branch; never merge or publish without the
   developer's OK.

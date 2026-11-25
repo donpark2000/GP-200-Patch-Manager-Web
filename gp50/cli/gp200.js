@@ -10,7 +10,10 @@
 // - midi_bridge.py sends GP-200 uploads only when opened with
 //   --gp200-patch-writes, and never anything but those message kinds;
 // - a slot is overwritten only if it still holds what the reference backup
-//   has for it (read just before writing), as the GP-50 runner does;
+//   has for it (read just before writing), as the GP-50 runner does; if one
+//   doesn't, or the reference lacks it, nothing is written and the runner
+//   asks (NeedsAnswer; developer, 2026-11-25), unless the check is skipped
+//   on the developer's explicit instruction;
 // - the written slots are read again at the end, and must still match.
 
 import { GP200, WRITE_TIMING } from "../../src/core/device.js";
@@ -22,6 +25,7 @@ import {
   buildEnterEditorMode, buildIdentityQuery, buildPresetChange, CMD_RESPONSE, HEADER, nibbleDecode, SUB_UPLOAD_CHUNK, toHex,
 } from "../../src/core/sysex.js";
 import { expandSources, orderEntries, parseLeadingSlotLabel, planUpload, planWarnings, writeSlots } from "../../src/core/upload.js";
+import { NeedsAnswer, SKIP_FLAG } from "./commands.js";
 import { isGp200Read } from "./copy.js";
 
 const UPLOAD_CHUNK_RAW = 183; // as src/core/sysex.js buildUploadChunks
@@ -98,11 +102,15 @@ function differs(a, b) {
   return splitManaged(diffPrstContent(a, b, DEAD_BYTE_FILE_OFFSETS)).other.length > 0;
 }
 
+const askTail = `To write anyway, only on the developer's explicit instruction: ${SKIP_FLAG}`;
+
 /**
  * Restore `files` (.prst files or one zip) to the GP-200 from `start`, the
- * app's way, guarded as the header says. Returns { ok, results }.
+ * app's way, guarded as the header says. Returns { ok, results }; throws
+ * NeedsAnswer, with nothing written, when the reference check asks.
+ * `reference` is null only with `skipCheck`.
  */
-export async function gp200Restore(connection, files, start, reference, { log, isCancelled = () => false, timing = WRITE_TIMING, timeoutMs }) {
+export async function gp200Restore(connection, files, start, reference, { log, isCancelled = () => false, timing = WRITE_TIMING, timeoutMs, skipCheck = false }) {
   const { entries, notes } = await expandSources(files);
   for (const n of notes) log.warn(n);
   const { ordered, orderedBy } = orderEntries(entries);
@@ -114,22 +122,28 @@ export async function gp200Restore(connection, files, start, reference, { log, i
     return { ok: false, results: [] };
   }
   const slots = plan.items.map((it) => it.slot);
-  const missing = slots.filter((s) => !reference.has(s));
-  if (missing.length) {
-    log.error(`Nothing written: the reference has no patch for ${missing.map(slotToLabel).join(", ")}`);
-    return { ok: false, results: [] };
-  }
+  const labels = (list) => list.map(slotToLabel).join(", ");
+  if (!skipCheck && !reference) throw new Error("No reference, and the check isn't skipped");
+  const missing = skipCheck ? [] : slots.filter((s) => !reference.has(s));
+  if (missing.length) throw new NeedsAnswer(`Nothing written; ask the developer: the reference has no patch for ${labels(missing)}. ${askTail}`);
   const device = new GP200({ input: connection.input, output: patchWriteGate(connection.output, slots), log, timing, ...(timeoutMs ? { timeoutMs } : {}) });
   try {
-    // The slots must still hold what the reference says, read just before writing.
-    const before = await readSlots(device, slots, { skeleton: skeletonBytes(), log, isCancelled });
-    const now = new Map(before.entries.map((e) => [e.slot, e.data]));
-    const changed = slots.filter((s) => !now.has(s) || differs(reference.get(s), now.get(s)));
-    if (changed.length) {
-      log.error(`Nothing written: ${changed.map(slotToLabel).join(", ")} no longer hold${changed.length === 1 ? "s" : ""} what the reference has (or couldn't be read)`);
-      return { ok: false, results: [] };
+    if (skipCheck) log.warn(`Reference check skipped (${SKIP_FLAG}): ${labels(slots)} overwritten whatever they hold`);
+    else {
+      // The slots must still hold what the reference says, read just before writing.
+      const before = await readSlots(device, slots, { skeleton: skeletonBytes(), log, isCancelled });
+      const now = new Map(before.entries.map((e) => [e.slot, e.data]));
+      const unread = slots.filter((s) => !now.has(s));
+      if (unread.length || before.cancelled) {
+        log.error(`Nothing written: ${unread.length ? `couldn't read ${labels(unread)}` : "stopped"} before writing`);
+        return { ok: false, results: [] };
+      }
+      const changed = slots.filter((s) => differs(reference.get(s), now.get(s)));
+      if (changed.length) {
+        throw new NeedsAnswer(`Nothing written; ask the developer: ${labels(changed)} no longer hold${changed.length === 1 ? "s" : ""} what the reference has. ${askTail}`);
+      }
+      log.info(`${slots.length} slot(s) hold what the reference has; writing`);
     }
-    log.info(`${slots.length} slot(s) hold what the reference has; writing`);
     await device.connect();
     const out = await writeSlots(device, plan.items, { skeleton: skeletonBytes(), log, isCancelled });
     if (out.failed.length || out.cancelled) return { ok: false, results: out.results };

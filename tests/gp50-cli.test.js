@@ -182,12 +182,48 @@ test("gp50 runner: a GP-200, damaged or overflowing file stops a restore before 
   assert.equal(writesSent(s.pedal).length, 0);
 });
 
-test("gp50 runner: a patch that isn't in the reference is never overwritten", async (t) => {
+test("gp50 runner: a patch that isn't in the reference: asked before anything is written (exit 2)", async (t) => {
   const s = setup(t);
   s.pedal.names[4] = "My own";
+  s.pedal.names[9] = "Mine too";
+  assert.equal(await s.run("restore", s.zip, "--start", "0", "--out", s.dir, "--reference", s.zip, "--write"), 2);
+  assert.match(s.text(), /Reference check: 100 patch\(es\) read, 98 hold a patch in the reference, 2 don't/);
+  assert.match(s.text(), /Nothing written; ask the developer: patch 4 "My own", patch 9 "Mine too" hold patches that aren't in the reference\. To write anyway, only on the developer's explicit instruction: --skip-reference-check/);
+  assert.match(s.text(), /restore: NEEDS AN ANSWER/);
+  assert.deepEqual(s.pedal.stored, [], "nothing written, not even the patches before 4");
+  assert.equal(writesSent(s.pedal).length, 0);
+});
+
+test("gp50 runner: no reference asks before the port is opened; --skip-reference-check writes anyway, and says so", async (t) => {
+  const s = setup(t);
+  s.pedal.names[4] = "My own";
+  const some = s.file("some.zip", createZip([20, 21, 22].map((n) => ({ name: slotFileName(n, `Fake ${n}`), data: s.reference[n] }))));
+  assert.equal(await s.run("restore", some, "--start", "3", "--out", s.dir, "--write"), 2);
+  assert.match(s.text(), /Nothing written; ask the developer: there's no --reference/);
+  assert.equal(s.opened, 0);
+  for (const [args, why] of [
+    [["restore", some, "--start", "3", "--reference", s.zip, "--skip-reference-check", "--write"], /not both/],
+    [["roundtrip", "--skip-reference-check", "--write"], /is for restore, copy, gp200-restore only/],
+    [["check", "--skip-reference-check"], /is for restore, copy, gp200-restore only/],
+  ]) {
+    assert.equal(await s.run(...args, "--out", s.dir), 1, args.join(" "));
+    assert.match(s.text(), why);
+  }
+  assert.equal(s.opened, 0, "all of them before the port was opened");
+  assert.equal(await s.run("restore", some, "--start", "3", "--out", s.dir, "--skip-reference-check", "--write"), 0, s.text());
+  assert.match(s.text(), /Reference check skipped \(--skip-reference-check\): any patch may be overwritten/);
+  assert.doesNotMatch(s.text(), /Reference check: /, "no reads for the check");
+  assert.deepEqual(s.pedal.stored, [3, 4, 5]);
+  assert.deepEqual(hexAll(contents(s.pedal).slice(3, 6)), hexAll(s.reference.slice(20, 23)), '"My own" overwritten');
+});
+
+test("gp50 runner: a patch changed after the check, during the run, is still never overwritten", async (t) => {
+  const s = setup(t);
+  s.pedal.later = (fn) => { if (s.pedal.stored.length === 2) s.pedal.names[6] = "Saved meanwhile"; setImmediate(fn); };
   assert.equal(await s.run("restore", s.zip, "--start", "0", "--out", s.dir, "--reference", s.zip, "--write"), 1);
-  assert.match(s.text(), /Slot 4 holds "My own"/);
-  assert.deepEqual(s.pedal.stored, [0, 1, 2, 3]);
+  assert.match(s.text(), /Reference check: 100 patch\(es\) read, 100 hold a patch in the reference/);
+  assert.match(s.text(), /Slot 6 holds "Saved meanwhile"/);
+  assert.deepEqual(s.pedal.stored, [0, 1, 2, 3, 4, 5]);
 });
 
 test("gp50 runner: round trips, every step checked over all 100; a write that did nothing fails it", async (t) => {

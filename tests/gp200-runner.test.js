@@ -113,20 +113,37 @@ test("gp200-restore: the planned slots written the app's way, verified, and read
   assert.deepEqual(await names(path.join(s.dir, after)), ["63A_Copy One.prst", "63B_Copy Two.prst"], "in slot-label order");
 });
 
-test("gp200-restore refuses: a slot changed since the reference, a slot not in it, or no --write", async (t) => {
+test("gp200-restore asks (exit 2, nothing written): a slot changed since the reference, a slot not in it, no reference; refuses without --write", async (t) => {
   const s = setup(t);
   assert.equal(await s.run("gp200-backup", "--from", "63-A", "--to", "63-B"), 0, s.text());
   const reference = path.join(s.dir, s.saved(/^gp200_63A_to_63B_.*\.zip$/)[0]);
   const one = s.file("63A_Copy One.prst", patch("Copy One"));
   s.pedal.dumps.set(S63A, dumpWithName("Saved Meanwhile"));
-  assert.equal(await s.run("gp200-restore", one, "--start", "63-A", "--reference", reference, "--write"), 1);
-  assert.match(s.text(), /Nothing written: 63A no longer holds what the reference has/);
-  assert.equal(await s.run("gp200-restore", one, "--start", "63-C", "--reference", reference, "--write"), 1);
-  assert.match(s.text(), /Nothing written: the reference has no patch for 63C/);
+  assert.equal(await s.run("gp200-restore", one, "--start", "63-A", "--reference", reference, "--write"), 2);
+  assert.match(s.text(), /Nothing written; ask the developer: 63A no longer holds what the reference has\. To write anyway, only on the developer's explicit instruction: --skip-reference-check/);
+  assert.match(s.text(), /gp200-restore: NEEDS AN ANSWER/);
+  assert.equal(await s.run("gp200-restore", one, "--start", "63-C", "--reference", reference, "--write"), 2);
+  assert.match(s.text(), /Nothing written; ask the developer: the reference has no patch for 63C/);
   const opened = s.opened.length;
+  assert.equal(await s.run("gp200-restore", one, "--start", "63-A", "--write"), 2);
+  assert.match(s.text(), /Nothing written; ask the developer: there's no --reference/);
   assert.equal(await s.run("gp200-restore", one, "--start", "63-A", "--reference", reference), 1);
   assert.match(s.text(), /"gp200-restore" writes to the pedal; add --write to say so/);
-  assert.equal(s.opened.length, opened, "refused before the pedal was opened");
+  assert.equal(await s.run("gp200-restore", one, "--start", "63-A", "--reference", reference, "--skip-reference-check", "--write"), 1);
+  assert.match(s.text(), /Give --reference or --skip-reference-check, not both/);
+  assert.equal(await s.run("gp200-backup", "--skip-reference-check"), 1);
+  assert.match(s.text(), /--skip-reference-check is for restore, copy, gp200-restore only/);
+  assert.equal(s.opened.length, opened, "the last four before the pedal was opened");
   assert.equal(s.pedal.writes.size, 0, "nothing written in any of them");
   assert.equal(s.pedal.editorMode, false, "never even put in editor mode");
+});
+
+test("gp200-restore --skip-reference-check: written whatever the slot holds, verified and read again; said in the log", async (t) => {
+  const s = setup(t);
+  s.pedal.dumps.set(S63A, dumpWithName("Not Backed Up"));
+  const one = s.file("63A_Copy One.prst", patch("Copy One"));
+  assert.equal(await s.run("gp200-restore", one, "--start", "63-A", "--skip-reference-check", "--write"), 0, s.text());
+  assert.match(s.text(), /Reference check skipped \(--skip-reference-check\): 63A overwritten whatever they hold/);
+  assert.match(s.text(), /End check: all 1 written slot\(s\) read again and match their files/);
+  assert.deepEqual([...s.pedal.writes.keys()], [S63A], "only the planned slot");
 });

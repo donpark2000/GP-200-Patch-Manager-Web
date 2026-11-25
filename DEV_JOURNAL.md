@@ -5640,3 +5640,39 @@ Q15-Q20.
    developer.
 
 Don't purge the folders listed in the 2026-11-24 status entry.
+
+## 2026-11-25: The runner's reference check asks instead of refusing
+
+**Developer:** go ahead with RULES.md row 2 (the check asks, an explicit
+instruction overrides it). **Done,** in both runner write paths
+(`gp50/cli/commands.js` for restore and copy to the GP-50,
+`gp50/cli/gp200.js` for `gp200-restore`; options in `gp50/cli/run.js`):
+- **Asks before anything is written.** The GP-50 runner used to find a
+  patch not in the reference only when it reached it, so a restore stopped
+  partway with the patches before it already written (the old test: 0-3
+  written, stopped at 4). Now every patch to be overwritten is read first;
+  if any isn't in the reference, nothing is written and the log lists them
+  all (`patch 4 "My own", patch 9 "Mine too"`), so one question covers the
+  run. `gp200-restore` already read its slots first; a mismatch or a slot
+  the reference lacks now asks instead of failing. A slot that couldn't be
+  read is still a plain failure (not a question).
+- **Exit code 2** ("NEEDS AN ANSWER") when nothing was written and the
+  developer is to be asked; 1 stays for failures, 0 for passes.
+- **No `--reference`** for restore, copy or `gp200-restore` asks too, found
+  before any port is opened (copy reads the GP-200 only after that).
+- **`--skip-reference-check`** writes without the check, logged as a
+  warning. Claude uses it only on the developer's explicit instruction
+  (CLAUDE.md). Refused with `--reference` too ("not both"), and for check
+  and roundtrip (a round trip's reference is its data).
+- **Kept:** the check during the write (a patch changed after the first
+  read is still never overwritten), and a round trip's own check of all 100
+  before it starts, so a round trip has no extra reads.
+- **Cost:** the first read adds one read per patch to a restore or copy on
+  the GP-50 (the write loop already read each patch once, for its guard;
+  left as it is, per "reliability over speed"). Not timed on the pedal.
+
+**Tests:** 2 changed, 3 new; suite 273 pass. Shown to fail, one at a time:
+the first read finding nothing (1 test), the guard during the write off
+(1), the GP-200 mismatch ignored (1), exit 2 dropped (3), both options
+allowed (2). Not run on either pedal. CLAUDE.md, DESIGN.md (GP-50 writes,
+GP-200) and RULES.md row 2 updated.

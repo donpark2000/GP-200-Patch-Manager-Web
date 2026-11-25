@@ -5,10 +5,10 @@
 //     info                                       firmware, selected patch, names
 //     backup    [--from 0] [--to 99]             one .prst, or a .zip
 //     check     --reference <zip> [--shift n]    read all 100 and compare (read only)
-//     restore   <files> --start n --reference <zip> --write
+//     restore   <files> --start n (--reference <zip> | --skip-reference-check) --write
 //     roundtrip --reference <zip> [--shift 1] [--times 1] --write
 //   Stage 3, copying between the pedals (gp50/convert.js):
-//     copy      --from 1-B --to 12-B --start n --reference <zip> --write
+//     copy      --from 1-B --to 12-B --start n (--reference <zip> | --skip-reference-check) --write
 //               reads those GP-200 patches (reads only), converts them, and
 //               writes them to the GP-50 from patch n
 //     convert   <files or zips> --start <n | 50-B>   no pedal: converts each
@@ -16,14 +16,20 @@
 //   Both save the source and converted patches and a listening sheet (CSV).
 //   The GP-200 (gp200.js; developer, 2026-11-24: the runner may write it):
 //     gp200-backup  [--from 1-A] [--to 64-D]   reads only; a .zip
-//     gp200-restore <files or one zip> --start 63-A --reference <gp200 zip> --write
+//     gp200-restore <files or one zip> --start 63-A (--reference <gp200 zip> | --skip-reference-check) --write
 //               the web app's restore; only slots that still hold what the
 //               reference has are overwritten
 //
-// Only patches whose contents are in the reference zip are overwritten.
+// The reference check (developer, 2026-11-25: it asks instead of refusing):
+// only patches whose contents are in the reference zip are overwritten. With
+// no reference, or a patch to be overwritten that isn't in it, nothing is
+// written and the exit code is 2: Claude asks the developer. On the
+// developer's explicit instruction, --skip-reference-check writes without it
+// (restore, copy, gp200-restore; a round trip needs its reference).
 // The GP-200 is written only by gp200-restore; every other command opens it
 // read-only. Its messages are checked in gp200.js / copy.js and midi_bridge.py.
-// Ctrl+C stops after the patch being written. Exit code 0 only if all passed.
+// Ctrl+C stops after the patch being written. Exit code 0 only if all passed,
+// 2 when nothing was written and the developer is to be asked, else 1.
 
 import { closeSync, existsSync, openSync, readFileSync, statSync, writeFileSync, writeSync } from "node:fs";
 import os from "node:os";
@@ -36,13 +42,14 @@ import { readZip } from "../../src/core/unzip.js";
 import { createZip } from "../../src/core/zip.js";
 import { parseReference } from "../write-steps.js";
 import { Gp50Writer } from "../writer.js";
-import { ANY_PATCH, backup, check, restore, roundTrip, shifted } from "./commands.js";
+import { ANY_PATCH, backup, check, NeedsAnswer, restore, roundTrip, shifted, SKIP_FLAG } from "./commands.js";
 import { convertFiles, readGp200Slots, sheet } from "./copy.js";
 import { ALL_GP200_SLOTS, gp200Backup, gp200Reference, gp200Restore } from "./gp200.js";
 import { connect } from "./winmm.js";
 
 const OPTIONS = Object.fromEntries(["out", "from", "to", "reference", "shift", "start", "times"].map((k) => [k, { type: "string" }]));
 const WRITES = ["restore", "roundtrip", "copy"];
+const SKIPPABLE = ["restore", "copy", "gp200-restore"]; // the reference check can be skipped
 const GP200_COMMANDS = ["gp200-backup", "gp200-restore"];
 const COMMANDS = ["info", "backup", "check", "convert", ...WRITES, ...GP200_COMMANDS];
 export const MAP_FILE = new URL("../effect-map.json", import.meta.url);
@@ -74,12 +81,19 @@ export const loadReference = async (file) => parseReference(await readZip(readFi
 
 /** Everything that can be wrong with the command is found before the port is opened. */
 async function parse(argv) {
-  const { values: v, positionals: [command, ...files] } = parseArgs({ args: argv, allowPositionals: true, options: { ...OPTIONS, write: { type: "boolean" } } });
+  const options = { ...OPTIONS, write: { type: "boolean" }, [SKIP_FLAG.slice(2)]: { type: "boolean" } };
+  const { values: v, positionals: [command, ...files] } = parseArgs({ args: argv, allowPositionals: true, options });
   if (!COMMANDS.includes(command)) throw new Error(`Commands: ${COMMANDS.join(", ")}`);
   if (!v.out || !statSync(v.out, { throwIfNoEntry: false })?.isDirectory()) throw new Error("--out must be an existing folder (the test session's)");
-  if (["check", ...WRITES, "gp200-restore"].includes(command) && !v.reference) throw new Error("--reference <zip> is needed");
+  const skipCheck = v[SKIP_FLAG.slice(2)] === true;
+  if (skipCheck && !SKIPPABLE.includes(command)) throw new Error(`${SKIP_FLAG} is for ${SKIPPABLE.join(", ")} only`);
+  if (skipCheck && v.reference) throw new Error(`Give --reference or ${SKIP_FLAG}, not both`);
+  if (["check", "roundtrip"].includes(command) && !v.reference) throw new Error("--reference <zip> is needed");
   if ([...WRITES, "gp200-restore"].includes(command) && !v.write) throw new Error(`"${command}" writes to the pedal; add --write to say so`);
-  if (GP200_COMMANDS.includes(command)) return parseGp200(command, v, files);
+  if (SKIPPABLE.includes(command) && !v.reference && !skipCheck) {
+    throw new NeedsAnswer(`Nothing written; ask the developer: there's no --reference to check the patches to be overwritten against. To write anyway, only on the developer's explicit instruction: ${SKIP_FLAG}`);
+  }
+  if (GP200_COMMANDS.includes(command)) return { ...(await parseGp200(command, v, files)), skipCheck };
   const shift = number(v.shift, "shift", command === "roundtrip" ? 1 : 0);
   if (shift > 99) throw new Error(`--shift ${shift} is more than 99`);
   // convert's start is a GP-50 patch number or a GP-200 label ("50-B"): which, the files say.
@@ -102,7 +116,7 @@ async function parse(argv) {
   }
   if (command === "convert") read.sort((a, b) => a.name.localeCompare(b.name, "en", { numeric: true }));
   return {
-    command, shift, start, out: v.out, from, to, times: number(v.times, "times", 1),
+    command, shift, start, out: v.out, from, to, times: number(v.times, "times", 1), skipCheck,
     reference: v.reference ? await loadReference(v.reference) : null,
     files: command === "convert" ? read : files.map((name) => ({ name: path.basename(name), data: new Uint8Array(readFileSync(name)) })),
   };
@@ -121,7 +135,7 @@ async function parseGp200(command, v, files) {
   return {
     ...out,
     start: labelToSlot(v.start),
-    reference: gp200Reference(await readZip(new Uint8Array(readFileSync(v.reference)))),
+    reference: v.reference ? gp200Reference(await readZip(new Uint8Array(readFileSync(v.reference)))) : null,
     files: files.map((name) => ({ name: path.basename(name), data: new Uint8Array(readFileSync(name)) })),
   };
 }
@@ -132,7 +146,7 @@ async function runGp200(a, { open, log, isCancelled, timing }) {
   const connection = await open(log, { pedal: "gp200", gp200Writes: writes });
   try {
     const opts = { log, isCancelled, timeoutMs: timing.gp200TimeoutMs, ...(timing.gp200Write ? { timing: timing.gp200Write } : {}) };
-    if (writes) return (await gp200Restore(connection, a.files, a.start, a.reference, opts)).ok;
+    if (writes) return (await gp200Restore(connection, a.files, a.start, a.reference, { ...opts, skipCheck: a.skipCheck })).ok;
     const slots = Array.from({ length: a.to - a.from + 1 }, (_, i) => a.from + i);
     const r = await gp200Backup(connection, slots, opts);
     const all = slots.length === ALL_GP200_SLOTS.length;
@@ -231,9 +245,12 @@ export async function main(argv, { open = connect, print = console.log, timing =
     log[ok ? "info" : "error"](`${a.command}: ${ok ? "PASSED" : "FAILED"}`);
     return ok ? 0 : 1;
   } catch (err) {
-    if (log) log.error(err.message);
-    else print(err.message);
-    return 1;
+    const ask = err instanceof NeedsAnswer;
+    const text = ask ? `${err.message}
+${argv[0] ?? "runner"}: NEEDS AN ANSWER` : err.message;
+    if (log) log.error(text);
+    else print(text);
+    return ask ? 2 : 1;
   } finally {
     writer?.close();
     await connection?.close();
@@ -241,7 +258,7 @@ export async function main(argv, { open = connect, print = console.log, timing =
   }
 }
 
-async function run({ command, files, reference, from, to, shift, start, times, out }, writer, opts) {
+async function run({ command, files, reference, from, to, shift, start, times, out, skipCheck }, writer, opts) {
   const { log } = opts;
   if (command === "info") {
     (await writer.readNames()).forEach((n, i) => log.info(`  ${String(i).padStart(2, "0")} ${n}`));
@@ -261,7 +278,7 @@ async function run({ command, files, reference, from, to, shift, start, times, o
   if (command === "check") {
     return (await check(writer, shifted(reference, shift), shift ? `the reference moved by ${shift}` : "the reference", opts)).pass;
   }
-  if (command === "restore" || command === "copy") return (await restore(writer, files, start, reference, opts)).ok;
+  if (command === "restore" || command === "copy") return (await restore(writer, files, start, reference, { ...opts, skipCheck })).ok;
   let ok = true;
   for (let i = 1; ok && i <= times; i++) {
     log.info(`Round trip ${i} of ${times}`);
