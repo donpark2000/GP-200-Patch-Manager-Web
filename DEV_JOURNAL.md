@@ -5477,7 +5477,7 @@ holds for patch writes (a reset puts patches back); firmware, global settings
 and unknown commands stay off limits, since they're what could make a reset
 or re-flash necessary, or not enough. A backup before each run still costs
 under a minute. CLAUDE.md's write rules are unchanged until the developer
-says which to relax.
+says which to relax (they did, below).
 
 **Asked for:** every mapping heuristic in one document. Done:
 `gp50/CONVERSION_RULES.md` (written by hand, linked from DESIGN.md "Both
@@ -5494,3 +5494,23 @@ synced times worked out from the tempo, lost tone controls rebuilt in a free
 EQ, a second place for the loser of a shared module, the GP-200 volume
 module folded into patch volume, EXP both ways, and the GP-50 fields taken
 but not confirmed. No pedal writes.
+
+## 2026-11-25: Write rules loosened; a usage check before each write run
+
+**Developer's worry:** a 5-hour or weekly usage limit could cut Claude off
+partway through a write run. A test of a cut on the GP-200 (it has never been
+tested; the GP-50 keeps a half-sent patch's old contents, 2026-11-22) was
+"a lot of overhead". **Chosen instead:** Claude checks usage (`get_usage`,
+which reports both limits and when they reset) before every write run, and
+defers the run if either limit is over 85% used. Runs take under a minute,
+so headroom at the start covers them. At the time of asking, weekly was 92%
+used (resets 2026-11-25 07:00 UTC), 5-hour 4%.
+
+**CLAUDE.md** (developer: "Yes, do both"): the runner may write patches to
+any slot on either pedal without asking first (the GP-200 still only through
+`gp200-restore`). Each run: usage check, backup of that pedal, report of the
+patches changed. Never firmware, global settings or unknown commands. The
+GP-50 write budget and the GP-200 limits (planned patches only, 1-A to 50-A
+off limits) are gone. The web app's own rules are unchanged (writes only
+from Restore and Template, after confirmation). DESIGN.md "Working rules"
+updated to match.

@@ -48,24 +48,29 @@ this is the short version:
 - Plain JavaScript ES modules, no build step.
 - Nothing loaded from other sites. The one thing sent: the anonymous
   usage counts (DESIGN.md "Stats").
-- Never write to the pedal outside the phase 2 restore feature and the
-  Template screen (developer, 2026-10-02), and never without the user's
-  confirmation in the app. One exception: the
-  developer-only write-timing test (`test.html?dev`, `src/core/tuning.js`), which
-  may write only to the scratch slots 64A-64D, also after confirmation.
-  A second exception (developer, 2026-11-22; replaces the one for slots
-  55-99 only): while stages 1-3 of the plan in DESIGN.md "Both pedals" run,
-  Claude's command-line test runner may write patches to any GP-50 slot
-  without confirmation in the app, within that section's rules. The GP-50
-  write page (`gp50/write.html`, unpublished) stays at slots 55-99, after
-  confirmation in the app. A third (developer, 2026-11-24: "remove the
-  block, safely"): in the same stages, the runner may write GP-200 patches
-  too, only with `gp200-restore` (the web app's restore, gated: planned
-  slots only, each still holding what a fresh reference backup has, and
-  read again at the end). Take a full GP-200 backup first, tell the
-  developer which GP-200 slots will change, and never touch their own
-  patches (1-A to 50-A) unless they name them. No firmware, global
-  settings or other GP-200 commands.
+- **The web app** never writes to the pedal outside the phase 2 restore
+  feature and the Template screen (developer, 2026-10-02), and never
+  without the user's confirmation in the app. The developer-only
+  write-timing test (`test.html?dev`, `src/core/tuning.js`) writes only to
+  the scratch slots 64A-64D, also after confirmation. The GP-50 write page
+  (`gp50/write.html`, unpublished) stays at slots 55-99, after
+  confirmation in the app.
+- **Claude's command-line runner** (developer, 2026-11-25: no patch on
+  either pedal is precious; everything worth keeping is backed up, and a
+  factory reset is acceptable) may write patches to any slot on either
+  pedal without asking first: the GP-50 with the runner's writes, the
+  GP-200 only with `gp200-restore` (the web app's restore, gated). Each
+  write run:
+  1. **Check usage first** (`get_usage`). If the 5-hour or weekly limit
+     is over 85% used, don't start: tell the developer when it resets and
+     do other work meanwhile. A run cut off partway through is the one risk
+     to avoid (the GP-50 keeps a half-sent patch's old contents; the GP-200
+     is untested).
+  2. **Back up that pedal first** (`gp200-backup`, or the GP-50 backup)
+     into the session folder.
+  3. **Report afterwards** which patches changed.
+  Patch writes only: never firmware, global settings or unknown commands,
+  on either pedal.
 
 ## Files: repo vs. test output vs. backups
 
