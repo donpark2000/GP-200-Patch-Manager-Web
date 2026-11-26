@@ -5995,8 +5995,8 @@ lower Gain.
 
 **The pattern so far** (three of four heard changes, all on close
 matches, all a gain set too high on B): Boost Gain 100 -> 20, SUPDual OD
-Gain 2 50 -> 0-10, Super OD Gain 30 -> 20. One possible general rule,
-for the end of the listening (Claude, not proposed yet): scaling a
-carried Gain by the two effects' defaults (target default / source
-default) gives 30 x 40/50 = 24 here (Swarm's default 40, Super OD's 50), but
-for Saturate (default 50) -> Boost (default 20) 100 x 20/50 = 40, not 20.
+Gain 2 50 -> 0-10, Super OD Gain 30 -> 20. Scaling a carried Gain by the two
+effects' defaults (target default / source default) doesn't explain it:
+30 x 50/40 = 37.5 here (Swarm's default 40, Super OD's 50), higher, not
+lower; 100 x 20/50 = 40 for Saturate -> Boost, not 20. A general rule is
+for the end of the listening.
