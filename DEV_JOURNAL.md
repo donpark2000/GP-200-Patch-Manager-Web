@@ -5997,6 +5997,6 @@ lower Gain.
 matches, all a gain set too high on B): Boost Gain 100 -> 20, SUPDual OD
 Gain 2 50 -> 0-10, Super OD Gain 30 -> 20. One possible general rule,
 for the end of the listening (Claude, not proposed yet): scaling a
-carried Gain by the two effects' defaults gives 30 x 50/40 the other
-way, i.e. 30 x 40/50 = 24 here (Swarm's default 40, Super OD's 50), but
+carried Gain by the two effects' defaults (target default / source
+default) gives 30 x 40/50 = 24 here (Swarm's default 40, Super OD's 50), but
 for Saturate (default 50) -> Boost (default 20) 100 x 20/50 = 40, not 20.
