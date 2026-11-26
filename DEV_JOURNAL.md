@@ -5928,7 +5928,8 @@ left out (1), stand-ins counted on (1).
   round-trip reports (`21-53-17` / `21-53-18`: 6 files) to
   `round-trip reports\`. Top level now: the zip and its sheet. Moved, not
   deleted; the file names in the entries above are unchanged.
-- **To decide (not changed):** the tools' file names. They put a UTC time
-  at the end (`gp200_ab_pairs_2026-11-25T21-53-18.zip`). Local time, and
-  the distinguishing part shorter and nearer the front, would help; it
-  changes names the tools use now, so it waits for the developer's say.
+- **The tools' file names: UTC stays** (developer: "UTC is fine. It sorts
+  well. So does sort by date modified. Having 'significant differentiators'
+  at the front of a file name might help."). No change to the tools now.
+  When a tool gets a new kind of output, or two outputs must sit side by
+  side, Claude proposes a name with what tells them apart at the front.
