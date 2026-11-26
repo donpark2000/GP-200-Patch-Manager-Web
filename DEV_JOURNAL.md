@@ -5933,3 +5933,42 @@ left out (1), stand-ins counted on (1).
   at the front of a file name might help."). No change to the tools now.
   When a tool gets a new kind of output, or two outputs must sit side by
   side, Claude proposes a name with what tells them apart at the front.
+
+## 2026-11-26: A/B listening, pairs 1-2; two candidate changes, held
+
+The developer is listening to the A/B pairs (`gp200_ab_pairs_2026-11-25T21-53-18.zip`,
+51-A to 55-B on the GP-200) one pair at a time, tweaking B on the pedal.
+
+- **Pair 1, 51-A/51-B Pop Bass (check pair):** "seemed fine".
+- **Pair 2, 51-C/51-D Radio Cat:** CTRL kept; amp and cab choices good;
+  patch level the same, but **B much louder**. With amp, cab, PRE and EQ
+  switched off on both, still hard to get the same sound (still on and
+  different then, Claude's reading: A's Detune in MOD, lost in B; the
+  Slapback synced in A, 150 ms in B, Q15). The developer's tweaks on B:
+  - **PRE:** A has Saturate (Saturation 100, Mix 50, Volume 50). B has
+    Boost at Gain 100, +3dB on, Bright on (Saturation paired to Gain by
+    Claude, by hand; Mix and Volume dropped; +3dB and Bright at the
+    Boost's defaults). **Boost at Gain 20 (its default) is much closer**
+    than at 100.
+  - **AMP:** SUPDual CL -> SUPDual OD fills Gain 2 (the second channel,
+    which CL lacks) at its default, 50. **Gain 2 at 0 to 10 is closer.**
+- Claude's reading of the dump (`readGp200` on both, scratch script):
+  other differences that could add level, not yet heard on their own: the
+  cab's Low Cut 150 / High Cut 5000 dropped, Hyper EQ's -12 dB at 31 and
+  63 Hz dropped. Saturate is in 4 backup patches (3-C, 4-C, 8-B, 14-A).
+
+**Candidate changes, not made** (developer: track both, but go through
+the other pairs first before changing the approach; more may turn up
+that points to a general rule):
+1. Saturate -> Boost: don't carry Saturation into Gain; Gain at 20.
+2. SUPDual CL -> SUPDual OD: Gain 2 at 0, not its default 50.
+
+A possible general pattern to watch for in the other pairs (Claude, not
+a rule): both came from a control filled in or paired on a close match
+that adds gain or level (a second channel, a boost's gain, +3dB). The
+target's default may be the wrong fill for such a control; the setting
+that adds least may be better.
+
+**Developer's aim for the rules:** "good enough" rules that apply to any
+patch, including custom patches made in future, not a hundred
+patch-specific rules; a conversion is never expected to be perfect.
