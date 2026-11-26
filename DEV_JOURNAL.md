@@ -6020,3 +6020,77 @@ same, not checked). B carried 1/4, and the developer slowed it to 1/2D
 (three times as long). Candidate 4 is then: A-Chorus at Depth 20 and a
 slower Rate than the M-Chorus's. Both tweaks make the single chorus
 gentler, the same direction as the gain findings.
+
+## 2026-11-26: A new approach: one module, one effect at a time (developer)
+
+**Developer:** pause the whole-patch pairs; each pair changes many things
+at once. Instead, go module by module (amps, then cabs, MOD, PRE and so
+on) through every GP-200 effect the GP-50 lacks, and find by ear the
+closest GP-50 effect, using effects both pedals have. Not ranked by the
+backup (it is mostly Valeton's sample patches, not what people design).
+Done once, for safer, more predictable results; firmware updates that
+add effects are rare (and `tools/make-effect-map.js`'s staleness test
+would show them). **No text review of the candidates** ("hearing is
+believing"): if nothing is close, try other candidates; where a found
+match needs a gain, EQ or volume tweak, extrapolate a ratio for the
+mapping. Not perfect, a really good starting point.
+
+**Agreed format** (Claude's proposal, the developer's yes): one bank per
+GP-200 effect. A = the GP-200 effect; B, C, D = three GP-50 alternatives
+at the same settings (the current pick and two others of the same kind),
+all of which the GP-200 also has, so the test runs on the GP-200 alone.
+A neutral chain: the module under test, plus what it needs to be heard
+(for amps, one cab; a bass cab for bass amps), everything else off. The
+developer picks the closest, tweaks it, and reports its settings. At each
+effect's defaults first; a second setting only where the tweak is large.
+Batches of about 10, loaded with the web app's Restore.
+
+**Size** (from `gp50/effect-map.json`, GP-200 effects whose GP-50 copy is
+another effect): CAB 49, AMP 39, DST 18, PRE 14 (plus 5 stand-ins), DLY
+13, MOD 12, RVB 8, WAH 4, NR 2, EQ 1; about 160. Another 34 keep the
+effect and lose only a setting (21 cabs' cut filters, 8 delays, mostly
+sync, 5 reverbs): a separate question, later.
+
+The four pairs not heard (Mad Bass, Summer Bass, Marcelo Roascio2,
+Clean) are kept for the end: rebuilt with the new rules, they become the
+check that the module rules add up to close patches. Candidates 1-4
+(above) stand until their module's turn.
+
+## 2026-11-26: Status (start here next session)
+
+Supersedes the status entries above. Topic: **A/B listening; the
+module-by-module sound tests planned.**
+
+**Why this work:** copying patches between the pedals works, but by ear
+several close matches came out too strong on the copy (gain, chorus
+depth). Testing one effect at a time, by ear, gives general mapping
+rules that hold for any patch, including ones made in future (the
+developer's standing rule, 2026-11-26, CLAUDE.md and RULES.md).
+
+**Rules changed this session:** conversion rules are general and "good
+enough" for any patch, no patch-specific rules; listening findings are
+held as candidates until a general rule shows (developer).
+
+**Known:** suite 284 pass (not rerun; no code changed this session).
+Branch `gp50-experiments`, pushed, not merged; live site unchanged at
+`58c0117`. No pedal writes by Claude. The developer heard pairs 1-5 of 9
+(entries above); candidates 1-4 held: Saturate -> Boost Gain 20;
+SUPDual CL -> OD Gain 2 at 0; Swarm -> Super OD lower Gain (30 -> 20);
+M-Chorus -> A-Chorus Depth 20 and a slower Rate. Synced value 4 = 1/4
+(M-Chorus). Open: Q11, Q13-Q22.
+
+**Next:**
+1. Build a tool for the module test banks (no pedal; tests; the zip as
+   Restore reads it, checked as for the A/B pairs): for each GP-200
+   effect in a module whose GP-50 copy is another effect, a bank of A +
+   three GP-50 alternatives the GP-200 also has, in a neutral chain.
+   Pick the alternatives by kind (maker, gain level, layout); the current
+   map pick is always one of them.
+2. Amps first: 39, in batches of about 10, into a session folder
+   (`GP-200-testing\2026-11-26_amp-tests\` or the day's date). Tell the
+   developer which patches the Restore will overwrite.
+3. Record each verdict and tweak; once a module is done, propose its
+   rules (ratios where tweaks repeat), then on to cabs, MOD, PRE.
+
+Don't purge `GP-200-testing\2026-11-25_round-trip` (the four pairs kept
+for the end) or the folders listed in the 2026-11-24 status entry.
