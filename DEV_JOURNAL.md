@@ -5972,3 +5972,8 @@ that adds least may be better.
 **Developer's aim for the rules:** "good enough" rules that apply to any
 patch, including custom patches made in future, not a hundred
 patch-specific rules; a conversion is never expected to be perfect.
+
+**Recorded as a standing rule** (developer: "Yes, record it"): conversion
+rules are general and good enough for any patch; no patch-specific rules;
+listening findings are held as candidates until a general rule shows.
+In CLAUDE.md (project rules) and RULES.md section 2.

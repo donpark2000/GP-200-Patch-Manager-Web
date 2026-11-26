@@ -86,6 +86,11 @@ this is the short version:
   the runner stops before writing anything and exits with 2, listing
   what to ask; Claude adds `--skip-reference-check` only on the
   developer's explicit instruction (RULES.md row 2).
+- **Conversion rules are general and "good enough"** (developer,
+  2026-11-26): a mapping rule must apply to any patch, including custom
+  patches made in future, not fix one patch. No patch-specific rules; a
+  conversion is never expected to be perfect. Findings from listening
+  are held as candidates until enough are in to see a general rule.
 - **Revisit rules when a milestone passes** (developer, 2026-11-25),
   using RULES.md.
   Patch writes only, never firmware, global settings or unknown commands

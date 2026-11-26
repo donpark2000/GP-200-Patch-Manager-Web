@@ -47,6 +47,7 @@ of a stage), not only when one gets in the way.
 | No backup before a run; ask first if one seems worth it | Developer, 2026-11-25 |
 | Patch writes only: never firmware, global settings or unknown commands | Claude, agreed: part of the stage plan, developer "yes to the plan" (2026-11-22) |
 | Rules come from the developer; each says who set it | Developer, 2026-11-25 |
+| Conversion rules are general and "good enough", for any patch (custom ones in future too); no patch-specific rules; listening findings held as candidates until a general rule shows | Developer, 2026-11-26 |
 | Files: code in the repo, backups in `GP-200\Backups`, test output in dated session folders | Not traced (2026-10-01) |
 | Instructions start with `cd` into the session folder and give tools by full path | Not traced |
 | Purge a session folder only once recorded, with a yes, to the Recycle Bin | Not traced |
