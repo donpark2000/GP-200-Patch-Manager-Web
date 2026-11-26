@@ -497,6 +497,16 @@ unmappables still open: `gp50/CONVERSION_RULES.md`.
   listed as unexplained; a second trip must change nothing. For a GP-200
   backup, `--pairs` makes A/B pairs (A unchanged, B through the GP-50
   format) for listening on the GP-200 alone.
+- **Module sound tests** (`tools/sound-tests.js`, `gp50/sound-tests.js`;
+  journal 2026-11-26): for each GP-200 effect whose GP-50 copy is another
+  effect, a bank on the GP-200 alone: A the effect at its defaults, B the
+  map's pick, C and D other GP-50 effects the GP-200 also has, each at what
+  a copy would carry from A, through one neutral amp and cab, everything
+  else off. The alternatives and chains are judgments, apart in
+  `gp50/sound-test-choices.json`; a test fails when an effect is in neither
+  its tests nor its "not tested" list. A zip per module from a start patch
+  (32-A) to 64-D, split where it doesn't fit, each checked as Restore reads
+  it.
 - **Copying from the command line** (`gp50/cli/run.js copy`): GP-200
   patches are read with reads only (the bridge and `copy.js` refuse anything
   else), converted, and written to the GP-50; `convert` makes files for the

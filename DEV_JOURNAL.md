@@ -77,6 +77,12 @@ This journal records only what's new or different for the browser.
   momentary. To settle: the developer compares CTRL 1 and 2's settings in
   Valeton Suite on patch 00 (6 6) and patch 03 (6 5); then carry them, or
   set them from the GP-200 if it has the same setting.
+- **Q23. Hyper EQ's bands on the GP-50.** (2026-11-26, sound tests.) The
+  GP-200's 10-band Hyper EQ goes to the GP-50's Guitar EQ 1 (5 bands), but
+  no band shares a name, so every band is dropped and the copy is flat.
+  Carrying each band to the nearest of the target's (and EQs the other way)
+  would need a rule; not a pick by ear (flat at the defaults, all EQs sound
+  alike). For the developer: worth a rule? Related to Q16.
 - **Q20. GP-50 fields taken, not confirmed.** (2026-11-25.) Which 3001 on/off
   bit is which module (taken in module order; CTRL's are, and listening hasn't
   contradicted it), 2001 patch volume, 2002 tempo; and whether the two pedals'
@@ -6094,3 +6100,119 @@ M-Chorus -> A-Chorus Depth 20 and a slower Rate. Synced value 4 = 1/4
 
 Don't purge `GP-200-testing\2026-11-25_round-trip` (the four pairs kept
 for the end) or the folders listed in the 2026-11-24 status entry.
+
+## 2026-11-26: Module sound tests built: 12 zips, 162 tests
+
+**Developer** (before leaving for the day): put all the zips in one new
+folder; make every module's tests now, to go through one by one tomorrow;
+load at 32-A and above (the user patches start there), splitting a module
+that doesn't fit; the next module may overwrite the last one's patches. No
+backup wanted (everything worth keeping was backed up before the project;
+a factory reset or re-flash is acceptable). The pedal can be off: nothing
+here touches it.
+
+**Built:**
+- `gp50/sound-tests.js` (no DOM): resolves the choices against the map,
+  builds each bank, splits, writes the sheet and read-me, and checks.
+  `tools/sound-tests.js --out <folder> [--start 32-A]` writes the files and
+  a log (Node, OS, every bank, every check), exit 0 / 1 / 2.
+- `gp50/sound-test-choices.json`: Claude's judgments, kept apart as for the
+  effect map: the alternatives per effect (by kind: maker, gain level,
+  speaker layout, sort of effect), the neutral chains, and what isn't
+  tested and why. Named as Valeton's files name them; the tool refuses a
+  name that isn't there, an effect tested twice, the pick listed again, an
+  alternative the GP-200 lacks, more than three.
+- **What a bank holds:** A = the GP-200 effect at its defaults. B = the
+  map's current pick, C and D = others, each at what a copy carries: A's
+  settings through the map's entry for the pick (its hand pairings, e.g.
+  Saturation -> Gain), by control name for the others (DESIGN.md), then
+  back on the GP-200 by the map's GP-50 -> GP-200 entry. Fewer than three:
+  the empty patch ("It's GP-200"). Patch names start with the letter.
+- **Neutral chains** (Claude's, in the choices file): clean = Dark Twin +
+  Dark Twin 2x12; crunch = UK 800 + UK GRN 4x12; high = Mess DualV + Mess
+  4x12; bass = Classic Bass + AMPG 4x10; acoustic = AC Pre1 + AC. The
+  tested amp or cab takes the chain's place; everything else off but the
+  volume pedal (the empty patch's, on at 100, EXP 1 on it, EXP 2 on the wah).
+  Amps and cabs get the chain of their kind (one per bank); drives, MOD,
+  DLY, RVB, PRE, WAH the clean one (bass drives the bass one); gates the
+  high-gain one, so the gate has noise to cut. An effect sits in the
+  test's module where it can (a PRE/DST boost in DST), else its own
+  (Ring Echo in DLY for Ring Mod).
+
+**Tests:** `tests/sound-tests.test.js`, 11; suite 295 pass. The checks
+shown to fail: two files swapped in a zip, a module on that should be off,
+the zip restored from the wrong start, B's settings changed by one (against
+the real converter), an effect left out of the choices (the tool exits 1),
+a name not in the map (exits 2), and ten kinds of bad choices. The cut
+filter fix (below) was seen failing in the sheet first.
+
+**Made** (folder `GP-200-testing\2026-11-26_module-tests`): `00_READ ME.txt`,
+then `01_AMP-1` (20 tests) and `02_AMP-2` (19), `03_CAB-1` (25) and
+`04_CAB-2` (24), `05_MOD` (12), `06_PRE` (7), `07_DST` (25, the PRE/DST
+boosts and overdrives with the drives), `08_DLY` (13), `09_RVB` (8),
+`10_WAH` (4), `11_NR` (2), `12_SPECIAL` (3, optional): a .zip and a .csv
+sheet each. Tool: "12 zips, 162 tests; checked 648 files, 6886 modules as
+Restore reads them from 32A; 0 problem(s). PASSED". Each zip: ordered by
+slot label, every file to the slot its name gives, no warning, every patch
+the one built, only the tested module differs within a bank. Every B is
+what the real converter makes of A, but the four wahs: the converter leaves
+an EXP-worked wah out (as designed); the test keeps it on, so it can be
+heard.
+
+**Claude's calls, for the developer to know:**
+1. B is always the map's pick; the sheet says so (not a blind test).
+2. Three picks can't be heard on the GP-200 (its effect at that code is
+   another, or none): Rev Echo (DLY), Plate and Sweet Space (RVB). Their
+   banks have three other alternatives; the GP-50's own needs the GP-50.
+3. Not tested: Hyper EQ (flat at its defaults, and no band shares a name
+   with a GP-50 EQ: it needs a band rule, Q23) and three stand-ins with
+   nothing to try (Auto Swell, Hold, Freeze). The other three stand-ins
+   (Step Filter, Ring Mod, Bit Smash) are in the optional SPECIAL zip.
+4. Bass cabs (9) have one bass cab to try (AMPG 4x10); the others are
+   Bellman 2x12 (the Bassman's 2x10) and Mess 4x12. Acoustic cabs (7): the
+   GP-50's one acoustic cab, AC, and two flat guitar cabs (J-120, TWD CP).
+   Wahs (4) and gates (2): one each to try.
+5. Foxy 15TB: Valeton's description says a Vox AC-100 bass amp, which is
+   why the map picked Foxy Bass; its controls (Gain, Tone Cut, Volume,
+   Bass, Treble) and name read as an AC15 top boost, so it plays through
+   the clean guitar chain, against Foxy 30TB and 30N.
+6. A cab's cut filters at their off ends aren't listed as lost on the
+   sheet (decision 4); the first run listed them in every cab row.
+
+**For the developer, to listen:** in the web app, Restore, one zip at a
+time, start at 32-A. Fill in the sheet: closest (B / C / D / none), the
+tweak that made it closer. No pedal writes by Claude.
+
+## 2026-11-26: Status (start here next session)
+
+Supersedes the status entries above. Topic: **module sound tests built**.
+
+**Why this work:** copying patches between the pedals works, but by ear
+several close matches came out too strong on the copy (gain, chorus
+depth). Testing one effect at a time, by ear, gives general mapping rules
+that hold for any patch, including ones made in future (the developer's
+standing rule, 2026-11-26).
+
+**Rules changed this session:** none (the developer's loading range for
+the tests, 32-A and above, is a choice for these tests, recorded in the
+entry above).
+
+**Known:** suite 295 pass. Branch `gp50-experiments`, pushed, not merged;
+live site unchanged at `58c0117`. No pedal writes by Claude. The tests are
+in `GP-200-testing\2026-11-26_module-tests` (entry above). Candidates 1-4
+(2026-11-26, A/B pairs) still held for their modules. Open: Q11, Q13-Q23.
+
+**Next:**
+1. The developer listens, zip by zip, from `01_AMP-1`, and fills in the
+   sheets.
+2. Claude reads each finished sheet into the journal (verdicts and tweaks
+   as evidence), and once a module is done proposes its rules: a new pick
+   where another is closer; a ratio where tweaks repeat (as the gain
+   findings so far: Boost 100 -> 20, SUPDual OD Gain 2 50 -> 0-10, Super
+   OD 30 -> 20).
+3. Then: the 34 effects that keep the effect and lose a setting; Q23; the
+   four held A/B pairs, rebuilt, as the end check.
+
+Don't purge `GP-200-testing\2026-11-26_module-tests`,
+`GP-200-testing\2026-11-25_round-trip` (the four pairs kept for the end) or
+the folders listed in the 2026-11-24 status entry.

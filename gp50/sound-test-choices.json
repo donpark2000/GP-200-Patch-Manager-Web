@@ -1,0 +1,231 @@
+{
+  "about": "The module-by-module sound tests (journal 2026-11-26, \"A new approach: one module, one effect at a time\"). For each GP-200 effect whose GP-50 copy is another effect: the GP-50 effects to hear it against, on the GP-200 alone. Used by tools/sound-tests.js. Effects are named as Valeton's files name them: the tested effect by its GP-200 name, the alternatives and the chain by their GP-50 names (each must be an effect the GP-200 also has, at the same code). The map's current pick is added by the tool as B (unless it is a stand-in, or the GP-200 lacks it); \"alts\" are the others, picked by Claude by kind (maker, gain, speaker layout, sort of effect), up to 3 in all. \"chain\" names the neutral chain the test plays through: the tested module replaces that chain's module of the same name, everything else off. \"notTested\": effects left out of the listening, with the reason.",
+  "chains": {
+    "clean": { "AMP": "Dark Twin", "CAB": "Dark Twin 2x12" },
+    "crunch": { "AMP": "UK 800", "CAB": "UK GRN 4x12" },
+    "high": { "AMP": "Mess DualV", "CAB": "Mess 4x12" },
+    "bass": { "AMP": "Classic Bass", "CAB": "AMPG 4x10" },
+    "acoustic": { "AMP": "AC Pre1", "CAB": "AC" }
+  },
+  "tests": [
+    {
+      "module": "AMP",
+      "effects": [
+        { "name": "Dark DLX", "chain": "clean", "alts": ["Tweedy", "Bellman 59N"] },
+        { "name": "Dark Vibra", "chain": "clean", "alts": ["Bellman 59N", "L-Star CL"] },
+        { "name": "Silver Twin", "chain": "clean", "alts": ["J-120 CL", "L-Star CL"] },
+        { "name": "SUPDual CL", "chain": "clean", "alts": ["Tweedy", "Foxy 30N"] },
+        { "name": "Foxy 15TB", "chain": "clean", "alts": ["Foxy 30TB", "Foxy 30N"] },
+        { "name": "BogSV CL", "chain": "clean", "alts": ["L-Star CL", "Dark Twin"] },
+        { "name": "Z38 CL", "chain": "clean", "alts": ["Z38 OD", "Match CL"] },
+        { "name": "Knights CL", "chain": "clean", "alts": ["Match CL", "Bellman 59N"] },
+        { "name": "Knights CL+", "chain": "clean", "alts": ["Match CL", "Bellman 59B"] },
+        { "name": "Bad-KT CL", "chain": "clean", "alts": ["Bad-KT OD", "Foxy 30N"] },
+        { "name": "Solo100 CL", "chain": "clean", "alts": ["Solo100 OD", "L-Star CL"] },
+        { "name": "UK 45+", "chain": "crunch", "alts": ["UK 50JP", "Bellman 59B"] },
+        { "name": "UK 45JP", "chain": "crunch", "alts": ["UK 50JP", "Bellman 59B"] },
+        { "name": "UK 50", "chain": "crunch", "alts": ["UK 45", "UK 800"] },
+        { "name": "UK 50+", "chain": "crunch", "alts": ["UK 800", "UK 45"] },
+        { "name": "UK SLP", "chain": "crunch", "alts": ["UK 800", "UK 45"] },
+        { "name": "Match OD", "chain": "crunch", "alts": ["Bad-KT OD", "Z38 OD"] },
+        { "name": "Knights OD", "chain": "crunch", "alts": ["UK 800", "Bad-KT OD"] },
+        { "name": "Juice30 OD", "chain": "crunch", "alts": ["UK 800", "Bad-KT OD"] },
+        { "name": "BogSV OD", "chain": "crunch", "alts": ["Flagman+", "Solo100 OD"] },
+        { "name": "L-Star OD", "chain": "crunch", "alts": ["Mess DualV", "Solo100 OD"] },
+        { "name": "UK 900", "chain": "crunch", "alts": ["Flagman+", "UK 50JP"] },
+        { "name": "Flagman 1", "chain": "crunch", "alts": ["UK 800", "Solo100 OD"] },
+        { "name": "Flagman 2", "chain": "crunch", "alts": ["UK 800", "Solo100 OD"] },
+        { "name": "Flagman+ 2", "chain": "high", "alts": ["UK 800", "Solo100 LD"] },
+        { "name": "Bog BlueV", "chain": "high", "alts": ["Flagman+", "Solo100 OD"] },
+        { "name": "Bog BlueM", "chain": "high", "alts": ["Solo100 LD", "Flagman+"] },
+        { "name": "Bog RedM", "chain": "high", "alts": ["Mess DualM", "Eagle 120"] },
+        { "name": "Mess2C+ 1", "chain": "high", "alts": ["Mess DualM", "Solo100 LD"] },
+        { "name": "Mess2C+ 2", "chain": "high", "alts": ["Mess DualM", "Solo100 LD"] },
+        { "name": "Mess2C+ 3", "chain": "high", "alts": ["Mess DualM", "Solo100 LD"] },
+        { "name": "Mess4 LD", "chain": "high", "alts": ["Mess DualM", "Solo100 LD"] },
+        { "name": "Mess4 LD 2", "chain": "high", "alts": ["Mess DualM", "Solo100 LD"] },
+        { "name": "Mess4 LD 3", "chain": "high", "alts": ["Mess DualM", "Solo100 LD"] },
+        { "name": "Eagle 120+", "chain": "high", "alts": ["Power LD", "Dizz VH"] },
+        { "name": "Dizz VH S", "chain": "high", "alts": ["Dizz VH+", "Eagle 120"] },
+        { "name": "Dizz VH+ S", "chain": "high", "alts": ["Dizz VH", "Power LD"] },
+        { "name": "Mini Bass", "chain": "bass", "alts": ["Mess Bass", "Foxy Bass"] },
+        { "name": "Bass Pre", "chain": "bass", "alts": ["Mess Bass", "Foxy Bass"] }
+      ]
+    },
+    {
+      "module": "CAB",
+      "effects": [
+        { "name": "SUP ZEP", "chain": "clean", "alts": ["Dark VIT 1x12", "Foxy 1x12"] },
+        { "name": "TWD PRC", "chain": "clean", "alts": ["TWD CP 1x8", "L-Star 1x12"] },
+        { "name": "TWD LUX", "chain": "clean", "alts": ["TWD CP 1x8", "Bellman 2x12"] },
+        { "name": "DARK LUX", "chain": "clean", "alts": ["Dark Twin 2x12", "L-Star 1x12"] },
+        { "name": "ROUT", "chain": "clean", "alts": ["Foxy 1x12", "L-Star 1x12"] },
+        { "name": "TOM OPEN", "chain": "clean", "alts": ["Foxy 1x12", "L-Star 1x12"] },
+        { "name": "US STO", "chain": "clean", "alts": ["Dark VIT 1x12", "Foxy 1x12"] },
+        { "name": "ACE", "chain": "clean", "alts": ["L-Star 1x12", "Dark VIT 1x12"] },
+        { "name": "BogSV", "chain": "clean", "alts": ["Foxy 1x12", "Bog 4x12"] },
+        { "name": "Bad-KT", "chain": "clean", "alts": ["Foxy 2x12", "L-Star 1x12"] },
+        { "name": "UK G12", "chain": "crunch", "alts": ["UK GRN 4x12", "Foxy 1x12"] },
+        { "name": "Match", "chain": "clean", "alts": ["SUP Star 2x12", "UK GRN 2x12"] },
+        { "name": "MATT TWD", "chain": "clean", "alts": ["Dark CS 2x12", "SUP Star 2x12"] },
+        { "name": "TWD SUP", "chain": "clean", "alts": ["Bellman 2x12", "Dark Twin 2x12"] },
+        { "name": "SUP", "chain": "clean", "alts": ["Bellman 2x12", "Dark Twin 2x12"] },
+        { "name": "BOUTI", "chain": "clean", "alts": ["Foxy 2x12", "SUP Star 2x12"] },
+        { "name": "Bellman 2", "chain": "clean", "alts": ["Dark CS 2x12", "Dark Twin 2x12"] },
+        { "name": "Dumb", "chain": "clean", "alts": ["Dark CS 2x12", "SUP Star 2x12"] },
+        { "name": "Blue SK", "chain": "crunch", "alts": ["UK GRN 2x12", "Dark CS 2x12"] },
+        { "name": "Freed", "chain": "crunch", "alts": ["UK GRN 2x12", "Foxy 2x12"] },
+        { "name": "DB Rock", "chain": "crunch", "alts": ["UK GRN 2x12", "SUP Star 2x12"] },
+        { "name": "UK LD", "chain": "crunch", "alts": ["Solo 4x12", "Mess 4x12"] },
+        { "name": "UK MD", "chain": "crunch", "alts": ["Solo 4x12", "Juice 4x12"] },
+        { "name": "UK Dark", "chain": "crunch", "alts": ["Mess 4x12", "Dizz 4x12"] },
+        { "name": "UK 75", "chain": "crunch", "alts": ["Mess 4x12", "Solo 4x12"] },
+        { "name": "H-WAY", "chain": "crunch", "alts": ["Juice 4x12", "Solo 4x12"] },
+        { "name": "Way", "chain": "crunch", "alts": ["Juice 4x12", "Bog 4x12"] },
+        { "name": "EV", "chain": "crunch", "alts": ["Solo 4x12", "Mess 4x12"] },
+        { "name": "Uban", "chain": "crunch", "alts": ["Mess 4x12", "Eagle 4x12"] },
+        { "name": "TRP", "chain": "crunch", "alts": ["Mess 4x12", "Dizz 4x12"] },
+        { "name": "King", "chain": "crunch", "alts": ["Eagle 4x12", "Bog 4x12"] },
+        { "name": "ADM 1", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "ADM 2", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "Workman 1", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "Workman 2", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "F-TOP", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "US BASS", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "MATT", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "HACK", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "AMPG 2", "chain": "bass", "alts": ["Bellman 2x12", "Mess 4x12"] },
+        { "name": "AC Dream", "chain": "acoustic", "alts": ["J-120 2x12", "TWD CP 1x8"] },
+        { "name": "OM", "chain": "acoustic", "alts": ["J-120 2x12", "TWD CP 1x8"] },
+        { "name": "JUMBO", "chain": "acoustic", "alts": ["J-120 2x12", "TWD CP 1x8"] },
+        { "name": "Bird", "chain": "acoustic", "alts": ["J-120 2x12", "TWD CP 1x8"] },
+        { "name": "GA", "chain": "acoustic", "alts": ["J-120 2x12", "TWD CP 1x8"] },
+        { "name": "Classic AC", "chain": "acoustic", "alts": ["J-120 2x12", "TWD CP 1x8"] },
+        { "name": "Mandolin", "chain": "acoustic", "alts": ["J-120 2x12", "TWD CP 1x8"] },
+        { "name": "Fretless Bass", "chain": "bass", "alts": ["AMPG 4x10", "Bellman 2x12"] },
+        { "name": "Double Bass", "chain": "bass", "alts": ["AMPG 4x10", "Bellman 2x12"] }
+      ]
+    },
+    {
+      "module": "MOD",
+      "effects": [
+        { "name": "G-Chorus", "chain": "clean", "alts": ["B-Chorus", "Detune"] },
+        { "name": "C-Chorus", "chain": "clean", "alts": ["B-Chorus", "Detune"] },
+        { "name": "M-Chorus", "chain": "clean", "alts": ["B-Chorus", "Detune"] },
+        { "name": "G-Roto", "chain": "clean", "alts": ["Vibrato", "A-Chorus"] },
+        { "name": "Vibrato T", "chain": "clean", "alts": ["V-Roto", "M-Vibe"] },
+        { "name": "B-Jet", "chain": "clean", "alts": ["N-Jet", "O-Phase"] },
+        { "name": "Trem Jet", "chain": "clean", "alts": ["N-Jet", "Sine Trem"] },
+        { "name": "G-Phase", "chain": "clean", "alts": ["M-Vibe", "N-Jet"] },
+        { "name": "S-Phase", "chain": "clean", "alts": ["M-Vibe", "Jet"] },
+        { "name": "Pan Phase", "chain": "clean", "alts": ["M-Vibe", "Sine Trem"] },
+        { "name": "Vibe", "chain": "clean", "alts": ["O-Phase", "V-Roto"] },
+        { "name": "Triangle Trem", "chain": "clean", "alts": ["O-Trem", "Bias Trem"] }
+      ]
+    },
+    {
+      "module": "PRE",
+      "effects": [
+        { "name": "S-Comp", "chain": "clean", "alts": ["COMP"] },
+        { "name": "AC Refiner", "chain": "clean", "alts": [] },
+        { "name": "Saturate", "chain": "clean", "alts": ["B-Boost", "Micro Boost"] },
+        { "name": "P-Bend", "chain": "clean", "alts": ["OCTA"] },
+        { "name": "Hammy", "chain": "clean", "alts": ["OCTA"] },
+        { "name": "Harmonizer 1", "chain": "clean", "alts": ["OCTA"] },
+        { "name": "Harmonizer 2", "chain": "clean", "alts": ["OCTA"] }
+      ]
+    },
+    {
+      "module": "DST",
+      "effects": [
+        { "name": "AC Boost", "chain": "clean", "alts": ["Boost", "Super OD"] },
+        { "name": "P-Boost", "chain": "clean", "alts": ["B-Boost", "Micro Boost"] },
+        { "name": "14 Boost", "chain": "clean", "alts": ["Micro Boost", "B-Boost"] },
+        { "name": "FAT BB", "chain": "clean", "alts": ["B-Boost", "Micro Boost"] },
+        { "name": "OD 9", "chain": "clean", "alts": ["Super OD", "Yellow OD"] },
+        { "name": "Scream OD", "chain": "clean", "alts": ["Super OD", "Yellow OD"] },
+        { "name": "Penesas", "chain": "clean", "alts": ["B-Boost", "Super OD"] },
+        { "name": "Tube", "chain": "clean", "alts": ["B-Boost", "Super OD"] },
+        { "name": "TaiChi OD", "chain": "clean", "alts": ["Super OD", "B-Boost"] },
+        { "name": "Precise OD", "chain": "clean", "alts": ["Super OD", "SM Dist"] },
+        { "name": "Blues OD", "chain": "clean", "alts": ["Green OD", "La Charger"] },
+        { "name": "Swarm", "chain": "clean", "alts": ["Green OD", "Yellow OD"] },
+        { "name": "Master OD", "chain": "clean", "alts": ["Green OD", "La Charger"] },
+        { "name": "Timmy OD", "chain": "clean", "alts": ["Green OD", "B-Boost"] },
+        { "name": "Blues Master", "chain": "clean", "alts": ["Super OD", "Green OD"] },
+        { "name": "Empire OD", "chain": "clean", "alts": ["Super OD", "Green OD"] },
+        { "name": "Force", "chain": "clean", "alts": ["SM Dist", "Plustortion"] },
+        { "name": "Chief", "chain": "clean", "alts": ["SM Dist", "Darktale"] },
+        { "name": "Master Dist", "chain": "clean", "alts": ["Darktale", "Plustortion"] },
+        { "name": "Revolt", "chain": "clean", "alts": ["Darktale", "La Charger"] },
+        { "name": "Flex OD", "chain": "clean", "alts": ["La Charger", "Darktale"] },
+        { "name": "Flagman Dist", "chain": "clean", "alts": ["La Charger", "Darktale"] },
+        { "name": "Sora Fuzz", "chain": "clean", "alts": ["Red Haze", "Darktale"] },
+        { "name": "Black Bass", "chain": "bass", "alts": ["Darktale", "Plustortion"] },
+        { "name": "Bass Hammer", "chain": "bass", "alts": ["Darktale", "Plustortion"] }
+      ]
+    },
+    {
+      "module": "DLY",
+      "effects": [
+        { "name": "Digital Delay S", "chain": "clean", "alts": ["Ping Pong", "Analog"] },
+        { "name": "Vintage Rack", "chain": "clean", "alts": ["Tube", "Analog"] },
+        { "name": "Dual Echo", "chain": "clean", "alts": ["Pure", "Analog"] },
+        { "name": "999 Echo", "chain": "clean", "alts": ["Sweet Echo", "Tape"] },
+        { "name": "BBD Delay S", "chain": "clean", "alts": ["Sweet Echo", "Tape"] },
+        { "name": "Lofi Echo", "chain": "clean", "alts": ["Sweet Echo", "Tape"] },
+        { "name": "M-Echo", "chain": "clean", "alts": ["Analog", "Tube"] },
+        { "name": "Tape Delay S", "chain": "clean", "alts": ["Tube", "Analog"] },
+        { "name": "Rev Echo", "chain": "clean", "alts": ["Pure", "Tape", "Sweep Echo"] },
+        { "name": "Ambience 1", "chain": "clean", "alts": ["Sweep Echo", "Tape"] },
+        { "name": "Ambience 2", "chain": "clean", "alts": ["Sweep Echo", "Tape"] },
+        { "name": "Broken Delay", "chain": "clean", "alts": ["Tape", "Analog"] },
+        { "name": "Ice Delay", "chain": "clean", "alts": ["Sweep Echo", "Ring Echo"] }
+      ]
+    },
+    {
+      "module": "RVB",
+      "effects": [
+        { "name": "Plate", "chain": "clean", "alts": ["Hall", "Room", "Air"] },
+        { "name": "Sweet Space", "chain": "clean", "alts": ["N-Star", "Deepsea", "Air"] },
+        { "name": "Shimmer", "chain": "clean", "alts": ["Deepsea", "Church"] },
+        { "name": "Club", "chain": "clean", "alts": ["Air", "Hall"] },
+        { "name": "Concert", "chain": "clean", "alts": ["Church", "Room"] },
+        { "name": "Arena", "chain": "clean", "alts": ["Church", "Deepsea"] },
+        { "name": "Amp Spring", "chain": "clean", "alts": ["Room", "Air"] },
+        { "name": "Tube Spring", "chain": "clean", "alts": ["Room", "Air"] }
+      ]
+    },
+    {
+      "module": "WAH",
+      "effects": [
+        { "name": "V-Wah", "chain": "clean", "alts": [] },
+        { "name": "S-Wah", "chain": "clean", "alts": [] },
+        { "name": "B-Wah", "chain": "clean", "alts": [] },
+        { "name": "P-Wah", "chain": "clean", "alts": [] }
+      ]
+    },
+    {
+      "module": "NR",
+      "effects": [
+        { "name": "Gate 2", "chain": "high", "alts": [] },
+        { "name": "Gate 3", "chain": "high", "alts": [] }
+      ]
+    },
+    {
+      "module": "SPECIAL",
+      "about": "Stand-ins: effects with nothing like them on the GP-50 (DESIGN.md), now copied as a switched-off placeholder. Optional: is any GP-50 effect close enough to copy them as, on?",
+      "effects": [
+        { "name": "Step Filter", "chain": "clean", "alts": ["Crier", "Toucher"] },
+        { "name": "Ring Mod", "chain": "clean", "alts": ["Ring Echo", "OCTA"] },
+        { "name": "Bit Smash", "chain": "clean", "alts": ["Darktale", "Plustortion"] }
+      ]
+    }
+  ],
+  "notTested": {
+    "Hyper EQ": "At its defaults every band is flat, so it sounds like any flat EQ; and no band shares a name with the GP-50's EQs, so the copy is a flat Guitar EQ 1 whatever the patch set. What it needs is a rule for carrying bands to the nearest frequencies, not a pick by ear",
+    "Auto Swell": "Stand-in; no GP-50 effect does a volume swell",
+    "Hold": "Stand-in; no GP-50 effect holds a note",
+    "Freeze": "Stand-in; no GP-50 effect freezes a note"
+  }
+}
