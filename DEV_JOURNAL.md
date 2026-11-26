@@ -1043,6 +1043,13 @@ entry of that date). The skill's source now lives in the private repo
    unexplained once the checker's own two faults were fixed; it found a
    field the converter resets (two GP-50 bytes in 48 patches) and five
    patches that change again on a second trip (2026-11-25).
+12. **Tidy a folder before asking someone to look in it, and make the file
+   they need easy to spot.** Only what they need at the top; superseded runs
+   and reports in subfolders. Don't make them tell files apart by a few
+   digits at the end of a long name. Evidence: the developer was sent to a
+   24-item folder for one zip among three that differed only in the UTC
+   time at the end of a 38-character name, and couldn't find it
+   (2026-11-25).
 
 ## 2026-10-01: Status at end of day (start here next session)
 
@@ -5904,3 +5911,24 @@ left out (1), stand-ins counted on (1).
   backup's, every B valid. The 18-13-29 zip is still a fair test for the
   pairs it shares; its Special B differs from today's converter (the wah
   off, not left out: sounds the same).
+
+## 2026-11-25: A/B pairs loaded; the session folder tidied
+
+- **Developer:** loaded `gp200_ab_pairs_2026-11-25T21-53-18.zip` with the
+  web app's Restore from 51-A (Pop Bass): "It looks good." The listening
+  test (the sheet's verdicts) is for tomorrow.
+- **Developer's feedback:** the right zip was hard to find: 24 items in the
+  folder, three zips told apart only by the end of a long name (the time in
+  it is UTC, 7 hours ahead of the file's time in Explorer). Asked: clean up
+  before asking the developer to look, and make what matters easy to see.
+  Kept as a memory ("easy-to-see files"); proposed for the standards skill
+  (item 12).
+- **Done:** in `GP-200-testing6-11-25_round-trip`, the two earlier runs
+  (`18-11-55`, `18-13-29`: 16 files) moved to `older runs\`, and the latest
+  round-trip reports (`21-53-17` / `21-53-18`: 6 files) to
+  `round-trip reports\`. Top level now: the zip and its sheet. Moved, not
+  deleted; the file names in the entries above are unchanged.
+- **To decide (not changed):** the tools' file names. They put a UTC time
+  at the end (`gp200_ab_pairs_2026-11-25T21-53-18.zip`). Local time, and
+  the distinguishing part shorter and nearer the front, would help; it
+  changes names the tools use now, so it waits for the developer's say.
