@@ -5977,3 +5977,26 @@ patch-specific rules; a conversion is never expected to be perfect.
 rules are general and good enough for any patch; no patch-specific rules;
 listening findings are held as candidates until a general rule shows.
 In CLAUDE.md (project rules) and RULES.md section 2.
+
+**Pair 3, 52-A/52-B Step Up 2** (stand-in): with A's PRE switched off,
+"almost identical". As designed: A's PRE is Step Filter, on; B's is the
+stand-in (the GP-50's Crier, back on the GP-200 as A-WAH), off at its
+defaults. A's CTRL 1 switched the Step Filter; B's CTRL 1 is empty (the
+rule: a stand-in stays off, so its CTRL is dropped). Nothing to change.
+
+**Pair 4, 52-C/52-D Warm Plexi:** "pretty good"; B a little louder. The
+only module on that differs: DST, Swarm (Gain 30, Tone 90, Volume 50) ->
+Super OD at the same values (same three controls, so all carried; PRE is
+an off COMP in both). The developer tried the other GP-50 drives with
+Gain, Tone and VOL that the GP-200 also has (Green OD, SM Dist, La
+Charger): **Super OD is the closest pick, but with Gain at 20 instead of
+30 the overall sound is closer.** Candidate 3: Swarm -> Super OD with a
+lower Gain.
+
+**The pattern so far** (three of four heard changes, all on close
+matches, all a gain set too high on B): Boost Gain 100 -> 20, SUPDual OD
+Gain 2 50 -> 0-10, Super OD Gain 30 -> 20. One possible general rule,
+for the end of the listening (Claude, not proposed yet): scaling a
+carried Gain by the two effects' defaults gives 30 x 50/40 the other
+way, i.e. 30 x 40/50 = 24 here (Swarm's default 40, Super OD's 50), but
+for Saturate (default 50) -> Boost (default 20) 100 x 20/50 = 40, not 20.
