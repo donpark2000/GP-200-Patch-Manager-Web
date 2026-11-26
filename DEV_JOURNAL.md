@@ -6000,3 +6000,23 @@ effects' defaults (target default / source default) doesn't explain it:
 30 x 50/40 = 37.5 here (Swarm's default 40, Super OD's 50), higher, not
 lower; 100 x 20/50 = 40 for Saturate -> Boost, not 20. A general rule is
 for the end of the listening.
+
+**Pair 5, 53-A/53-B Glory Moment:** "really close" with MOD off on both,
+so the chorus substitute made the most difference. A: M-Chorus (three
+voices) Mix 81, Rate 4 synced, Filter 82, Depth L/C/R 53/34/50. B:
+A-Chorus Depth 50 (set: no Depth on M-Chorus), Rate 4 synced, Tone 82.
+PRE is taken (COMP4, on), so the GP-50's Detune wasn't an option. Claude
+suggested A-Chorus with less Depth, B-Chorus, M-Vibe. **Developer: A-Chorus
+at Depth 20, Rate 1/2D, "sounds pretty good".** Candidate 4: M-Chorus ->
+A-Chorus at Depth 20 (and the Rate, below). The fourth heard change of
+five that is a close match set too strong on B.
+
+Rate: both patches hold 4, a synced note length; which note 4 is isn't
+known (the pedals' note menus aren't in Valeton's files read so far).
+Asked the developer what A's Rate shows.
+**Developer: A's M-Chorus Rate shows 1/4.** So synced value 4 = 1/4 on
+M-Chorus (one point toward Q15's note table; A-Chorus's menu assumed the
+same, not checked). B carried 1/4, and the developer slowed it to 1/2D
+(three times as long). Candidate 4 is then: A-Chorus at Depth 20 and a
+slower Rate than the M-Chorus's. Both tweaks make the single chorus
+gentler, the same direction as the gain findings.
