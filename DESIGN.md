@@ -510,8 +510,9 @@ unmappables still open: `gp50/CONVERSION_RULES.md`.
   **A tweak heard in a test becomes an offset** (developer, 2026-11-27):
   the difference between the copy and the setting the developer chose at
   A's defaults is added to the patch's own setting in any conversion, per
-  pair of effects and per setting, limited to the control's range; the
-  controls are taken as linear. No extra tests to find curves.
+  pair of effects and per setting, kept within 5-95 (developer: settings
+  can misbehave at the ends); the controls are taken as linear. No extra
+  tests to find curves.
 - **Copying from the command line** (`gp50/cli/run.js copy`): GP-200
   patches are read with reads only (the bridge and `copy.js` refuse anything
   else), converted, and written to the GP-50; `convert` makes files for the
