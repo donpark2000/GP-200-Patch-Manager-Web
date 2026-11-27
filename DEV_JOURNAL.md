@@ -69,6 +69,17 @@ This journal records only what's new or different for the browser.
   against the rules. Uploading one is a write that isn't a patch: needs the
   developer's OK before any test. The developer may ask the author of the
   GP-200 custom firmware.
+  *2026-11-27:* a GP-50 research report from a custom-firmware project
+  (developer's copy: `Documents\GP-200\Reference\IR_SNAPTONE_BACKUP_REPORT.md`,
+  outside the repo) says, for GP-50 firmware 1.1.0 and from its firmware
+  only: restoring user IRs and SnapTones over USB works on stock firmware
+  (upload, rename, delete, name lists); backing them up does not, as no
+  stock message returns their data; the pedal stores the converted bytes
+  unchanged, so a re-upload of saved bytes gives the same sound. The GP-200
+  wasn't examined. The developer won't open the pedal; a whole-memory
+  write is too risky (agreed); no reply yet from the GP-200 firmware author.
+  The developer will ask Valeton support for backup and restore of IRs and
+  SnapTones (Valeton's app now loads NAM V2 files).
 - **Q22. The two bytes after the GP-50's CTRL masks.** (2026-11-25, round
   trip.) One per CTRL, it seems: 5 or 6 in the factory patches (6 6 in 20,
   6 5 in 26, 5 6 in 2, 5 5 in the rest and the empty patch). The converter
