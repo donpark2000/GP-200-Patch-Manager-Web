@@ -6238,3 +6238,40 @@ in `GP-200-testing\2026-11-26_module-tests` (entry above). Candidates 1-4
 Don't purge `GP-200-testing\2026-11-26_module-tests`,
 `GP-200-testing\2026-11-25_round-trip` (the four pairs kept for the end) or
 the folders listed in the 2026-11-24 status entry.
+
+## 2026-11-27: Listening, AMP-1 banks 32-38; how a tweak becomes a rule (developer)
+
+The developer is listening to `01_AMP-1.zip` (session folder
+`2026-11-26_module-tests`) and giving results in chat instead of filling
+in the sheets; Claude writes them into `01_AMP-1.csv` (developer,
+2026-11-27: "Is it OK if I just give you feedback as I test").
+
+| Bank | GP-200 amp | Closest | Tweak from the copy |
+|---|---|---|---|
+| 32 | Dark DLX | B Dark Twin (pick) | Gain +10, Volume +10, Bass +10, Middle 30 (default 40), Treble +5 |
+| 33 | Dark Vibra | B Dark Twin (pick) | Gain +10, Volume +10, Middle 50 (default 40) |
+| 34 | Silver Twin | B Dark Twin (pick) | Gain 0, Bass -20, Treble +20 |
+| 35 | SUPDual CL | B SUPDual OD (pick) | none |
+| 36 | Foxy 15TB | D Foxy 30N (pick was Foxy Bass) | Gain +5, Tone Cut -28 |
+| 37 | BogSV CL | none of B-D; Foxy 30N closer (developer: very like bank 36) | not given |
+| 38 | Z38 CL | D Match CL (pick was Foxy 30N) | Gain 0, Presence 30 (default 65), Bass +15, Middle -10, Treble -10 |
+
+Candidate picks (held until the module is done): Foxy 15TB -> Foxy 30N,
+BogSV CL -> Foxy 30N, Z38 CL -> Match CL. Foxy 15TB plays as a guitar amp,
+as its controls suggested (not the bass amp Valeton's text says). Developer
+on the amps: "so many choices but the differences are subtle".
+Watching: Match CL's Presence default (65) was too bright where the GP-200
+amp has no Presence (one case).
+
+**How a tweak becomes a rule: as an offset** (developer, 2026-11-27). The
+developer asked whether Claude assumed the controls are linear; Claude
+said no (one point per setting can't tell an offset, a ratio or a fixed
+level apart) and proposed lining up the defaults while keeping 0 and 100
+at the ends. The developer: no more sound testing than planned; assume
+the controls are linear, so a tweak from 30 to 40 means "add 10" in the
+mapping, which is a better guess than copying the level. So a rule from
+the tests adds the difference found at the defaults to whatever the
+patch's setting is, per pair of effects and per setting, limited to the
+control's range. A setting the GP-200 effect lacks gets the value chosen
+in the test (the GP-50 default plus the difference). Rules still wait
+until each module's listening is done (2026-11-26 rule: candidates first).
