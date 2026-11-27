@@ -6277,7 +6277,8 @@ in the test (the GP-50 default plus the difference). Rules still wait
 until each module's listening is done (2026-11-26 rule: candidates first).
 **Never above 95 or below 5** (developer, 2026-11-27: "I've heard some
 settings have issues at the extreme ends"): an offset stops at 5 and 95
-instead of the control's ends. Claude's reading, to confirm: only for a
+instead of the control's ends. Scope (Claude's reading; developer "Yes,
+only those", 2026-11-27): only for a
 setting an offset moves, on a 0-100 knob; a value copied unchanged (a
 patch's own 0 or 100) stays as it is, and switches and menus aren't
 touched.
