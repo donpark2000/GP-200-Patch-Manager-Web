@@ -6275,3 +6275,9 @@ patch's setting is, per pair of effects and per setting, limited to the
 control's range. A setting the GP-200 effect lacks gets the value chosen
 in the test (the GP-50 default plus the difference). Rules still wait
 until each module's listening is done (2026-11-26 rule: candidates first).
+**Never above 95 or below 5** (developer, 2026-11-27: "I've heard some
+settings have issues at the extreme ends"): an offset stops at 5 and 95
+instead of the control's ends. Claude's reading, to confirm: only for a
+setting an offset moves, on a 0-100 knob; a value copied unchanged (a
+patch's own 0 or 100) stays as it is, and switches and menus aren't
+touched.
