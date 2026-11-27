@@ -86,6 +86,11 @@ This journal records only what's new or different for the browser.
   read the whole flash only through the debug port inside the pedal (not
   USB), and says IRs and SnapTones sit in their own store, to be covered in a
   later post (not out as of Oct 2, 2026).
+  *Correction, 2026-11-27:* the developer had already asked Valeton earlier
+  for a one-command backup and restore of the whole pedal, IRs and SnapTones
+  included, and won't write again. The blog's author is the firmware author
+  already contacted (no reply). The developer doesn't use IRs or SnapTones
+  (the built-in sounds are enough), so Q21 waits on outside answers.
 - **Q22. The two bytes after the GP-50's CTRL masks.** (2026-11-25, round
   trip.) One per CTRL, it seems: 5 or 6 in the factory patches (6 6 in 20,
   6 5 in 26, 5 6 in 2, 5 5 in the rest and the empty patch). The converter
