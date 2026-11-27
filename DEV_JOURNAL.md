@@ -80,6 +80,12 @@ This journal records only what's new or different for the browser.
   write is too risky (agreed); no reply yet from the GP-200 firmware author.
   The developer will ask Valeton support for backup and restore of IRs and
   SnapTones (Valeton's app now loads NAM V2 files).
+  Public GP-200 sources read 2026-11-27 (developer's links): the firmware-mod
+  projects Goaltoday/GP-200-FIRMWARE-MODS and tntexplosivesltd/gp200-patcher
+  offer no IR, SnapTone or patch backup; the blog gp200-reversing.hashnode.dev
+  read the whole flash only through the debug port inside the pedal (not
+  USB), and says IRs and SnapTones sit in their own store, to be covered in a
+  later post (not out as of Oct 2, 2026).
 - **Q22. The two bytes after the GP-50's CTRL masks.** (2026-11-25, round
   trip.) One per CTRL, it seems: 5 or 6 in the factory patches (6 6 in 20,
   6 5 in 26, 5 6 in 2, 5 5 in the rest and the empty patch). The converter
