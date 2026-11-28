@@ -6239,7 +6239,7 @@ Don't purge `GP-200-testing\2026-11-26_module-tests`,
 `GP-200-testing\2026-11-25_round-trip` (the four pairs kept for the end) or
 the folders listed in the 2026-11-24 status entry.
 
-## 2026-11-27: Listening, AMP-1 banks 32-38; how a tweak becomes a rule (developer)
+## 2026-11-27: Listening, AMP-1 (banks 32-51); how a tweak becomes a rule (developer)
 
 The developer is listening to `01_AMP-1.zip` (session folder
 `2026-11-26_module-tests`) and giving results in chat instead of filling
@@ -6255,9 +6255,34 @@ in the sheets; Claude writes them into `01_AMP-1.csv` (developer,
 | 36 | Foxy 15TB | D Foxy 30N (pick was Foxy Bass) | Gain +5, Tone Cut -28 |
 | 37 | BogSV CL | none of B-D; Foxy 30N closer (developer: very like bank 36) | not given |
 | 38 | Z38 CL | D Match CL (pick was Foxy 30N) | Gain 0, Presence 30 (default 65), Bass +15, Middle -10, Treble -10 |
+| 39 | Knights CL | C Match CL (pick was Foxy 30N) | none |
+| 40 | Knights CL+ | C Match CL (pick was Foxy 30N) | none |
+| 41 | Bad-KT CL | B Match CL (pick) | Presence +10, Volume +10, Middle 60 (default 50) |
+| 42 | Solo100 CL | D L-Star CL (pick was Dark Twin) | Gain +10, Presence +10, Middle +10, Treble +10, Bass -5 |
+| 43 | UK 45+ | D Bellman 59B (pick was UK 45) | Gain -5, Middle -10, Treble +15, Presence +10 |
+| 44 | UK 45JP | C UK 50JP (pick was UK 45) | Gain 1 -10, Bass -10, Treble +10 |
+| 45 | UK 50 | B UK 50JP (pick) | Bass +10, Treble -10 |
+| 46 | UK 50+ | C UK 800 (pick was UK 50JP) | Gain -5, Bass +10, Middle -20, Treble -20 |
+| 47 | UK SLP | D UK 45 (pick was UK 50JP) | Volume -5, Bass -20 |
+| 48 | Match OD | B Foxy 30TB (pick) | Gain +10, Volume +10, Treble +10, Char Hot (default Cool) |
+| 49 | Knights OD | B Foxy 30TB (pick) | Gain +11, Tone Cut 70 (default 50), Volume +10, Bass +10 |
+| 50 | Juice30 OD | C UK 800 (pick was Juice R100) | Volume -20, Treble -20 |
+| 51 | BogSV OD | B Bog RedV (pick) | Gain -15, Presence -50 (to 0), Volume -10 |
+
+AMP-1 done (2026-11-28): the map's pick won 9 of 20 banks (32-35, 41, 45,
+48, 49, 51) and lost 11. Results were given in chat, with a few slips the
+developer corrected or Claude read from context (bank 41's settings first
+typed under 42; "64" for 46, "50" for 51, Gain "600" for 60), each noted
+in the sheet's comment. No change is common to a whole group: Gain went up
+on most clean amps and down on most crunch amps, and EQ moved both ways
+from amp to amp. Bank 51's Presence 0 is below the 5-95 limit, so as an
+offset it would stop at 5; a menu (bank 48's Char) is a chosen value, not
+an offset.
 
 Candidate picks (held until the module is done): Foxy 15TB -> Foxy 30N,
-BogSV CL -> Foxy 30N, Z38 CL -> Match CL. Foxy 15TB plays as a guitar amp,
+BogSV CL -> Foxy 30N, Z38 CL, Knights CL and Knights CL+ -> Match CL,
+Solo100 CL -> L-Star CL, UK 45+ -> Bellman 59B, UK 45JP -> UK 50JP,
+UK 50+ and Juice30 OD -> UK 800, UK SLP -> UK 45. Foxy 15TB plays as a guitar amp,
 as its controls suggested (not the bass amp Valeton's text says). Developer
 on the amps: "so many choices but the differences are subtle".
 Watching: Match CL's Presence default (65) was too bright where the GP-200
